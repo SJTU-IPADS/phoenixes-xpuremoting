@@ -8,7 +8,18 @@ Credits: Tianxia Wang, Xingda Wei
 
 1. 确保MPS关闭：
 
-TBD：instructions on how to check whether MPS is enabled (and instructions to disable it) 
+由于用户可以设定`CUDA_MPS_PIPE_DIRECTORY`为非默认目录，因此不能通过判断`/tmp/nvidia-mps`下是否存在MPS_PIPE确定是否关闭mps。
+
+现阶段可以通过`ps -ef | grep nvidia-cuda-mps-control`检查是否存在mps进程。
+
+```
+> ps -ef | grep nvidia-cuda-mps-control
+zwx       3850  3593  0 19:42 pts/20   00:00:00 nvidia-cuda-mps-control -f
+zwx       4589  4035  0 19:42 pts/21   00:00:00 grep --color=auto --exclude-dir=.bzr --exclude-dir=CVS --exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=.idea --exclude-dir=.tox nvidia-cuda-mps-control
+```
+如果存在这个进程，确认没有CUDA任务负载后，可以通过以下方法关闭mps。
+
+`echo "quit" | sudo nvidia-cuda-mps-control` 或 `pkill nvidia-cuda-mps-control`
 
 2. Prepare docker container, 参考： [prepare_container.md](prepare_container.md) 
 
