@@ -1,7 +1,6 @@
 # Tutorial on implementing CUDA remote invocation 
 
-Credits: Tianxia Wang, Xingda Wei 
-
+Credits: Tianxia Wang, Xingda Wei, Wenxin Zheng 
 
 
 ## 0. Pre-requests
