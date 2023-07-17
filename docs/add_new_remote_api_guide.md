@@ -6,6 +6,7 @@ Please use the following steps to implement a specific remoted API for cricket:
    1. If so, check whether it is possible to merge it at our `main`. If it is possible, just merge and we are all set. If not, then goto the next step. 
    2. If not, implement our own version. 
 2. Open a gitlab issue to describe the how you plan to implement the API. The plan must be reviewed by one of the senior member, e.g., zhuobin, tianxia and mingcong. Please use the following issue template: 
+3. Fork a a new branch named as {issue_num}-{api_name}, then implement. After the implementation, add a merge request. 
 
 ![add_new_remote_api](./add_new_remote_api.png)
 
