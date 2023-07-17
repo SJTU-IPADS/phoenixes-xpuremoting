@@ -16,6 +16,14 @@ Libgdb and libtirpc built as part of the main Makefile.
 
 On the system where the Cricket server should be executed, the appropriate NVIDIA drivers should be installed.
 
+
+
+## Quick start
+
+Goto  [implement_new_remoting_api.md](docs/implement_new_remoting_api.md) 
+
+
+
 # Building
 
 ```
@@ -35,6 +43,7 @@ To support Cricket, the CUDA libraries must be linked dynamically to the CUDA ap
 
 The Cricket library has to be preloaded to the CUDA Application.
 For starting the server:
+
 ```
 LD_PRELOAD=<path-to-cricket>/bin/cricket-server.so <cuda-binary>
 ```
@@ -69,7 +78,12 @@ REMOTE_GPU_ADDRESS=remoteSystem.my-domain.com LD_PRELOAD=/nfs_share/cricket/bin/
 
 # Contributing
 
+## Add new remote API implementation
+
+Please checkout  [add_new_remote_api_guide.md](docs/add_new_remote_api_guide.md) 
+
 ## File structue
+
 * **cpu:** The virtualization layer
 * **gpu:** The checkpoint/restart tool
 * **submodules:** Submodules are located here.
