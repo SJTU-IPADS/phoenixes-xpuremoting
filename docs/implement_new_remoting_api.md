@@ -35,7 +35,7 @@ git clone --recursive -b share-object-support  git@ipads.se.sjtu.edu.cn:scaleais
 假设cricket被clone到了 $CRICKET
 
 ```
-docker run --gpus all -dit -v $CRICKET:/testdir --privileged --network host --ipc=host --namecricket-pytorch-xxx yyh/pytorch:v1.13.1-devel-new
+docker run --gpus all -dit -v $CRICKET:/testdir --privileged --network host --ipc=host --name cricket-pytorch-xxx yyh/pytorch:v1.13.1-devel-new
 ```
 
 3. 编译：
