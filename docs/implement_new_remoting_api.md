@@ -26,7 +26,7 @@ zwx       4589  4035  0 19:42 pts/21   00:00:00 grep --color=auto --exclude-dir=
 
 1. Clone the repo:
 
-```
+```bash
 git clone --recursive -b share-object-support  git@ipads.se.sjtu.edu.cn:scaleaisys/cricket.git
 ```
 
@@ -34,13 +34,13 @@ git clone --recursive -b share-object-support  git@ipads.se.sjtu.edu.cn:scaleais
 
 假设cricket被clone到了 $CRICKET
 
-```
+```bash
 docker run --gpus all -dit -v $CRICKET:/testdir --privileged --network host --ipc=host --name cricket-pytorch-xxx yyh/pytorch:v1.13.1-devel-new
 ```
 
 3. 编译：
 
-```
+```bash
 docker exec -it cricket-pytorch-xxx bash
 cd /testdir
 make libtirpc
@@ -49,7 +49,7 @@ cd cpu && make cricket-rpc-server cricket-client.so
 
 **Note**: 默认编译的debug level是`DEBUG`， 会输出很多无效信息。正常跑可以使用如下选项避免：
 
-```
+```bash
 # In docker container 
 cd cpu && LOG=INFO make cricket-rpc-server cricket-client.so
 ```
@@ -58,7 +58,7 @@ cd cpu && LOG=INFO make cricket-rpc-server cricket-client.so
 
 1. 运行cricket server
 
-```
+```bash
 docker exec -it cricket-pytorch-xxx bash
 cd /testdir/cpu
 LD_LIBRARY_PATH=../submodules/libtirpc/install/lib ./cricket-rpc-server
@@ -66,11 +66,11 @@ LD_LIBRARY_PATH=../submodules/libtirpc/install/lib ./cricket-rpc-server
 
 2. 运行client（使用GPU的程序）
 
-```
+```bash
 docker exec -it cricket-pytorch-xxx bash
 cd /testdir
 
-LD_LIBRARY_PATH=./submodules/libtirpc/install/lib:./cpu/cricket-client.so LD_PRELOAD=./cpu/cricket-client.so REMOTE_GPU_ADDRESS=127.0.0.1 python3 ./tests/test_apps/pytorch_minimal.py
+LD_LIBRARY_PATH=./submodules/libtirpc/install/lib:./cpu/ LD_PRELOAD=./cpu/cricket-client.so REMOTE_GPU_ADDRESS=127.0.0.1 python3 ./tests/test_apps/pytorch_minimal.py
 ```
 
 如果一切正常，会打印如下：
@@ -140,8 +140,8 @@ client
 
 ```bash
 docker exec -it cricket-pytorch-xxx bash
-cd /testdir/cpu
-LD_LIBRARY_PATH=./submodules/libtirpc/install/lib:./cpu/cricket-client.so  LD_PRELOAD=./cpu/cricket-client.so REMOTE_GPU_ADDRESS=127.0.0.1 ./tests/test_apps/a.out
+cd /testdir
+LD_LIBRARY_PATH=./submodules/libtirpc/install/lib:./cpu/  LD_PRELOAD=./cpu/cricket-client.so REMOTE_GPU_ADDRESS=127.0.0.1 ./tests/test_apps/a.out
 ```
 
 3. 如果未实现某个API的话，一般会把具体的error print出来：
