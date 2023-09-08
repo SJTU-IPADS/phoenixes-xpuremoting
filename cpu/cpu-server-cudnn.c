@@ -15,8 +15,9 @@
 #include "api-recorder.h"
 
 #include "cpu-server-cudnn.h"
+#include "cpu-measurement.h"
 
-
+extern measurement_info vanillas[6000];
 
 int server_cudnn_init(int bypass)
 {
@@ -172,11 +173,14 @@ bool_t rpc_cudnngetstream_1_svc(ptr handle, ptr_result *result, struct svc_req *
 
 bool_t rpc_cudnncreatetensordescriptor_1_svc(ptr_result *result, struct svc_req *rqstp)
 {
+    int proc = 5010;
     RECORD_VOID_API;
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
 
     GSCHED_RETAIN;
+    time_start(vanillas, proc);
     result->err = cudnnCreateTensorDescriptor((cudnnTensorDescriptor_t*)&result->ptr_result_u.ptr);
+    time_end(vanillas, proc);
     if (resource_mg_create(&rm_cudnn_tensors, (void*)result->ptr_result_u.ptr) != 0) {
         LOGE(LOG_ERROR, "error in resource manager");
     }
@@ -348,13 +352,16 @@ bool_t rpc_cudnngettensorsizeinbytes_1_svc(ptr tensorDesc, sz_result *result, st
 
 bool_t rpc_cudnndestroytensordescriptor_1_svc(ptr tensorDesc, int *result, struct svc_req *rqstp)
 {
+    int proc = 5018;
     RECORD_API(ptr);
     RECORD_SINGLE_ARG(tensorDesc);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
 
     GSCHED_RETAIN;
+    time_start(vanillas, proc);
     *result = cudnnDestroyTensorDescriptor(
         (cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)tensorDesc));
+    time_end(vanillas, proc);
     // TODO: Remove from resource manager
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
@@ -1163,6 +1170,40 @@ bool_t rpc_cudnnconvolutionforward_1_svc(ptr handle, cudnn_scaling_t alpha, ptr 
     return 1;
 }
 
+bool_t rpc_cudnnsetconvolutiongroupcount_1_svc(ptr convDesc, int groupCnt, int *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cudnnsetconvolutiongroupcount_1_argument);
+    RECORD_NARG(convDesc);
+    RECORD_NARG(groupCnt);
+
+    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
+    GSCHED_RETAIN;
+    *result = cudnnSetConvolutionGroupCount(
+        (cudnnConvolutionDescriptor_t)resource_mg_get(&rm_cudnn_convs, (void*)convDesc),
+        groupCnt
+    );
+    GSCHED_RELEASE;
+    RECORD_RESULT(integer, *result);
+    return 1;
+}
+
+bool_t rpc_cudnnsetconvolutionmathtype_1_svc(ptr convDesc, int mathType, int *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cudnnsetconvolutionmathtype_1_argument);
+    RECORD_NARG(convDesc);
+    RECORD_NARG(mathType);
+
+    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
+    GSCHED_RETAIN;
+    *result = cudnnSetConvolutionMathType(
+        (cudnnConvolutionDescriptor_t)resource_mg_get(&rm_cudnn_convs, (void*)convDesc),
+        (cudnnMathType_t)mathType
+    );
+    GSCHED_RELEASE;
+    RECORD_RESULT(integer, *result);
+    return 1;
+}
+
 bool_t rpc_cudnnaddtensor_1_svc(ptr handle, cudnn_scaling_t alpha, ptr aDesc, ptr A, cudnn_scaling_t beta, ptr cDesc, ptr C, int *result, struct svc_req *rqstp)
 {
     RECORD_API(rpc_cudnnaddtensor_1_argument);
@@ -1215,182 +1256,249 @@ bool_t rpc_cudnntransformtensor_1_svc(ptr handle, cudnn_scaling_t alpha, ptr xDe
     return 1;
 }
 
-static const size_t backendAttributeSizes[] = {
-    [CUDNN_TYPE_HANDLE] = sizeof(cudnnHandle_t),
-    [CUDNN_TYPE_DATA_TYPE] = sizeof(cudnnDataType_t),
-    [CUDNN_TYPE_BOOLEAN] = sizeof(bool),
-    [CUDNN_TYPE_INT64] = sizeof(int64_t),
-    [CUDNN_TYPE_FLOAT] = sizeof(float),
-    [CUDNN_TYPE_DOUBLE] = sizeof(double),
-    [CUDNN_TYPE_VOID_PTR] = sizeof(void *),
-    [CUDNN_TYPE_CONVOLUTION_MODE] = sizeof(cudnnConvolutionMode_t),
-    [CUDNN_TYPE_HEUR_MODE] = sizeof(cudnnBackendHeurMode_t),
-    [CUDNN_TYPE_KNOB_TYPE] = sizeof(cudnnBackendKnobType_t),
-    [CUDNN_TYPE_NAN_PROPOGATION] = sizeof(cudnnNanPropagation_t),
-    [CUDNN_TYPE_NUMERICAL_NOTE] = sizeof(cudnnBackendNumericalNote_t),
-    [CUDNN_TYPE_LAYOUT_TYPE] = sizeof(cudnnBackendLayoutType_t),
-    [CUDNN_TYPE_ATTRIB_NAME] = sizeof(cudnnBackendAttributeName_t),
-    [CUDNN_TYPE_POINTWISE_MODE] = sizeof(cudnnPointwiseMode_t),
-    [CUDNN_TYPE_BACKEND_DESCRIPTOR] = sizeof(cudnnBackendDescriptor_t),
-    [CUDNN_TYPE_GENSTATS_MODE] = sizeof(cudnnGenStatsMode_t),
-    [CUDNN_TYPE_BN_FINALIZE_STATS_MODE] = sizeof(cudnnBnFinalizeStatsMode_t),
-    [CUDNN_TYPE_REDUCTION_OPERATOR_TYPE] = sizeof(cudnnReduceTensorOp_t),
-    [CUDNN_TYPE_BEHAVIOR_NOTE] = sizeof(cudnnBackendBehaviorNote_t),
-    [CUDNN_TYPE_TENSOR_REORDERING_MODE] = sizeof(cudnnBackendTensorReordering_t),
-    [CUDNN_TYPE_RESAMPLE_MODE] = sizeof(cudnnResampleMode_t),
-    [CUDNN_TYPE_PADDING_MODE] = sizeof(cudnnPaddingMode_t),
-    [CUDNN_TYPE_INT32] = sizeof(int32_t),
-    [CUDNN_TYPE_CHAR] = sizeof(char),
-    [CUDNN_TYPE_SIGNAL_MODE] = sizeof(cudnnSignalMode_t),
-    [CUDNN_TYPE_FRACTION] = sizeof(cudnnFraction_t),
-    [CUDNN_TYPE_NORM_MODE] = sizeof(cudnnBackendNormMode_t),
-    [CUDNN_TYPE_NORM_FWD_PHASE] = sizeof(cudnnBackendNormFwdPhase_t),
-    [CUDNN_TYPE_RNG_DISTRIBUTION] = sizeof(cudnnRngDistribution_t),
-};
-
-bool_t rpc_cudnnbackendcreatedescriptor_1_svc(int descriptorType, ptr_result *result, struct svc_req *rqstp)
+bool_t rpc_cudnngetbatchnormalizationforwardtrainingexworkspacesize_1_svc(ptr handle, int mode, int bnOps, ptr xDesc, ptr zDesc, ptr yDesc, ptr bnScaleBiasMeanVarDesc, ptr activationDesc, sz_result* result, struct svc_req *rqstp)
 {
-    RECORD_API(int);
-    RECORD_SINGLE_ARG(descriptorType);
+    RECORD_API(rpc_cudnngetbatchnormalizationforwardtrainingexworkspacesize_1_argument);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
-
     GSCHED_RETAIN;
-    result->err = cudnnBackendCreateDescriptor(
-        (cudnnBackendDescriptorType_t)descriptorType,
-        (cudnnBackendDescriptor_t*)&result->ptr_result_u.ptr);
-    if (resource_mg_create(&rm_cudnn_backendds, (void*)result->ptr_result_u.ptr) != 0) {
-        LOGE(LOG_ERROR, "error in resource manager");
-    }
+    result->err = cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
+        (cudnnBatchNormMode_t)mode,
+        (cudnnBatchNormOps_t)bnOps,
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)zDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)yDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)bnScaleBiasMeanVarDesc),
+        (const cudnnActivationDescriptor_t)resource_mg_get(&rm_cudnn_activations, (void*)activationDesc),
+        (size_t*)&result->sz_result_u.data
+    );
     GSCHED_RELEASE;
-    RECORD_RESULT(ptr_result_u, *result);
     return 1;
 }
 
-bool_t rpc_cudnnbackenddestroydescriptor_1_svc(ptr descriptor, int *result, struct svc_req *rqstp)
+bool_t rpc_cudnnbatchnormalizationforwardtrainingex_1_svc(ptr handle, int mode, int bnOps, cudnn_scaling_t alpha, cudnn_scaling_t beta, ptr xDesc, ptr xData, ptr zDesc, ptr zData, ptr yDesc, ptr yData, ptr bnScaleBiasMeanVarDesc, ptr bnScaleData, ptr bnBiasData, double exponentialAverageFactor, ptr resultRunningMeanData, ptr resultRunningVarianceData, double epsilon, ptr saveMean, ptr saveInvVariance, ptr activationDesc, ptr workspace, size_t workSpaceSizeInBytes, ptr reserveSpace, size_t reserveSpaceSizeInBytes, int *result, struct svc_req *rqstp)
 {
-    RECORD_API(ptr);
-    RECORD_SINGLE_ARG(descriptor);
+    RECORD_API(rpc_cudnnbatchnormalizationforwardtrainingex_1_argument);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
-
     GSCHED_RETAIN;
-    *result = cudnnBackendDestroyDescriptor(
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)descriptor));
-    // TODO: Remove from resource manager
+    *result = cudnnBatchNormalizationForwardTrainingEx(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
+        (cudnnBatchNormMode_t)mode,
+        (cudnnBatchNormOps_t)bnOps,
+        (alpha.dataType == CUDNN_DATA_DOUBLE ? (const void*)&alpha.cudnn_scaling_t_u.d : (const void*)&alpha.cudnn_scaling_t_u.f),
+        (beta.dataType == CUDNN_DATA_DOUBLE ? (const void*)&beta.cudnn_scaling_t_u.d : (const void*)&beta.cudnn_scaling_t_u.f),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)xData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)zDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)zData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)yDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)yData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)bnScaleBiasMeanVarDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)bnScaleData),
+        (const void*)resource_mg_get(&rm_memory, (void*)bnBiasData),
+        exponentialAverageFactor,
+        (void*)resource_mg_get(&rm_memory, (void*)resultRunningMeanData),
+        (void*)resource_mg_get(&rm_memory, (void*)resultRunningVarianceData),
+        epsilon,
+        (void*)resource_mg_get(&rm_memory, (void*)saveMean),
+        (void*)resource_mg_get(&rm_memory, (void*)saveInvVariance),
+        (const cudnnActivationDescriptor_t)resource_mg_get(&rm_cudnn_activations, (void*)activationDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)workspace),
+        workSpaceSizeInBytes,
+        (void*)resource_mg_get(&rm_memory, (void*)reserveSpace),
+        reserveSpaceSizeInBytes
+    );
     GSCHED_RELEASE;
-    RECORD_RESULT(integer, *result);
     return 1;
 }
 
-bool_t rpc_cudnnbackendinitialize_1_svc(ptr descriptor, int *result, struct svc_req *rqstp)
+bool_t rpc_cudnngetbatchnormalizationbackwardexworkspacesize_1_svc(ptr handle, int mode, int bnOps, ptr xDesc, ptr yDesc, ptr dyDesc, ptr dzDesc, ptr dxDesc, ptr dBnScaleBiasDesc, ptr activationDesc, sz_result *result, struct svc_req *rqstp)
 {
-    RECORD_API(ptr);
-    RECORD_SINGLE_ARG(descriptor);
+    RECORD_API(rpc_cudnngetbatchnormalizationbackwardexworkspacesize_1_argument);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
-
     GSCHED_RETAIN;
-    *result = cudnnBackendInitialize(
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)descriptor));
+    result->err = cudnnGetBatchNormalizationBackwardExWorkspaceSize(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
+        (cudnnBatchNormMode_t)mode,
+        (cudnnBatchNormOps_t)bnOps,
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)yDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dyDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dzDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dxDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dBnScaleBiasDesc),
+        (const cudnnActivationDescriptor_t)resource_mg_get(&rm_cudnn_activations, (void*)activationDesc),
+        (size_t*)&result->sz_result_u.data
+    );
     GSCHED_RELEASE;
-    RECORD_RESULT(integer, *result);
     return 1;
 }
 
-bool_t rpc_cudnnbackendfinalize_1_svc(ptr descriptor, int *result, struct svc_req *rqstp)
+bool_t rpc_cudnnbatchnormalizationbackwardex_1_svc(ptr handle, int mode, int bnOps, cudnn_scaling_t alphaDataDiff, cudnn_scaling_t betaDataDiff, cudnn_scaling_t alphaParamDiff, cudnn_scaling_t betaParamDiff, ptr xDesc, ptr xData, ptr yDesc, ptr yData, ptr dyDesc, ptr dyData, ptr dzDesc, ptr dzData, ptr dxDesc, ptr dxData, ptr dBnScaleBiasDesc, ptr bnScaleData, ptr bnBiasData, ptr dBnScaleData, ptr dBnBiasData, double epsilon, ptr saveMean, ptr saveInvVariance, ptr activationDesc, ptr workspace, size_t workSpaceSizeInBytes, ptr reserveSpace, size_t reserveSpaceSizeInBytes, int *result, struct svc_req *rqstp)
 {
-    RECORD_API(ptr);
-    RECORD_SINGLE_ARG(descriptor);
+    RECORD_API(rpc_cudnnbatchnormalizationbackwardex_1_argument);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
-
     GSCHED_RETAIN;
-    *result = cudnnBackendFinalize(
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)descriptor));
+    *result = cudnnBatchNormalizationBackwardEx(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
+        (cudnnBatchNormMode_t)mode,
+        (cudnnBatchNormOps_t)bnOps,
+        (alphaDataDiff.dataType == CUDNN_DATA_DOUBLE ? (const void*)&alphaDataDiff.cudnn_scaling_t_u.d : (const void*)&alphaDataDiff.cudnn_scaling_t_u.f),
+        (betaDataDiff.dataType == CUDNN_DATA_DOUBLE ? (const void*)&betaDataDiff.cudnn_scaling_t_u.d : (const void*)&betaDataDiff.cudnn_scaling_t_u.f),
+        (alphaParamDiff.dataType == CUDNN_DATA_DOUBLE ? (const void*)&alphaParamDiff.cudnn_scaling_t_u.d : (const void*)&alphaParamDiff.cudnn_scaling_t_u.f),
+        (betaParamDiff.dataType == CUDNN_DATA_DOUBLE ? (const void*)&betaParamDiff.cudnn_scaling_t_u.d : (const void*)&betaParamDiff.cudnn_scaling_t_u.f), 
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)xData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)yDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)yData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dyDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)dyData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dzDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)dzData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dxDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)dxData),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dBnScaleBiasDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)bnScaleData),
+        (const void*)resource_mg_get(&rm_memory, (void*)bnBiasData),
+        (void*)resource_mg_get(&rm_memory, (void*)dBnScaleData),
+        (void*)resource_mg_get(&rm_memory, (void*)dBnBiasData),
+        epsilon,
+        (const void*)resource_mg_get(&rm_memory, (void*)saveMean),
+        (const void*)resource_mg_get(&rm_memory, (void*)saveInvVariance),
+        (const cudnnActivationDescriptor_t)resource_mg_get(&rm_cudnn_activations, (void*)activationDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)workspace),
+        (size_t)workSpaceSizeInBytes,
+        (void*)resource_mg_get(&rm_memory, (void*)reserveSpace),
+        (size_t)reserveSpaceSizeInBytes
+    );
     GSCHED_RELEASE;
-    RECORD_RESULT(integer, *result);
-    return 1;
-}
-bool_t rpc_cudnnbackendsetattribute_1_svc(
-                         ptr descriptor,
-                         int attributeName,
-                         int attributeType,
-                         int64_t elementCount,
-                         mem_data arrayOfElements,
-                         int *result, struct svc_req *rqstp)
-{
-    RECORD_API(rpc_cudnnbackendsetattribute_1_argument);
-    RECORD_NARG(descriptor);
-    RECORD_NARG(attributeName);
-    RECORD_NARG(attributeType);
-    RECORD_NARG(elementCount);
-    RECORD_NARG(arrayOfElements);
-
-    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
-    
-    if (attributeType < 0 || attributeType >= CUDNN_TYPE_RNG_DISTRIBUTION) {
-        LOGE(LOG_ERROR, "attributeType out of range.");
-        return 0;
-    }
-
-    if (arrayOfElements.mem_data_len != elementCount * backendAttributeSizes[attributeType]) {
-        LOGE(LOG_ERROR, "array dimensions not as expected.");
-        return 0;
-    }
-    GSCHED_RETAIN;
-    *result = cudnnBackendSetAttribute(
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)descriptor),
-        (cudnnBackendAttributeName_t)attributeName,
-        (cudnnBackendAttributeType_t)attributeType,
-        elementCount,
-        arrayOfElements.mem_data_val);
-    GSCHED_RELEASE;
-    RECORD_RESULT(integer, *result);
     return 1;
 }
 
-bool_t rpc_cudnnbackendgetattribute_1_svc(ptr descriptor, int attributeName, int attributeType, int64_t requestedElementCount, mem_result *result, struct svc_req *rqstp)
+// 5315
+bool_t rpc_cudnngetconvolutionbackwarddataalgorithm_v7_1_svc(ptr handle, ptr wDesc, ptr dyDesc, ptr convDesc, ptr dxDesc, int requestedAlgoCount, mem_result *result, struct svc_req *rqstp)
 {
-    void *arrayOfElements = NULL;
+    RECORD_API(rpc_cudnngetconvolutionbackwarddataalgorithm_v7_1_argument);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
-    if (attributeType < 0 || attributeType >= CUDNN_TYPE_RNG_DISTRIBUTION) {
-        LOGE(LOG_ERROR, "attributeType out of range.");
-        return 0;
-    }
-    result->mem_result_u.data.mem_data_len = sizeof(int64_t) + requestedElementCount*sizeof(backendAttributeSizes[attributeType]);
+    GSCHED_RETAIN;
+    result->mem_result_u.data.mem_data_len = sizeof(int) + sizeof(cudnnConvolutionBwdDataAlgoPerf_t) * requestedAlgoCount;
     if ((result->mem_result_u.data.mem_data_val = malloc(result->mem_result_u.data.mem_data_len)) == NULL) {
         LOGE(LOG_ERROR, "malloc failed");
         return 0;
     }
-    if (requestedElementCount > 0) {
-        void *data = result->mem_result_u.data.mem_data_val + sizeof(int64_t);
-    }
-    
-    GSCHED_RETAIN;
-    result->err = cudnnBackendGetAttribute(
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)descriptor),
-        (cudnnBackendAttributeName_t)attributeName,
-        (cudnnBackendAttributeType_t)attributeType,
-        requestedElementCount,
-        (int64_t*)result->mem_result_u.data.mem_data_val,
-        arrayOfElements);
-    
-    LOGE(LOG_DEBUG, "desc: %p, name: %d, type: %d, requestedElementCount: %zd, elementCount: %zd, arrayOfElements: %p -> %d", descriptor, attributeName, attributeType, requestedElementCount, *result->mem_result_u.data.mem_data_val, arrayOfElements, result->err);
-
+    result->err = cudnnGetConvolutionBackwardDataAlgorithm_v7(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn,(void*)handle),
+        (const cudnnFilterDescriptor_t)resource_mg_get(&rm_cudnn_filters, (void*)wDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dyDesc),
+        (const cudnnConvolutionDescriptor_t)resource_mg_get(&rm_cudnn_convs, (void*)convDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dxDesc),
+        requestedAlgoCount,
+        (int*)result->mem_result_u.data.mem_data_val,
+        (cudnnConvolutionBwdDataAlgoPerf_t*)(result->mem_result_u.data.mem_data_val + sizeof(int))
+    );
     GSCHED_RELEASE;
     return 1;
 }
-bool_t rpc_cudnnbackendexecute_1_svc(ptr handle, ptr executionPlan, ptr variantPack, int *result, struct svc_req *rqstp)
-{
-    RECORD_API(rpc_cudnnbackendexecute_1_argument);
-    RECORD_NARG(handle);
-    RECORD_NARG(executionPlan);
-    RECORD_NARG(variantPack);
-    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
 
+// 5316
+bool_t rpc_cudnnconvolutionbackwarddata_1_svc(ptr handle, cudnn_scaling_t alpha, ptr wDesc, ptr w, ptr dyDesc, ptr dy, ptr convDesc, int algo, ptr workSpace, size_t workSpaceSizeInBytes, cudnn_scaling_t beta, ptr dxDesc, ptr dx, int *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cudnnconvolutionbackwarddata_1_argument);
+    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
     GSCHED_RETAIN;
-    *result = cudnnBackendExecute(
+    *result = cudnnConvolutionBackwardData(
         (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)executionPlan),
-        (cudnnBackendDescriptor_t)resource_mg_get(&rm_cudnn_backendds, (void*)variantPack));
+        (alpha.dataType == CUDNN_DATA_DOUBLE ? (const void*)&alpha.cudnn_scaling_t_u.d : (const void*)&alpha.cudnn_scaling_t_u.f),
+        (const cudnnFilterDescriptor_t)resource_mg_get(&rm_cudnn_filters, (void*)wDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)w),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dyDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)dy),
+        (const cudnnConvolutionDescriptor_t)resource_mg_get(&rm_cudnn_convs, (void*)convDesc),
+        (cudnnConvolutionBwdDataAlgo_t) algo,
+        (void*)resource_mg_get(&rm_memory, (void*)workSpace),
+        workSpaceSizeInBytes,
+        (beta.dataType == CUDNN_DATA_DOUBLE ? (const void*)&beta.cudnn_scaling_t_u.d : (const void*)&beta.cudnn_scaling_t_u.f),
+        (const cudnnTensorDescriptor_t) resource_mg_get(&rm_cudnn_tensors, (void*)dxDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)dx)
+    );
     GSCHED_RELEASE;
-    RECORD_RESULT(integer, *result);
+    return 1;
+}
+
+
+// 5317
+bool_t rpc_cudnngetconvolutionbackwardfilteralgorithm_v7_1_svc(ptr handle, ptr xDesc, ptr dyDesc, ptr convDesc, ptr dwDesc, int requestedAlgoCount, mem_result *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cudnngetconvolutionbackwardfilteralgorithm_v7_1_argument);
+    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
+    GSCHED_RETAIN;
+    result->mem_result_u.data.mem_data_len = sizeof(int) + sizeof(cudnnConvolutionBwdFilterAlgoPerf_t) * requestedAlgoCount;
+    if ((result->mem_result_u.data.mem_data_val = malloc(result->mem_result_u.data.mem_data_len)) == NULL) {
+        LOGE(LOG_ERROR, "malloc failed");
+        return 0;
+    }
+    result->err = cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn,(void*)handle),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dyDesc),
+        (const cudnnConvolutionDescriptor_t)resource_mg_get(&rm_cudnn_convs, (void*)convDesc),
+        (const cudnnFilterDescriptor_t)resource_mg_get(&rm_cudnn_filters, (void*)dwDesc),
+        (const int)requestedAlgoCount,
+        (int*)result->mem_result_u.data.mem_data_val,
+        (cudnnConvolutionBwdFilterAlgoPerf_t*)(result->mem_result_u.data.mem_data_val + sizeof(int))
+    );
+    GSCHED_RELEASE;
+    return 1;
+}
+
+// 5318
+
+bool_t rpc_cudnnconvolutionbackwardfilter_1_svc(ptr handle, cudnn_scaling_t alpha, ptr xDesc, ptr x, ptr dyDesc, ptr dy, ptr convDesc, int algo, ptr workSpace, size_t workSpaceSizeInBytes, cudnn_scaling_t beta, ptr dwDesc, ptr dw, int *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cudnnconvolutionbackwardfilter_1_argument);
+    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
+    GSCHED_RETAIN;
+    *result = cudnnConvolutionBackwardFilter(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
+        (alpha.dataType == CUDNN_DATA_DOUBLE ? (const void*)&alpha.cudnn_scaling_t_u.d : (const void*)&alpha.cudnn_scaling_t_u.f),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)x),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)dyDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)dy),
+        (const cudnnConvolutionDescriptor_t)resource_mg_get(&rm_cudnn_convs, (void*)convDesc),
+        (cudnnConvolutionBwdFilterAlgo_t)algo,
+        (void*)resource_mg_get(&rm_memory, (void*)workSpace),
+        workSpaceSizeInBytes,
+        (beta.dataType == CUDNN_DATA_DOUBLE ? (const void*)&beta.cudnn_scaling_t_u.d : (const void*)&beta.cudnn_scaling_t_u.f),  
+        (const cudnnFilterDescriptor_t)resource_mg_get(&rm_cudnn_filters, (void*)dwDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)dw)
+    );
+    GSCHED_RELEASE;
+    return 1;
+}
+
+// 5319
+bool_t rpc_cudnnbatchnormalizationforwardinference_1_svc(ptr handle, int mode, cudnn_scaling_t alpha, cudnn_scaling_t beta, ptr xDesc, ptr x, ptr yDesc, ptr y, ptr bnScaleBiasMeanVarDesc, ptr bnScale, ptr bnBias, ptr estimatedMean, ptr estimatedVariance, double epsilon, int *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cudnnbatchnormalizationforwardinference_1_argument);
+    LOGE(LOG_DEBUG, "%s", __FUNCTION__);
+    GSCHED_RETAIN;
+    *result = cudnnBatchNormalizationForwardInference(
+        (cudnnHandle_t)resource_mg_get(&rm_cudnn, (void*)handle),
+        (cudnnBatchNormMode_t)mode,
+        (alpha.dataType == CUDNN_DATA_DOUBLE ? (const void*)&alpha.cudnn_scaling_t_u.d : (const void*)&alpha.cudnn_scaling_t_u.f),
+        (beta.dataType == CUDNN_DATA_DOUBLE ? (const void*)&beta.cudnn_scaling_t_u.d : (const void*)&beta.cudnn_scaling_t_u.f),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)xDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)x),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)yDesc),
+        (void*)resource_mg_get(&rm_memory, (void*)y),
+        (const cudnnTensorDescriptor_t)resource_mg_get(&rm_cudnn_tensors, (void*)bnScaleBiasMeanVarDesc),
+        (const void*)resource_mg_get(&rm_memory, (void*)bnScale),
+        (const void*)resource_mg_get(&rm_memory, (void*)bnBias),
+        (const void*)resource_mg_get(&rm_memory, (void*)estimatedMean),
+        (const void*)resource_mg_get(&rm_memory, (void*)estimatedVariance),
+        epsilon
+    );
+    GSCHED_RELEASE;
     return 1;
 }

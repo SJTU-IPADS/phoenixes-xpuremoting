@@ -409,6 +409,7 @@ void kernel_infos_free(kernel_info_t *infos, size_t kernelnum)
 
 void hexdump(const uint8_t* data, size_t size)
 {
+    return;
     size_t pos = 0;
     while (pos < size) {
         printf("%#05zx: ", pos);

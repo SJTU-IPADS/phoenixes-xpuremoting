@@ -28,6 +28,10 @@
 #include "cpu-server-nvml.h"
 #include "cpu-server-cudnn.h"
 
+#include "cpu-measurement.h"
+
+extern measurement_info vanillas[6000];
+
 INIT_SOCKTYPE
 
 int connection_is_local = 0;
@@ -60,8 +64,9 @@ bool_t rpc_printmessage_1_svc(char *argp, int *result, struct svc_req *rqstp)
 
 bool_t rpc_deinit_1_svc(int *result, struct svc_req *rqstp)
 {
+    print_measurement_info("server_vanilla_", vanillas, 6000);
     LOG(LOG_INFO, "RPC deinit requested.");
-    //svc_exit();
+    // svc_exit();
     return 1;
 }
 

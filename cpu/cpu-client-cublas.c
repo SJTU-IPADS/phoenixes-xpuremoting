@@ -71,46 +71,12 @@ cublasStatus_t cublasSetWorkspace_v2(cublasHandle_t handle, void* workspace, siz
     return result;
 }
 
-cublasStatus_t cublasSetStream_v2(cublasHandle_t handle, cudaStream_t streamId)
-{
-#ifdef WITH_API_CNT
-    api_call_cnt++;
-#endif //WITH_API_CNT
-    int result;
-    enum clnt_stat retval_1;
-    retval_1 = rpc_cublassetstream_1(
-        (ptr)handle,
-        (ptr)streamId,
-        &result, clnt);
-    if (retval_1 != RPC_SUCCESS) {
-        clnt_perror (clnt, "call failed");
-    }
-    return result;
-}
-
 DEF_FN(cublasStatus_t, cublasGetStream_v2, cublasHandle_t, handle, cudaStream_t*, streamId);
 DEF_FN(cublasStatus_t, cublasGetPointerMode_v2, cublasHandle_t, handle, cublasPointerMode_t*, mode);
 DEF_FN(cublasStatus_t, cublasSetPointerMode_v2, cublasHandle_t, handle, cublasPointerMode_t, mode);
 DEF_FN(cublasStatus_t, cublasGetAtomicsMode, cublasHandle_t, handle, cublasAtomicsMode_t*, mode);
 DEF_FN(cublasStatus_t, cublasSetAtomicsMode, cublasHandle_t, handle, cublasAtomicsMode_t, mode);
 DEF_FN(cublasStatus_t, cublasGetMathMode, cublasHandle_t, handle, cublasMath_t*, mode);
-cublasStatus_t cublasSetMathMode(cublasHandle_t handle, cublasMath_t mode)
-{
-#ifdef WITH_API_CNT
-    api_call_cnt++;
-#endif //WITH_API_CNT
-    int result;
-    enum clnt_stat retval_1;
-    retval_1 = rpc_cublassetmathmode_1(
-        (ptr)handle,
-        (int)mode,
-        &result, clnt);
-    if (retval_1 != RPC_SUCCESS) {
-        clnt_perror (clnt, "call failed");
-    }
-    return result;
-}
-
 DEF_FN(cublasStatus_t, cublasGetSmCountTarget, cublasHandle_t, handle, int*, smCountTarget);
 DEF_FN(cublasStatus_t, cublasSetSmCountTarget, cublasHandle_t, handle, int, smCountTarget);
 DEF_FN(const char*, cublasGetStatusName, cublasStatus_t, status);
@@ -603,161 +569,38 @@ cublasStatus_t cublasSgemmEx(cublasHandle_t handle,
     return result;
 }
 
+cublasStatus_t cublasSetStream(cublasHandle_t handle, cudaStream_t streamId)
+{
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int result;
+    enum clnt_stat retval_1;
+    retval_1 = rpc_cublassetstream_1(
+        (ptr)handle,
+        (ptr)streamId,
+        &result,
+        clnt
+    );
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    return result;
+}
 
-DEF_FN(cublasStatus_t, cublasSgemmEx_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const float*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const void*, B, cudaDataType, Btype, int64_t, ldb, const float*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasGemmEx, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const void*, alpha, const void*, A, cudaDataType, Atype, int, lda, const void*, B, cudaDataType, Btype, int, ldb, const void*, beta, void*, C, cudaDataType, Ctype, int, ldc, cublasComputeType_t, computeType, cublasGemmAlgo_t, algo);
-DEF_FN(cublasStatus_t, cublasGemmEx_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const void*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const void*, B, cudaDataType, Btype, int64_t, ldb, const void*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc, cublasComputeType_t, computeType, cublasGemmAlgo_t, algo);
-DEF_FN(cublasStatus_t, cublasCgemmEx, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuComplex*, alpha, const void*, A, cudaDataType, Atype, int, lda, const void*, B, cudaDataType, Btype, int, ldb, const cuComplex*, beta, void*, C, cudaDataType, Ctype, int, ldc);
-DEF_FN(cublasStatus_t, cublasCgemmEx_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuComplex*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const void*, B, cudaDataType, Btype, int64_t, ldb, const cuComplex*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasSsyrk_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const float*, alpha, const float*, A, int, lda, const float*, beta, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasSsyrk_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const float*, alpha, const float*, A, int64_t, lda, const float*, beta, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDsyrk_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const double*, alpha, const double*, A, int, lda, const double*, beta, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDsyrk_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const double*, alpha, const double*, A, int64_t, lda, const double*, beta, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrk_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrk_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZsyrk_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZsyrk_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrkEx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const void*, A, cudaDataType, Atype, int, lda, const cuComplex*, beta, void*, C, cudaDataType, Ctype, int, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrkEx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const cuComplex*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrk3mEx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const void*, A, cudaDataType, Atype, int, lda, const cuComplex*, beta, void*, C, cudaDataType, Ctype, int, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrk3mEx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const cuComplex*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCherk_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const float*, alpha, const cuComplex*, A, int, lda, const float*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCherk_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const float*, alpha, const cuComplex*, A, int64_t, lda, const float*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZherk_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const double*, alpha, const cuDoubleComplex*, A, int, lda, const double*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZherk_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const double*, alpha, const cuDoubleComplex*, A, int64_t, lda, const double*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCherkEx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const float*, alpha, const void*, A, cudaDataType, Atype, int, lda, const float*, beta, void*, C, cudaDataType, Ctype, int, ldc);
-DEF_FN(cublasStatus_t, cublasCherkEx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const float*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const float*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCherk3mEx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const float*, alpha, const void*, A, cudaDataType, Atype, int, lda, const float*, beta, void*, C, cudaDataType, Ctype, int, ldc);
-DEF_FN(cublasStatus_t, cublasCherk3mEx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const float*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, const float*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasSsyr2k_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const float*, alpha, const float*, A, int, lda, const float*, B, int, ldb, const float*, beta, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasSsyr2k_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const float*, alpha, const float*, A, int64_t, lda, const float*, B, int64_t, ldb, const float*, beta, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDsyr2k_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const double*, alpha, const double*, A, int, lda, const double*, B, int, ldb, const double*, beta, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDsyr2k_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const double*, alpha, const double*, A, int64_t, lda, const double*, B, int64_t, ldb, const double*, beta, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCsyr2k_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, const cuComplex*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCsyr2k_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, const cuComplex*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZsyr2k_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZsyr2k_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCher2k_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, const float*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCher2k_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, const float*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZher2k_v2, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, const double*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZher2k_v2_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, const double*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasSsyrkx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const float*, alpha, const float*, A, int, lda, const float*, B, int, ldb, const float*, beta, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasSsyrkx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const float*, alpha, const float*, A, int64_t, lda, const float*, B, int64_t, ldb, const float*, beta, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDsyrkx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const double*, alpha, const double*, A, int, lda, const double*, B, int, ldb, const double*, beta, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDsyrkx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const double*, alpha, const double*, A, int64_t, lda, const double*, B, int64_t, ldb, const double*, beta, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrkx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, const cuComplex*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCsyrkx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, const cuComplex*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZsyrkx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZsyrkx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCherkx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, const float*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCherkx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, const float*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZherkx, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, const double*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZherkx_64, cublasHandle_t, handle, cublasFillMode_t, uplo, cublasOperation_t, trans, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, const double*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasSsymm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int, m, int, n, const float*, alpha, const float*, A, int, lda, const float*, B, int, ldb, const float*, beta, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasSsymm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int64_t, m, int64_t, n, const float*, alpha, const float*, A, int64_t, lda, const float*, B, int64_t, ldb, const float*, beta, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDsymm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int, m, int, n, const double*, alpha, const double*, A, int, lda, const double*, B, int, ldb, const double*, beta, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDsymm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int64_t, m, int64_t, n, const double*, alpha, const double*, A, int64_t, lda, const double*, B, int64_t, ldb, const double*, beta, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCsymm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int, m, int, n, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, const cuComplex*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCsymm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int64_t, m, int64_t, n, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, const cuComplex*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZsymm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int, m, int, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZsymm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int64_t, m, int64_t, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasChemm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int, m, int, n, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, const cuComplex*, beta, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasChemm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int64_t, m, int64_t, n, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, const cuComplex*, beta, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZhemm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int, m, int, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZhemm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, int64_t, m, int64_t, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasStrsm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const float*, alpha, const float*, A, int, lda, float*, B, int, ldb);
-DEF_FN(cublasStatus_t, cublasStrsm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const float*, alpha, const float*, A, int64_t, lda, float*, B, int64_t, ldb);
-DEF_FN(cublasStatus_t, cublasDtrsm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const double*, alpha, const double*, A, int, lda, double*, B, int, ldb);
-DEF_FN(cublasStatus_t, cublasDtrsm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const double*, alpha, const double*, A, int64_t, lda, double*, B, int64_t, ldb);
-DEF_FN(cublasStatus_t, cublasCtrsm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const cuComplex*, alpha, const cuComplex*, A, int, lda, cuComplex*, B, int, ldb);
-DEF_FN(cublasStatus_t, cublasCtrsm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, cuComplex*, B, int64_t, ldb);
-DEF_FN(cublasStatus_t, cublasZtrsm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, cuDoubleComplex*, B, int, ldb);
-DEF_FN(cublasStatus_t, cublasZtrsm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, cuDoubleComplex*, B, int64_t, ldb);
-DEF_FN(cublasStatus_t, cublasStrmm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const float*, alpha, const float*, A, int, lda, const float*, B, int, ldb, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasStrmm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const float*, alpha, const float*, A, int64_t, lda, const float*, B, int64_t, ldb, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDtrmm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const double*, alpha, const double*, A, int, lda, const double*, B, int, ldb, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDtrmm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const double*, alpha, const double*, A, int64_t, lda, const double*, B, int64_t, ldb, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCtrmm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, B, int, ldb, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCtrmm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, B, int64_t, ldb, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZtrmm_v2, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, B, int, ldb, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZtrmm_v2_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, B, int64_t, ldb, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasSgemmBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const float*, alpha, const float* const*,  Aarray, int, lda, const float* const*,  Barray, int, ldb, const float*, beta, float* const*,  Carray, int, ldc, int, batchCount);
-DEF_FN(cublasStatus_t, cublasSgemmBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const float*, alpha, const float* const*,  Aarray, int64_t, lda, const float* const*,  Barray, int64_t, ldb, const float*, beta, float* const*,  Carray, int64_t, ldc, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasDgemmBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const double*, alpha, const double* const*,  Aarray, int, lda, const double* const*,  Barray, int, ldb, const double*, beta, double* const*,  Carray, int, ldc, int, batchCount);
-DEF_FN(cublasStatus_t, cublasDgemmBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const double*, alpha, const double* const*,  Aarray, int64_t, lda, const double* const*,  Barray, int64_t, ldb, const double*, beta, double* const*,  Carray, int64_t, ldc, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemmBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuComplex*, alpha, const cuComplex* const*,  Aarray, int, lda, const cuComplex* const*,  Barray, int, ldb, const cuComplex*, beta, cuComplex* const*,  Carray, int, ldc, int, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemmBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex* const*,  Aarray, int64_t, lda, const cuComplex* const*,  Barray, int64_t, ldb, const cuComplex*, beta, cuComplex* const*,  Carray, int64_t, ldc, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemm3mBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuComplex*, alpha, const cuComplex* const*,  Aarray, int, lda, const cuComplex* const*,  Barray, int, ldb, const cuComplex*, beta, cuComplex* const*,  Carray, int, ldc, int, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemm3mBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex* const*,  Aarray, int64_t, lda, const cuComplex* const*,  Barray, int64_t, ldb, const cuComplex*, beta, cuComplex* const*,  Carray, int64_t, ldc, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasZgemmBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex* const*,  Aarray, int, lda, const cuDoubleComplex* const*,  Barray, int, ldb, const cuDoubleComplex*, beta, cuDoubleComplex* const*,  Carray, int, ldc, int, batchCount);
-DEF_FN(cublasStatus_t, cublasZgemmBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex* const*,  Aarray, int64_t, lda, const cuDoubleComplex* const*,  Barray, int64_t, ldb, const cuDoubleComplex*, beta, cuDoubleComplex* const*,  Carray, int64_t, ldc, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasSgemmStridedBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const float*, alpha, const float*, A, int, lda, long long int, strideA, const float*, B, int, ldb, long long int, strideB, const float*, beta, float*, C, int, ldc, long long int, strideC, int, batchCount);
-DEF_FN(cublasStatus_t, cublasSgemmStridedBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const float*, alpha, const float*, A, int64_t, lda, long long int, strideA, const float*, B, int64_t, ldb, long long int, strideB, const float*, beta, float*, C, int64_t, ldc, long long int, strideC, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasDgemmStridedBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const double*, alpha, const double*, A, int, lda, long long int, strideA, const double*, B, int, ldb, long long int, strideB, const double*, beta, double*, C, int, ldc, long long int, strideC, int, batchCount);
-DEF_FN(cublasStatus_t, cublasDgemmStridedBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const double*, alpha, const double*, A, int64_t, lda, long long int, strideA, const double*, B, int64_t, ldb, long long int, strideB, const double*, beta, double*, C, int64_t, ldc, long long int, strideC, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemmStridedBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, long long int, strideA, const cuComplex*, B, int, ldb, long long int, strideB, const cuComplex*, beta, cuComplex*, C, int, ldc, long long int, strideC, int, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemmStridedBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, long long int, strideA, const cuComplex*, B, int64_t, ldb, long long int, strideB, const cuComplex*, beta, cuComplex*, C, int64_t, ldc, long long int, strideC, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemm3mStridedBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuComplex*, alpha, const cuComplex*, A, int, lda, long long int, strideA, const cuComplex*, B, int, ldb, long long int, strideB, const cuComplex*, beta, cuComplex*, C, int, ldc, long long int, strideC, int, batchCount);
-DEF_FN(cublasStatus_t, cublasCgemm3mStridedBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, long long int, strideA, const cuComplex*, B, int64_t, ldb, long long int, strideB, const cuComplex*, beta, cuComplex*, C, int64_t, ldc, long long int, strideC, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasZgemmStridedBatched, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, long long int, strideA, const cuDoubleComplex*, B, int, ldb, long long int, strideB, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int, ldc, long long int, strideC, int, batchCount);
-DEF_FN(cublasStatus_t, cublasZgemmStridedBatched_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, long long int, strideA, const cuDoubleComplex*, B, int64_t, ldb, long long int, strideB, const cuDoubleComplex*, beta, cuDoubleComplex*, C, int64_t, ldc, long long int, strideC, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasGemmBatchedEx, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const void*, alpha, const void* const*,  Aarray, cudaDataType, Atype, int, lda, const void* const*,  Barray, cudaDataType, Btype, int, ldb, const void*, beta, void* const*,  Carray, cudaDataType, Ctype, int, ldc, int, batchCount, cublasComputeType_t, computeType, cublasGemmAlgo_t, algo);
-DEF_FN(cublasStatus_t, cublasGemmBatchedEx_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const void*, alpha, const void* const*,  Aarray, cudaDataType, Atype, int64_t, lda, const void* const*,  Barray, cudaDataType, Btype, int64_t, ldb, const void*, beta, void* const*,  Carray, cudaDataType, Ctype, int64_t, ldc, int64_t, batchCount, cublasComputeType_t, computeType, cublasGemmAlgo_t, algo);
-DEF_FN(cublasStatus_t, cublasGemmStridedBatchedEx, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, int, k, const void*, alpha, const void*, A, cudaDataType, Atype, int, lda, long long int, strideA, const void*, B, cudaDataType, Btype, int, ldb, long long int, strideB, const void*, beta, void*, C, cudaDataType, Ctype, int, ldc, long long int, strideC, int, batchCount, cublasComputeType_t, computeType, cublasGemmAlgo_t, algo);
-DEF_FN(cublasStatus_t, cublasGemmStridedBatchedEx_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const void*, alpha, const void*, A, cudaDataType, Atype, int64_t, lda, long long int, strideA, const void*, B, cudaDataType, Btype, int64_t, ldb, long long int, strideB, const void*, beta, void*, C, cudaDataType, Ctype, int64_t, ldc, long long int, strideC, int64_t, batchCount, cublasComputeType_t, computeType, cublasGemmAlgo_t, algo);
-DEF_FN(cublasStatus_t, cublasSgeam, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, const float*, alpha, const float*, A, int, lda, const float*, beta, const float*, B, int, ldb, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasSgeam_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, const float*, alpha, const float*, A, int64_t, lda, const float*, beta, const float*, B, int64_t, ldb, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDgeam, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, const double*, alpha, const double*, A, int, lda, const double*, beta, const double*, B, int, ldb, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDgeam_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, const double*, alpha, const double*, A, int64_t, lda, const double*, beta, const double*, B, int64_t, ldb, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCgeam, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, const cuComplex*, alpha, const cuComplex*, A, int, lda, const cuComplex*, beta, const cuComplex*, B, int, ldb, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCgeam_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, const cuComplex*, alpha, const cuComplex*, A, int64_t, lda, const cuComplex*, beta, const cuComplex*, B, int64_t, ldb, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZgeam, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int, m, int, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, beta, const cuDoubleComplex*, B, int, ldb, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZgeam_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, const cuDoubleComplex*, alpha, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, beta, const cuDoubleComplex*, B, int64_t, ldb, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasStrsmBatched, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const float*, alpha, const float* const*,  A, int, lda, float* const*,  B, int, ldb, int, batchCount);
-DEF_FN(cublasStatus_t, cublasStrsmBatched_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const float*, alpha, const float* const*,  A, int64_t, lda, float* const*,  B, int64_t, ldb, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasDtrsmBatched, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const double*, alpha, const double* const*,  A, int, lda, double* const*,  B, int, ldb, int, batchCount);
-DEF_FN(cublasStatus_t, cublasDtrsmBatched_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const double*, alpha, const double* const*,  A, int64_t, lda, double* const*,  B, int64_t, ldb, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasCtrsmBatched, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const cuComplex*, alpha, const cuComplex* const*,  A, int, lda, cuComplex* const*,  B, int, ldb, int, batchCount);
-DEF_FN(cublasStatus_t, cublasCtrsmBatched_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const cuComplex*, alpha, const cuComplex* const*,  A, int64_t, lda, cuComplex* const*,  B, int64_t, ldb, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasZtrsmBatched, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int, m, int, n, const cuDoubleComplex*, alpha, const cuDoubleComplex* const*,  A, int, lda, cuDoubleComplex* const*,  B, int, ldb, int, batchCount);
-DEF_FN(cublasStatus_t, cublasZtrsmBatched_64, cublasHandle_t, handle, cublasSideMode_t, side, cublasFillMode_t, uplo, cublasOperation_t, trans, cublasDiagType_t, diag, int64_t, m, int64_t, n, const cuDoubleComplex*, alpha, const cuDoubleComplex* const*,  A, int64_t, lda, cuDoubleComplex* const*,  B, int64_t, ldb, int64_t, batchCount);
-DEF_FN(cublasStatus_t, cublasSdgmm, cublasHandle_t, handle, cublasSideMode_t, mode, int, m, int, n, const float*, A, int, lda, const float*, x, int, incx, float*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasSdgmm_64, cublasHandle_t, handle, cublasSideMode_t, mode, int64_t, m, int64_t, n, const float*, A, int64_t, lda, const float*, x, int64_t, incx, float*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasDdgmm, cublasHandle_t, handle, cublasSideMode_t, mode, int, m, int, n, const double*, A, int, lda, const double*, x, int, incx, double*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasDdgmm_64, cublasHandle_t, handle, cublasSideMode_t, mode, int64_t, m, int64_t, n, const double*, A, int64_t, lda, const double*, x, int64_t, incx, double*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasCdgmm, cublasHandle_t, handle, cublasSideMode_t, mode, int, m, int, n, const cuComplex*, A, int, lda, const cuComplex*, x, int, incx, cuComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasCdgmm_64, cublasHandle_t, handle, cublasSideMode_t, mode, int64_t, m, int64_t, n, const cuComplex*, A, int64_t, lda, const cuComplex*, x, int64_t, incx, cuComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasZdgmm, cublasHandle_t, handle, cublasSideMode_t, mode, int, m, int, n, const cuDoubleComplex*, A, int, lda, const cuDoubleComplex*, x, int, incx, cuDoubleComplex*, C, int, ldc);
-DEF_FN(cublasStatus_t, cublasZdgmm_64, cublasHandle_t, handle, cublasSideMode_t, mode, int64_t, m, int64_t, n, const cuDoubleComplex*, A, int64_t, lda, const cuDoubleComplex*, x, int64_t, incx, cuDoubleComplex*, C, int64_t, ldc);
-DEF_FN(cublasStatus_t, cublasSmatinvBatched, cublasHandle_t, handle, int, n, const float* const*,  A, int, lda, float* const*,  Ainv, int, lda_inv, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasDmatinvBatched, cublasHandle_t, handle, int, n, const double* const*,  A, int, lda, double* const*,  Ainv, int, lda_inv, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasCmatinvBatched, cublasHandle_t, handle, int, n, const cuComplex* const*,  A, int, lda, cuComplex* const*,  Ainv, int, lda_inv, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasZmatinvBatched, cublasHandle_t, handle, int, n, const cuDoubleComplex* const*,  A, int, lda, cuDoubleComplex* const*,  Ainv, int, lda_inv, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasSgeqrfBatched, cublasHandle_t, handle, int, m, int, n, float* const*,  Aarray, int, lda, float* const*,  TauArray, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasDgeqrfBatched, cublasHandle_t, handle, int, m, int, n, double* const*,  Aarray, int, lda, double* const*,  TauArray, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasCgeqrfBatched, cublasHandle_t, handle, int, m, int, n, cuComplex* const*,  Aarray, int, lda, cuComplex* const*,  TauArray, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasZgeqrfBatched, cublasHandle_t, handle, int, m, int, n, cuDoubleComplex* const*,  Aarray, int, lda, cuDoubleComplex* const*,  TauArray, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasSgelsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, m, int, n, int, nrhs, float* const*,  Aarray, int, lda, float* const*,  Carray, int, ldc, int*, info, int*, devInfoArray, int, batchSize);
-DEF_FN(cublasStatus_t, cublasDgelsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, m, int, n, int, nrhs, double* const*,  Aarray, int, lda, double* const*,  Carray, int, ldc, int*, info, int*, devInfoArray, int, batchSize);
-DEF_FN(cublasStatus_t, cublasCgelsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, m, int, n, int, nrhs, cuComplex* const*,  Aarray, int, lda, cuComplex* const*,  Carray, int, ldc, int*, info, int*, devInfoArray, int, batchSize);
-DEF_FN(cublasStatus_t, cublasZgelsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, m, int, n, int, nrhs, cuDoubleComplex* const*,  Aarray, int, lda, cuDoubleComplex* const*,  Carray, int, ldc, int*, info, int*, devInfoArray, int, batchSize);
-DEF_FN(cublasStatus_t, cublasStpttr, cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const float*, AP, float*, A, int, lda);
-DEF_FN(cublasStatus_t, cublasDtpttr, cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const double*, AP, double*, A, int, lda);
-DEF_FN(cublasStatus_t, cublasCtpttr, cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const cuComplex*, AP, cuComplex*, A, int, lda);
-DEF_FN(cublasStatus_t, cublasZtpttr, , cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const cuDoubleComplex*, AP, cuDoubleComplex*, A, int, lda);
-DEF_FN(cublasStatus_t, cublasStrttp, cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const float*, A, int, lda, float*, AP);
-DEF_FN(cublasStatus_t, cublasDtrttp, cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const double*, A, int, lda, double*, AP);
-DEF_FN(cublasStatus_t, cublasCtrttp, cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const cuComplex*, A, int, lda, cuComplex*, AP);
-DEF_FN(cublasStatus_t, cublasZtrttp, , cublasHandle_t, handle, cublasFillMode_t, uplo, int, n, const cuDoubleComplex*, A, int, lda, cuDoubleComplex*, AP);
-DEF_FN(cublasStatus_t, cublasSgetrfBatched, cublasHandle_t, handle, int, n, float* const*,  A, int, lda, int*, P, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasDgetrfBatched, cublasHandle_t, handle, int, n, double* const*,  A, int, lda, int*, P, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasCgetrfBatched, cublasHandle_t, handle, int, n, cuComplex* const*,  A, int, lda, int*, P, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasZgetrfBatched, , cublasHandle_t, handle, int, n, cuDoubleComplex* const*,  A, int, lda, int*, P, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasSgetriBatched, cublasHandle_t, handle, int, n, const float* const*,  A, int, lda, const int*, P, float* const*,  C, int, ldc, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasDgetriBatched, cublasHandle_t, handle, int, n, const double* const*,  A, int, lda, const int*, P, double* const*,  C, int, ldc, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasCgetriBatched, cublasHandle_t, handle, int, n, const cuComplex* const*,  A, int, lda, const int*, P, cuComplex* const*,  C, int, ldc, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasZgetriBatched, cublasHandle_t, handle, int, n, const cuDoubleComplex* const*,  A, int, lda, const int*, P, cuDoubleComplex* const*,  C, int, ldc, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasSgetrsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, n, int, nrhs, const float* const*,  Aarray, int, lda, const int*, devIpiv, float* const*,  Barray, int, ldb, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasDgetrsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, n, int, nrhs, const double* const*,  Aarray, int, lda, const int*, devIpiv, double* const*,  Barray, int, ldb, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasCgetrsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, n, int, nrhs, const cuComplex* const*,  Aarray, int, lda, const int*, devIpiv, cuComplex* const*,  Barray, int, ldb, int*, info, int, batchSize);
-DEF_FN(cublasStatus_t, cublasZgetrsBatched, cublasHandle_t, handle, cublasOperation_t, trans, int, n, int, nrhs, const cuDoubleComplex* const*,  Aarray, int, lda, const int*, devIpiv, cuDoubleComplex* const*,  Barray, int, ldb, int*, info, int, batchSize);
+cublasStatus_t cublasSetMathMode(cublasHandle_t handle, cublasMath_t mode)
+{
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int result;
+    enum clnt_stat retval_1;
+    retval_1 = rpc_cublassetmathmode_1(
+        (ptr)handle,
+        (int)mode,
+        &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    return result;
+}

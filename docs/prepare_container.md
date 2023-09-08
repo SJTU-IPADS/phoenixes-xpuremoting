@@ -4,8 +4,6 @@
 
 如何基于Pytorch的官方镜像编译得到一个能正常编译并运行cricket.
 
-参考：https://github.com/RWTH-ACS/cricket/blob/share-object-support/docs/pytorch.md
-
 
 
 ## 1. Get Pytorch and apply criket patch 
@@ -32,3 +30,7 @@ git submodule update --init --recursive
 ```Bash
 make -f docker.Makefile
 ```
+
+---
+
+参考：https://github.com/RWTH-ACS/cricket/blob/share-object-support/docs/pytorch.md

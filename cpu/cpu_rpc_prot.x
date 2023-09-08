@@ -2,7 +2,7 @@ typedef opaque mem_data<>;
 
 typedef unsigned hyper size_t;
 typedef unsigned hyper ptr;
-typedef opaque rpc_cuda_device_prop[1032];
+typedef opaque rpc_cuda_device_prop[728];
 
 struct dint {
     int i1;
@@ -458,7 +458,7 @@ program RPC_CD_PROG {
                          ptr, int, ptr, int, double, ptr, int)                 = 3006;
         int          rpc_cublasSgemmEx(ptr, int, int, int, int, int, float,
                          ptr, int, int, ptr, int, int, float, ptr, int, int)                 = 3007;
-        int          rpc_cublasSetStream(ptr handle, ptr streamId)                             = 3008;
+        int          rpc_cublasSetStream(ptr handle, ptr streamId) = 3008;
         int          rpc_cublasSetWorkspace(ptr handle, ptr workspace, size_t workspaceSizeInBytes) = 3009;
         int          rpc_cublasSetMathMode(ptr handle, int mode) = 3010;
 
@@ -555,19 +555,16 @@ program RPC_CD_PROG {
         mem_result rpc_cudnnFindConvolutionForwardAlgorithm(ptr handle, ptr xDesc, ptr wDesc, ptr convDesc, ptr yDesc, int requestedAlgoCount) = 5306;
         sz_result rpc_cudnnGetConvolutionForwardWorkspaceSize(ptr handle, ptr xDesc, ptr wDesc, ptr convDesc, ptr yDesc, int algo) = 5307;
         int rpc_cudnnConvolutionForward(ptr handle, cudnn_scaling_t alpha, ptr xDesc, ptr x, ptr wDesc, ptr w, ptr convDesc, int algo, ptr workSpace, size_t workSpaceSizeInBytes, cudnn_scaling_t beta, ptr yDesc, ptr y) = 5308;
-        ptr_result rpc_cudnnBackendCreateDescriptor(int descriptorType) = 5309;
-        int rpc_cudnnBackendDestroyDescriptor(ptr descriptor) = 5310;
-        int rpc_cudnnBackendInitialize(ptr descriptor) = 5311;
-        int rpc_cudnnBackendFinalize(ptr descriptor) = 5312;
-        int rpc_cudnnBackendSetAttribute(ptr descriptor,
-                         int attributeName,
-                         int attributeType,
-                         int64_t elementCount,
-                         mem_data arrayOfElements) = 5313;
-        mem_result rpc_cudnnBackendGetAttribute(ptr descriptor,
-                            int attributeName,
-                            int attributeType,
-                            int64_t requestedElementCount) = 5314;
-        int rpc_cudnnBackendExecute(ptr handle, ptr executionPlan, ptr variantPack) = 5315;
+        int rpc_cudnnSetConvolutionGroupCount(ptr convDesc, int groupCnt) = 5309;
+        int rpc_cudnnSetConvolutionMathType(ptr convDesc, int mathType) = 5310;
+        sz_result rpc_cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize(ptr handle, int mode, int bnOps, ptr xDesc, ptr zDesc, ptr yDesc, ptr bnScaleBiasMeanVarDesc, ptr activationDesc) = 5311;
+        int rpc_cudnnBatchNormalizationForwardTrainingEx(ptr handle, int mode, int bnOps, cudnn_scaling_t alpha, cudnn_scaling_t beta, ptr xDesc, ptr x, ptr zDesc, ptr z, ptr yDesc, ptr y, ptr bnScaleBiasMeanVarDesc, ptr bnScaleData, ptr bnBiasData, double exponentialAverageFactor, ptr resultRunningMeanData, ptr resultRunningVarianceData, double epsilon, ptr saveMean, ptr saveInvVariance, ptr activationDesc, ptr workspace, size_t workSpaceSizeInBytes, ptr reserveSpace, size_t reserveSpaceSizeInBytes) = 5312;
+        sz_result rpc_cudnnGetBatchNormalizationBackwardExWorkspaceSize(ptr handle, int mode, int bnOps, ptr xDesc, ptr yDesc, ptr dyDesc, ptr dzDesc, ptr dxDesc, ptr dBnScaleBiasDesc, ptr activationDesc) = 5313;
+        int rpc_cudnnBatchNormalizationBackwardEx(ptr, int, int, cudnn_scaling_t, cudnn_scaling_t,cudnn_scaling_t,cudnn_scaling_t, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, double, ptr, ptr, ptr, ptr, size_t, ptr, size_t) = 5314;
+        mem_result rpc_cudnnGetConvolutionBackwardDataAlgorithm_v7(ptr, ptr, ptr, ptr, ptr, int) = 5315;
+        int rpc_cudnnConvolutionBackwardData(ptr, cudnn_scaling_t, ptr, ptr, ptr, ptr, ptr, int, ptr, size_t, cudnn_scaling_t, ptr, ptr) = 5316;
+        mem_result rpc_cudnnGetConvolutionBackwardFilterAlgorithm_v7(ptr, ptr, ptr, ptr, ptr, int) = 5317;
+        int rpc_cudnnConvolutionBackwardFilter(ptr, cudnn_scaling_t, ptr, ptr, ptr, ptr, ptr, int, ptr, size_t, cudnn_scaling_t, ptr, ptr) = 5318;
+        int rpc_cudnnBatchNormalizationForwardInference(ptr, int, cudnn_scaling_t, cudnn_scaling_t, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, double) = 5319;
     } = 1;
 } = 99;
