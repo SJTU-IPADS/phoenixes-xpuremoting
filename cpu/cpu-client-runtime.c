@@ -24,6 +24,10 @@
 #include "log.h"
 #include "oob.h"
 #include "mt-memcpy.h"
+#include "cpu-measurement.h"
+
+extern measurement_info totals[6000];
+
 #ifdef WITH_IB
 #include "cpu-ib.h"
 #endif //WITH_IB
@@ -280,6 +284,8 @@ cudaError_t cudaDeviceSynchronize(void)
 
 cudaError_t cudaGetDevice(int* device)
 {
+    int proc = 117;
+    time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -292,6 +298,7 @@ cudaError_t cudaGetDevice(int* device)
     if (result.err == 0) {
         *device = result.int_result_u.data;
     }
+    time_end(totals, proc);
     return result.err;
 }
 
@@ -956,6 +963,8 @@ DEF_FN(cudaError_t, cudaLaunchHostFunc, cudaStream_t, stream, cudaHostFn_t, fn, 
 
 cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void** args, size_t sharedMem, cudaStream_t stream)
 {
+    int proc = 317;
+    time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -966,7 +975,7 @@ cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void
     int found_kernel = 0;
     kernel_info_t *info;
     //printf("cudaLaunchKernel(func=%p, gridDim=[%d,%d,%d], blockDim=[%d,%d,%d], args=%p->%p,%p, sharedMem=%d, stream=%p)\n", func, gridDim.x, gridDim.y, gridDim.z, blockDim.x, blockDim.y, blockDim.z, args, args[0], args[1], sharedMem, stream);
-    LOGE(LOG_DEBUG, "cudaLaunchKernel(%p)", func);
+    LOGE(LOG_DEBUG, "cudaLaunchKernel(%p) %d", func, kernel_infos.length);
 
     for (i=0; i < kernel_infos.length; ++i) {
         if (list_at(&kernel_infos, i, (void**)&info) != 0) {
@@ -1005,6 +1014,7 @@ cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void
         clnt_perror (clnt, "call failed");
     }
     free(rpc_args.mem_data_val);
+    time_end(totals, proc);
     return result;
 }
 
@@ -1565,6 +1575,8 @@ extern char server[256];
 #define WITH_MT_MEMCPY
 cudaError_t cudaMemcpy(void* dst, const void* src, size_t count, enum cudaMemcpyKind kind)
 {
+    int proc = (kind == cudaMemcpyHostToDevice ? 440 : 441);
+    time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
     memcpy_cnt += count;
@@ -1710,6 +1722,7 @@ cudaError_t cudaMemcpy(void* dst, const void* src, size_t count, enum cudaMemcpy
         LOGE(LOG_ERROR, "unknown kind");
     }
 cleanup:
+    time_end(totals, proc);
     return ret;
 }
 DEF_FN(cudaError_t, cudaMemcpy2D, void*, dst, size_t, dpitch, const void*, src, size_t, spitch, size_t, width, size_t, height, enum cudaMemcpyKind, kind)

@@ -44,3 +44,10 @@ tags
 # perf data
 perf.data
 main
+
+#dataset
+dataset
+tests/test_apps/ResNet18_Cifar10_95.46/dataset
+tests/test_apps/ResNet18_Cifar10_95.46/checkpoint
+checkpoint
+tests/test_apps/ResNet18_Cifar10_95.46/utils/__pycache__

@@ -75,6 +75,13 @@ Run the application
 REMOTE_GPU_ADDRESS=remoteSystem.my-domain.com LD_PRELOAD=/nfs_share/cricket/bin/cricket-client.so /nfs_share/cuda/samples/5_Simulations/nbody/nbody -benchmark
 ```
 
+# Microbenchmark
+
+We implement a remote execution overhead breakdown microbenchmark in this project, and the doc can be found [here](tests/microbench/README.md).
+
+# Testing 
+
+Please check [unit test doc](unittests/README.md)
 
 # Contributing
 

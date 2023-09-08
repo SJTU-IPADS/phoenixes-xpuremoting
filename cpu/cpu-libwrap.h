@@ -2,6 +2,7 @@
 #define _CPU_LIBWRAP_H_
 
 #include <dlfcn.h>
+#include <assert.h>
 #include "log.h"
 
 
@@ -15,6 +16,10 @@ void libwrap_post_call(char *ret, char *name, char *parameters);
 #define DEF_DLSYM(RET, NAME) \
     RET ret; char* error_str; \
     *(void **)(&fun) = dlsym(libwrap_get_sohandle(), #NAME); \
+    if (fun == NAME) { \
+        LOGE(LOG_ERROR, "un-implemented function %s", #NAME);	\
+        assert(0); \
+    } \
     if ((error_str = dlerror()) != NULL) { \
         LOGE(LOG_ERROR, "[libwrap] %s", error_str); \
         return ret; \

@@ -17,6 +17,11 @@
 #include "cpu_rpc_prot.h"
 #include "list.h"
 #include "cpu-elf2.h"
+
+#include "cpu-measurement.h"
+
+extern measurement_info totals[6000];
+
 #ifdef WITH_IB
 #include "cpu-ib.h"
 #endif // WITH_IB
@@ -205,6 +210,7 @@ void __attribute__((constructor)) init_rpc(void)
 }
 void __attribute__((destructor)) deinit_rpc(void)
 {
+    print_measurement_info("client_total_", totals, 6000);
     enum clnt_stat retval_1;
     int result;
     if (initialized) {
@@ -236,9 +242,9 @@ void *dlopen(const char *filename, int flag)
     int has_kernel = 0;
     LOG(LOG_DBG(1), "intercepted dlopen(%s, %d)", filename, flag);
 
-    if (filename == NULL) {
-        return dlopen_orig(filename, flag);
-    }
+    // if (filename == NULL) {
+    //     return dlopen_orig(filename, flag);
+    // }
 
     if (dlopen_orig == NULL) {
         if ((dlopen_orig = dlsym(RTLD_NEXT, "dlopen")) == NULL) {
@@ -246,34 +252,38 @@ void *dlopen(const char *filename, int flag)
         }
     }
 
-    static const char *replace_libs[] = {
-        "libcuda.so.1",
-        "libcuda.so",
-        "libnvidia-ml.so.1",
-        "libcudnn_cnn_infer.so.8"
-    };
-    static const size_t replace_libs_sz = sizeof(replace_libs) / sizeof(char *);
-    if (filename != NULL) {
-        for (size_t i=0; i != replace_libs_sz; ++i) {
-            if (strcmp(filename, replace_libs[i]) == 0) {
-                LOG(LOG_DEBUG, "replacing dlopen call to %s with cricket-client.so", filename);
-                dl_handle = dlopen_orig("cricket-client.so", flag);
-                if (clnt == NULL) {
-                    LOGE(LOG_ERROR, "rpc seems to be uninitialized");
-                }
-                return dl_handle;
-            }
+    if (filename == NULL) {
+      assert(dlopen_orig != NULL);
+      return dlopen_orig(filename, flag);
+    }
+
+    if (filename != NULL && 
+        (strcmp(filename, "libcuda.so.1") == 0 ||
+        strcmp(filename, "libcuda.so") == 0) ||
+        strcmp(filename, "libnvidia-ml.so.1") == 0) {
+        LOG(LOG_DEBUG, "replacing dlopen call to cuda library with "
+                       "cricket-client.so");
+        dl_handle = dlopen_orig("cricket-client.so", flag);
+        if (clnt == NULL) {
+            LOGE(LOG_ERROR, "rpc seems to be uninitialized");
         }
+        return dl_handle;
+    } else {
+        // if ((has_kernel = cpu_utils_parameter_info(&kernel_infos, (char *)filename)) == 0) {
+        //     LOGE(LOG_DBG(1), "dlopen file \"%s\", but does not contain a kernel", filename);
+        // } else {
+        //     LOGE(LOG_DEBUG, "dlopen file \"%s\", contains a kernel", filename);
+        // }
+        if ((ret = dlopen_orig(filename, flag)) == NULL) {
+            LOGE(LOG_ERROR, "dlopen failed");
+        } else if (has_kernel) {
+            dlinfo(ret, RTLD_DI_LINKMAP, &map);
+            LOGE(LOG_DEBUG, "dlopen to  %p", map->l_addr);
+        }
+        return ret;
     }
-    /* filename is NULL or not in replace_libs list */
-    if ((ret = dlopen_orig(filename, flag)) == NULL) {
-        LOGE(LOG_ERROR, "dlopen failed: ", dlerror());
-    } else if (has_kernel) {
-        dlinfo(ret, RTLD_DI_LINKMAP, &map);
-        LOGE(LOG_DEBUG, "dlopen to  %p", map->l_addr);
-    }
-    return ret;
 }
+
 
 int dlclose(void *handle)
 {
@@ -320,6 +330,8 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
                             int thread_limit, uint3 *tid, uint3 *bid,
                             dim3 *bDim, dim3 *gDim, int *wSize)
 {
+    int proc = 50;
+    time_start(totals, proc);
     ptr_result result;
     enum clnt_stat retval_1;
 
@@ -333,7 +345,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
     if (info == NULL) {
         LOGE(LOG_ERROR, "request to register unknown function: \"%s\"",
              deviceName);
-        return;
+        goto end_measurement;
     } else {
         LOGE(LOG_DEBUG, "request to register known function: \"%s\"",
              deviceName);
@@ -350,11 +362,16 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
         }
         info->host_fun = (void *)hostFun;
     }
+end_measurement:
+    time_end(totals, proc);
+    return;
 }
 
 
 void **__cudaRegisterFatBinary(void *fatCubin)
 {
+    int proc = 51;
+    time_start(totals, proc);
     void **result;
     int rpc_result;
     enum clnt_stat retval_1;
@@ -387,6 +404,7 @@ void **__cudaRegisterFatBinary(void *fatCubin)
     LOG(LOG_DEBUG, "fatbin loaded to %p", result);
     // we return a bunch of zeroes to avoid segfaults. The memory is
     // mapped by the modules resource 
+    time_end(totals, proc);
     return result;
 }
 

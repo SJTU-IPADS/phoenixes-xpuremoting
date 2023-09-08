@@ -12,6 +12,9 @@
 #define WITH_RECORDER
 #include "api-recorder.h"
 #include "gsched.h"
+#include "cpu-measurement.h"
+
+extern measurement_info vanillas[6000];
 
 int server_driver_init(int restore)
 {
@@ -39,15 +42,18 @@ int server_driver_init(int restore)
 // Does not support checkpoint/restart yet
 bool_t rpc_elf_load_1_svc(mem_data elf, ptr module_key, int *result, struct svc_req *rqstp)
 {
+    int proc = 51;
     LOGE(LOG_DEBUG, "rpc_elf_load(elf: %p, len: %#x, module_key: %#x)", elf.mem_data_val, elf.mem_data_len, module_key);
     CUresult res;
     CUmodule module = NULL;
     
+    time_start(vanillas, proc);
     if ((res = cuModuleLoadData(&module, elf.mem_data_val)) != CUDA_SUCCESS) {
         LOGE(LOG_ERROR, "cuModuleLoadData failed: %d", res);
         *result = res;
         return 1;
     }
+    time_end(vanillas, proc);
 
     // We add our module using module_key as key. This means a fatbinaryHandle on the client is translated
     // to a CUmodule on the server.
@@ -100,6 +106,7 @@ bool_t rpc_elf_unload_1_svc(ptr elf_handle, int *result, struct svc_req *rqstp)
 bool_t rpc_register_function_1_svc(ptr fatCubinHandle, ptr hostFun, char* deviceFun,
                             char* deviceName, int thread_limit, ptr_result *result, struct svc_req *rqstp)
 {
+    int proc = 50;
     void *module = NULL;
     RECORD_API(rpc_register_function_1_argument);
     RECORD_ARG(1, fatCubinHandle);
@@ -116,9 +123,11 @@ bool_t rpc_register_function_1_svc(ptr fatCubinHandle, ptr hostFun, char* device
         result->err = -1;
         return 1;
     }
+    time_start(vanillas, proc);
     result->err = cuModuleGetFunction((CUfunction*)&result->ptr_result_u.ptr,
                     module,
                     deviceName);
+    time_end(vanillas, proc);
     if (resource_mg_add_sorted(&rm_functions, (void*)hostFun, (void*)result->ptr_result_u.ptr) != 0) {
         LOGE(LOG_ERROR, "error in resource manager");
     }
