@@ -93,9 +93,10 @@ char *_get_next_token(char *, int);
 typedef struct _detailed_info {
     int id;
     int cnt;
-    // 0: total time, 1: serialization time, 2: network time
-    long long time[3];
-    struct timeval start[3], end[3];
+#define TIMETYPE 4
+    // 0: total time, 1: serialization time, 2: network time, 3: tcp/ip time
+    long long time[TIMETYPE];
+    struct timeval start[TIMETYPE], end[TIMETYPE];
     long long payload_size;
 } detailed_info;
 

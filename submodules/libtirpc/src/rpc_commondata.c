@@ -88,12 +88,14 @@ void print_detailed_info(detailed_info *infos, int length)
     for (int i = 0; i < length; ++i) {
         if (infos[i].cnt == 0)
             break;
-        printf("api %d: count %d, total_time %lf, serialization_time %lf, "
-               "network_time %lf, payload_size %lf\n",
-               infos[i].id, infos[i].cnt, 1.0 * infos[i].time[0] / infos[i].cnt,
+        printf("api %d: count %d, payload_size %lf, total_time %lf, "
+               "serialization_time %lf, network_time %lf, tcpip_time %lf\n",
+               infos[i].id, infos[i].cnt,
+               1.0 * infos[i].payload_size / infos[i].cnt,
+               1.0 * infos[i].time[0] / infos[i].cnt,
                1.0 * (infos[i].time[1] - infos[i].time[2]) / infos[i].cnt,
                1.0 * infos[i].time[2] / infos[i].cnt,
-               1.0 * infos[i].payload_size / infos[i].cnt);
+               1.0 * infos[i].time[3] / infos[i].cnt);
     }
 #endif
 }

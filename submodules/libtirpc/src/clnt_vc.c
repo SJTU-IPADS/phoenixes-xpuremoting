@@ -684,6 +684,8 @@ int len;
 
     if (len == 0)
         goto end;
+
+    time_start(apis, api_id, 3);
     fd.fd = ct->ct_fd;
     fd.events = POLLIN;
     for (;;) {
@@ -691,6 +693,7 @@ int len;
         case 0:
             ct->ct_error.re_status = RPC_TIMEDOUT;
             len = -1;
+            time_end(apis, api_id, 3);
             goto end;
 
         case -1:
@@ -699,12 +702,14 @@ int len;
             ct->ct_error.re_status = RPC_CANTRECV;
             ct->ct_error.re_errno = errno;
             len = -1;
+            time_end(apis, api_id, 3);
             goto end;
         }
         break;
     }
 
     len = read(ct->ct_fd, buf, (size_t)len);
+    time_end(apis, api_id, 3);
 
     switch (len) {
     case 0:
@@ -733,13 +738,18 @@ int len;
     struct ct_data *ct = (struct ct_data *)ctp;
     int i = 0, cnt;
 
+    time_start(apis, api_id, 3);
     for (cnt = len; cnt > 0; cnt -= i, buf += i) {
         if ((i = write(ct->ct_fd, buf, (size_t)cnt)) == -1) {
             ct->ct_error.re_errno = errno;
             ct->ct_error.re_status = RPC_CANTSEND;
-            return (-1);
+            len = -1;
+            time_end(apis, api_id, 3);
+            goto end;
         }
     }
+    time_end(apis, api_id, 3);
+end:
     add_payload_size(apis, api_id, len);
 	time_end(apis, api_id, 2);
     return (len);
