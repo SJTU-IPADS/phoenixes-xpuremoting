@@ -17,11 +17,7 @@ cuda-gdb:
 	$(MAKE) -C submodules cuda-gdb
 	$(MAKE) -C submodules cuda-gdb-libs
 
-microbench:
-	@echo -e "\033[36m----> Building microbench\033[0m"
-	$(MAKE) -C tests/microbench
-
-libtirpc: microbench
+libtirpc:
 	@echo -e "\033[36m----> Building libtirpc\033[0m"
 	$(MAKE) -C submodules libtirpc/install
 

@@ -62,7 +62,7 @@
 #include <rpc/clnt.h>
 #include <stddef.h>
 #include <errno.h>
-#include "rpc_com.h"
+
 static bool_t	xdrrec_getlong(XDR *, long *);
 static bool_t	xdrrec_putlong(XDR *, const long *);
 static bool_t	xdrrec_getbytes(XDR *, char *, u_int);
