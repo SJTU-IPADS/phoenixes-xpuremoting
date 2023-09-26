@@ -42,6 +42,34 @@ int shm_enabled = 1;
 #endif //WITH_IB
 
 extern gsched_t sched_none;
+gsched_t *sched;
+
+//Runtime API RMs
+resource_mg rm_streams;
+resource_mg rm_events;
+resource_mg rm_arrays;
+resource_mg rm_memory;
+resource_mg rm_kernels;
+
+//Driver API RMs
+resource_mg rm_modules;
+resource_mg rm_functions;
+resource_mg rm_globals;
+
+//Other RMs
+resource_mg rm_cusolver;
+resource_mg rm_cublas;
+
+//CUDNN RMs
+resource_mg rm_cudnn;
+resource_mg rm_cudnn_tensors;
+resource_mg rm_cudnn_filters;
+resource_mg rm_cudnn_tensortransform;
+resource_mg rm_cudnn_poolings;
+resource_mg rm_cudnn_activations;
+resource_mg rm_cudnn_lrns;
+resource_mg rm_cudnn_convs;
+resource_mg rm_cudnn_backendds;
 
 unsigned long prog=0, vers=0;
 

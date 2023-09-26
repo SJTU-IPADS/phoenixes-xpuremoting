@@ -17,6 +17,7 @@
 #include "cpu_rpc_prot.h"
 #include "list.h"
 #include "cpu-elf2.h"
+#include "resource-mg.h"
 
 #include "cpu-measurement.h"
 
@@ -39,6 +40,33 @@ INIT_SOCKTYPE
 int connection_is_local = 0;
 int shm_enabled = 1;
 int initialized = 0;
+
+//Runtime API RMs
+resource_mg rm_streams;
+resource_mg rm_events;
+resource_mg rm_arrays;
+resource_mg rm_memory;
+resource_mg rm_kernels;
+
+//Driver API RMs
+resource_mg rm_modules;
+resource_mg rm_functions;
+resource_mg rm_globals;
+
+//Other RMs
+resource_mg rm_cusolver;
+resource_mg rm_cublas;
+
+//CUDNN RMs
+resource_mg rm_cudnn;
+resource_mg rm_cudnn_tensors;
+resource_mg rm_cudnn_filters;
+resource_mg rm_cudnn_tensortransform;
+resource_mg rm_cudnn_poolings;
+resource_mg rm_cudnn_activations;
+resource_mg rm_cudnn_lrns;
+resource_mg rm_cudnn_convs;
+resource_mg rm_cudnn_backendds;
 
 #ifdef WITH_IB
 int ib_device = 0;
@@ -124,7 +152,7 @@ static void rpc_connect(void)
         // inet_aton("137.226.133.199", &sock_in.sin_addr);
 
         clnt = clnttcp_create(&sock_in, prog, vers, &isock, 0, 0);
-        getsockname(isock, &local_addr, &sockaddr_len);
+        getsockname(isock, (sockaddr*) &local_addr, &sockaddr_len);
         connection_is_local =
             (local_addr.sin_addr.s_addr == sock_in.sin_addr.s_addr);
         break;

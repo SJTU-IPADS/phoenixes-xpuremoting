@@ -24,31 +24,31 @@ typedef struct resource_mg_t {
 
 
 //Runtime API RMs
-resource_mg rm_streams;
-resource_mg rm_events;
-resource_mg rm_arrays;
-resource_mg rm_memory;
-resource_mg rm_kernels;
+extern resource_mg rm_streams;
+extern resource_mg rm_events;
+extern resource_mg rm_arrays;
+extern resource_mg rm_memory;
+extern resource_mg rm_kernels;
 
 //Driver API RMs
-resource_mg rm_modules;
-resource_mg rm_functions;
-resource_mg rm_globals;
+extern resource_mg rm_modules;
+extern resource_mg rm_functions;
+extern resource_mg rm_globals;
 
 //Other RMs
-resource_mg rm_cusolver;
-resource_mg rm_cublas;
+extern resource_mg rm_cusolver;
+extern resource_mg rm_cublas;
 
 //CUDNN RMs
-resource_mg rm_cudnn;
-resource_mg rm_cudnn_tensors;
-resource_mg rm_cudnn_filters;
-resource_mg rm_cudnn_tensortransform;
-resource_mg rm_cudnn_poolings;
-resource_mg rm_cudnn_activations;
-resource_mg rm_cudnn_lrns;
-resource_mg rm_cudnn_convs;
-resource_mg rm_cudnn_backendds;
+extern resource_mg rm_cudnn;
+extern resource_mg rm_cudnn_tensors;
+extern resource_mg rm_cudnn_filters;
+extern resource_mg rm_cudnn_tensortransform;
+extern resource_mg rm_cudnn_poolings;
+extern resource_mg rm_cudnn_activations;
+extern resource_mg rm_cudnn_lrns;
+extern resource_mg rm_cudnn_convs;
+extern resource_mg rm_cudnn_backendds;
 
 
 /** initializes the resource manager
