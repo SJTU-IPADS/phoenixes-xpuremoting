@@ -80,10 +80,10 @@ void add_payload_size(detailed_info *infos, int id, long long size){
 #endif
 }
 
-void print_detailed_info(detailed_info *infos, int length)
+void print_detailed_info(detailed_info *infos, int length, const char* str)
 {
 #ifdef MEASUREMENT_DETAILED_SWITCH
-    printf("----detailed infos----\n");
+    printf("----%s detailed infos----\n", str);
     qsort(infos, length, sizeof(detailed_info), detailed_info_cmp_time);
     for (int i = 0; i < length; ++i) {
         if (infos[i].cnt == 0)

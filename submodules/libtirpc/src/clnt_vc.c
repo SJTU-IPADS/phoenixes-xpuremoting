@@ -69,8 +69,8 @@
 #include "clnt_fd_locks.h"
 #include "rpc_com.h"
 
-detailed_info apis[6000];
-int api_id = 0;
+detailed_info clnt_apis[6000];
+int clnt_api_id = 0;
 
 #define MCALL_MSG_SIZE 24
 
@@ -339,9 +339,9 @@ void *results_ptr;
 struct timeval timeout;
 {
     struct ct_data *ct = (struct ct_data *)cl->cl_private;
-    api_id = proc;
-    add_cnt(apis, api_id);
-    time_start(apis, api_id, 0);
+    clnt_api_id = proc;
+    add_cnt(clnt_apis, clnt_api_id);
+    time_start(clnt_apis, clnt_api_id, 0);
     XDR *xdrs = &(ct->ct_xdrs);
     struct rpc_msg reply_msg;
     u_int32_t x_id;
@@ -371,7 +371,7 @@ struct timeval timeout;
             TRUE;
 
 call_again:
-    time_start(apis, api_id, 1);
+    time_start(clnt_apis, clnt_api_id, 1);
     xdrs->x_op = XDR_ENCODE;
     ct->ct_error.re_status = RPC_SUCCESS;
     x_id = ntohl(--(*msg_x_id));
@@ -393,7 +393,7 @@ call_again:
     }
     if (!shipnow) {
         release_fd_lock(ct->ct_fd_lock, mask);
-        time_end(apis, api_id, 1);
+        time_end(clnt_apis, clnt_api_id, 1);
         return (RPC_SUCCESS);
     }
     /*
@@ -444,16 +444,16 @@ call_again:
             xdrs->x_op = XDR_FREE;
             (void)xdr_opaque_auth(xdrs, &(reply_msg.acpted_rply.ar_verf));
         }
-        time_end(apis, api_id, 1);
+        time_end(clnt_apis, clnt_api_id, 1);
     } /* end successful completion */
     else {
         /* maybe our credentials need to be refreshed ... */
-        time_end(apis, api_id, 1);
+        time_end(clnt_apis, clnt_api_id, 1);
         if (refreshes-- && AUTH_REFRESH(cl->cl_auth, &reply_msg))
             goto call_again;
     } /* end of unsuccessful completion */
     release_fd_lock(ct->ct_fd_lock, mask);
-    time_end(apis, api_id, 0);
+    time_end(clnt_apis, clnt_api_id, 0);
     return (ct->ct_error.re_status);
 }
 
@@ -632,7 +632,7 @@ void *info;
 
 static void clnt_vc_destroy(cl) CLIENT *cl;
 {
-    print_detailed_info(apis, 6000);
+    print_detailed_info(clnt_apis, 6000, "client");
     assert(cl != NULL);
     struct ct_data *ct = (struct ct_data *)cl->cl_private;
     int ct_fd = ct->ct_fd;
@@ -672,7 +672,7 @@ static int read_vc(ctp, buf, len) void *ctp;
 void *buf;
 int len;
 {
-    time_start(apis, api_id, 2);
+    time_start(clnt_apis, clnt_api_id, 2);
     /*
     struct sockaddr sa;
     socklen_t sal;
@@ -685,7 +685,7 @@ int len;
     if (len == 0)
         goto end;
 
-    time_start(apis, api_id, 3);
+    time_start(clnt_apis, clnt_api_id, 3);
     fd.fd = ct->ct_fd;
     fd.events = POLLIN;
     for (;;) {
@@ -693,7 +693,6 @@ int len;
         case 0:
             ct->ct_error.re_status = RPC_TIMEDOUT;
             len = -1;
-            time_end(apis, api_id, 3);
             goto end;
 
         case -1:
@@ -702,14 +701,12 @@ int len;
             ct->ct_error.re_status = RPC_CANTRECV;
             ct->ct_error.re_errno = errno;
             len = -1;
-            time_end(apis, api_id, 3);
             goto end;
         }
         break;
     }
 
     len = read(ct->ct_fd, buf, (size_t)len);
-    time_end(apis, api_id, 3);
 
     switch (len) {
     case 0:
@@ -725,8 +722,9 @@ int len;
         break;
     }
 end:
-    add_payload_size(apis, api_id, len);
-    time_end(apis, api_id, 2);
+    time_end(clnt_apis, clnt_api_id, 3);
+    add_payload_size(clnt_apis, clnt_api_id, len);
+    time_end(clnt_apis, clnt_api_id, 2);
     return (len);
 }
 
@@ -734,24 +732,23 @@ static int write_vc(ctp, buf, len) void *ctp;
 void *buf;
 int len;
 {
-    time_start(apis, api_id, 2);
+    time_start(clnt_apis, clnt_api_id, 2);
     struct ct_data *ct = (struct ct_data *)ctp;
     int i = 0, cnt;
 
-    time_start(apis, api_id, 3);
+    time_start(clnt_apis, clnt_api_id, 3);
     for (cnt = len; cnt > 0; cnt -= i, buf += i) {
         if ((i = write(ct->ct_fd, buf, (size_t)cnt)) == -1) {
             ct->ct_error.re_errno = errno;
             ct->ct_error.re_status = RPC_CANTSEND;
             len = -1;
-            time_end(apis, api_id, 3);
             goto end;
         }
     }
-    time_end(apis, api_id, 3);
 end:
-    add_payload_size(apis, api_id, len);
-	time_end(apis, api_id, 2);
+    time_end(clnt_apis, clnt_api_id, 3);
+    add_payload_size(clnt_apis, clnt_api_id, len);
+	time_end(clnt_apis, clnt_api_id, 2);
     return (len);
 }
 

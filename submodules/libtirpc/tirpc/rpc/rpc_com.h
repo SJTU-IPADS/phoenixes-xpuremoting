@@ -108,7 +108,7 @@ void add_cnt(detailed_info *infos, int id);
 void time_start(detailed_info *infos, int id, int type);
 void time_end(detailed_info *infos, int id, int type);
 void add_payload_size(detailed_info *infos, int id, long long size);
-void print_detailed_info(detailed_info *infos, int length);
+void print_detailed_info(detailed_info *infos, int length, const char* str);
 
 #endif
 

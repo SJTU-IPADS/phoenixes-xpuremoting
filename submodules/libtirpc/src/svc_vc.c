@@ -37,6 +37,7 @@
  */
 #include <pthread.h>
 #include <reentrant.h>
+#include <rpc/types.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -62,6 +63,8 @@
 
 #include <getpeereid.h>
 
+detailed_info svc_apis[6000];
+int svc_api_id = 0;
 
 extern rwlock_t svc_fd_lock;
 
@@ -411,6 +414,7 @@ static void
 __svc_vc_dodestroy(xprt)
 	SVCXPRT *xprt;
 {
+	print_detailed_info(svc_apis, 6000, "server");
 	SVCXPRT_EXT *ext = SVCEXT(xprt);
 	struct cf_conn *cd;
 	struct cf_rendezvous *r;
@@ -489,6 +493,7 @@ read_vc(xprtp, buf, len)
 	void *buf;
 	int len;
 {
+	time_start(svc_apis, svc_api_id, 2);
 	SVCXPRT *xprt;
 	int sock;
 	int milliseconds = 35 * 1000;
@@ -498,6 +503,7 @@ read_vc(xprtp, buf, len)
 	xprt = (SVCXPRT *)xprtp;
 	assert(xprt != NULL);
 
+	time_start(svc_apis, svc_api_id, 3);
 	sock = xprt->xp_fd;
 
 	cfp = (struct cf_conn *)xprt->xp_p1;
@@ -517,7 +523,7 @@ read_vc(xprtp, buf, len)
 		}
 		if (len != 0)
 			gettimeofday(&cfp->last_recv_time, NULL);
-		return len;
+		goto end;
 	}
 
 	do {
@@ -539,12 +545,18 @@ read_vc(xprtp, buf, len)
 
 	if ((len = read(sock, buf, (size_t)len)) > 0) {
 		gettimeofday(&cfp->last_recv_time, NULL);
-		return (len);
+		goto end;
 	}
 
 fatal_err:
+	len = -1;
 	((struct cf_conn *)(xprt->xp_p1))->strm_stat = XPRT_DIED;
-	return (-1);
+
+end:
+	time_end(svc_apis, svc_api_id, 3);
+	add_payload_size(svc_apis, svc_api_id, len);
+	time_end(svc_apis, svc_api_id, 2);
+	return (len);
 }
 
 /*
@@ -557,6 +569,7 @@ write_vc(xprtp, buf, len)
 	void *buf;
 	int len;
 {
+	time_start(svc_apis, svc_api_id, 2);
 	SVCXPRT *xprt;
 	int i, cnt;
 	struct cf_conn *cd;
@@ -570,12 +583,14 @@ write_vc(xprtp, buf, len)
 	if (cd->nonblock)
 		gettimeofday(&tv0, NULL);
 	
+	time_start(svc_apis, svc_api_id, 3);
 	for (cnt = len; cnt > 0; cnt -= i, buf += i) {
 		i = write(xprt->xp_fd, buf, (size_t)cnt);
 		if (i  < 0) {
 			if (errno != EAGAIN || !cd->nonblock) {
 				cd->strm_stat = XPRT_DIED;
-				return (-1);
+				len = -1;
+            	goto end;
 			}
 			/*
 			 * For non-blocking connections, do not
@@ -587,12 +602,16 @@ write_vc(xprtp, buf, len)
 			gettimeofday(&tv1, NULL);
 			if (tv1.tv_sec - tv0.tv_sec >= 2) {
 				cd->strm_stat = XPRT_DIED;
-				return (-1);
+				len = -1;
+            	goto end;
 			}
 			i = 0; /* Don't change buf and cnt */
 		}
 	}
-
+end:
+	time_end(svc_apis, svc_api_id, 3);
+	add_payload_size(svc_apis, svc_api_id, len);
+	time_end(svc_apis, svc_api_id, 2);
 	return (len);
 }
 
@@ -620,6 +639,10 @@ svc_vc_recv(xprt, msg)
 {
 	struct cf_conn *cd;
 	XDR *xdrs;
+	bool_t flg = FALSE;
+
+    add_cnt(svc_apis, svc_api_id);
+    time_start(svc_apis, svc_api_id, 0);
 
 	assert(xprt != NULL);
 	assert(msg != NULL);
@@ -627,9 +650,10 @@ svc_vc_recv(xprt, msg)
 	cd = (struct cf_conn *)(xprt->xp_p1);
 	xdrs = &(cd->xdrs);
 
+	time_start(svc_apis, svc_api_id, 1);
 	if (cd->nonblock) {
 		if (!__xdrrec_getrec(xdrs, &cd->strm_stat, TRUE))
-			return FALSE;
+			goto end;
 	}
 
 	xdrs->x_op = XDR_DECODE;
@@ -640,10 +664,15 @@ svc_vc_recv(xprt, msg)
 		(void)xdrrec_skiprecord(xdrs);
 	if (xdr_callmsg(xdrs, msg)) {
 		cd->x_id = msg->rm_xid;
-		return (TRUE);
+		svc_api_id = msg->rm_call.cb_proc;
+		flg = TRUE;
+		goto end;
 	}
 	cd->strm_stat = XPRT_DIED;
-	return (FALSE);
+end:
+	time_end(svc_apis, svc_api_id, 1);
+	time_end(svc_apis, svc_api_id, 0);
+	return flg;
 }
 
 static bool_t
@@ -652,16 +681,20 @@ svc_vc_getargs(xprt, xdr_args, args_ptr)
 	xdrproc_t xdr_args;
 	void *args_ptr;
 {
-
+	time_start(svc_apis, svc_api_id, 0);
+	time_start(svc_apis, svc_api_id, 1);
 	assert(xprt != NULL);
 	/* args_ptr may be NULL */
+	bool_t flg = TRUE;
 
 	if (!SVCAUTH_UNWRAP(&SVC_XP_AUTH(xprt),
 			    &(((struct cf_conn *)(xprt->xp_p1))->xdrs),
 			    xdr_args, args_ptr)) {
-		return FALSE;  
+		flg = FALSE;
 	}
-	return TRUE;
+	time_end(svc_apis, svc_api_id, 1);
+	time_end(svc_apis, svc_api_id, 0);
+	return flg;
 }
 
 static bool_t
@@ -686,6 +719,7 @@ svc_vc_reply(xprt, msg)
 	SVCXPRT *xprt;
 	struct rpc_msg *msg;
 {
+	time_start(svc_apis, svc_api_id, 0);
 	struct cf_conn *cd;
 	XDR *xdrs;
 	bool_t rstat;
@@ -711,6 +745,7 @@ svc_vc_reply(xprt, msg)
 	} else
 		has_args = FALSE;
 
+	time_start(svc_apis, svc_api_id, 1);
 	xdrs->x_op = XDR_ENCODE;
 	msg->rm_xid = cd->x_id;
 	rstat = FALSE;
@@ -721,6 +756,8 @@ svc_vc_reply(xprt, msg)
 		rstat = TRUE;
 	}
 	(void)xdrrec_endofrecord(xdrs, TRUE);
+	time_end(svc_apis, svc_api_id, 1);
+	time_end(svc_apis, svc_api_id, 0);
 	return (rstat);
 }
 
