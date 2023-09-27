@@ -333,6 +333,10 @@ int dlclose(void *handle)
     }
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void __cudaRegisterVar(void **fatCubinHandle, char *hostVar, char *deviceAddress,
                        const char *deviceName, int ext, size_t size, int constant,
                        int global);
@@ -454,6 +458,10 @@ void __cudaUnregisterFatBinary(void **fatCubinHandle)
     //     LOGE(LOG_ERROR, "call failed.");
     // }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 // void __cudaRegisterFatBinaryEnd(void **fatCubinHandle)
 // {
