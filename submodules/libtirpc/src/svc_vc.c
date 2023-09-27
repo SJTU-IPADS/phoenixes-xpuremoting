@@ -641,8 +641,8 @@ svc_vc_recv(xprt, msg)
 	XDR *xdrs;
 	bool_t flg = FALSE;
 
-    add_cnt(svc_apis, svc_api_id);
-    time_start(svc_apis, svc_api_id, 0);
+	struct timeval start_0, start_1;
+	gettimeofday(&start_0, NULL);
 
 	assert(xprt != NULL);
 	assert(msg != NULL);
@@ -650,7 +650,7 @@ svc_vc_recv(xprt, msg)
 	cd = (struct cf_conn *)(xprt->xp_p1);
 	xdrs = &(cd->xdrs);
 
-	time_start(svc_apis, svc_api_id, 1);
+	gettimeofday(&start_1, NULL);
 	if (cd->nonblock) {
 		if (!__xdrrec_getrec(xdrs, &cd->strm_stat, TRUE))
 			goto end;
@@ -670,6 +670,9 @@ svc_vc_recv(xprt, msg)
 	}
 	cd->strm_stat = XPRT_DIED;
 end:
+	add_cnt(svc_apis, svc_api_id);
+    set_start(svc_apis, svc_api_id, 0, &start_0);
+	set_start(svc_apis, svc_api_id, 1, &start_1);
 	time_end(svc_apis, svc_api_id, 1);
 	time_end(svc_apis, svc_api_id, 0);
 	return flg;

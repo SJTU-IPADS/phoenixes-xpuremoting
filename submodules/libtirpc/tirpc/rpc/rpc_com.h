@@ -105,6 +105,8 @@ typedef struct _detailed_info {
 #define NETWORK_TIME 2
 
 void add_cnt(detailed_info *infos, int id);
+void set_start(detailed_info *infos, int id, int type, struct timeval *start);
+void set_end(detailed_info *infos, int id, int type, struct timeval *end);
 void time_start(detailed_info *infos, int id, int type);
 void time_end(detailed_info *infos, int id, int type);
 void add_payload_size(detailed_info *infos, int id, long long size);

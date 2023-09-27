@@ -61,6 +61,18 @@ void add_cnt(detailed_info *infos, int id){
 #endif
 }
 
+void set_start(detailed_info *infos, int id, int type, struct timeval *start){
+#ifdef MEASUREMENT_DETAILED_SWITCH
+    infos[id].start[type] = *start;
+#endif    
+}
+
+void set_end(detailed_info *infos, int id, int type, struct timeval *end){
+#ifdef MEASUREMENT_DETAILED_SWITCH
+    infos[id].end[type] = *end;
+#endif
+}
+
 void time_start(detailed_info *infos, int id, int type){
 #ifdef MEASUREMENT_DETAILED_SWITCH
     gettimeofday(&infos[id].start[type], NULL);
