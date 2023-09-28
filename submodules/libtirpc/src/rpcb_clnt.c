@@ -101,9 +101,9 @@ static struct netbuf *got_entry(rpcb_entry_list_ptr, const struct netconfig *);
  * These are private routines that may not be provided in future releases.
  */
 bool_t
-__rpc_control(request, info)
-	int	request;
-	void	*info;
+__rpc_control(
+	int	request,
+	void	*info)
 {
 	switch (request) {
 	case CLCR_GET_RPCB_TIMEOUT:
@@ -143,8 +143,9 @@ extern rwlock_t	rpcbaddr_cache_lock;
  */
 
 static struct address_cache *
-check_cache(host, netid)
-	const char *host, *netid;
+check_cache(
+	const char *host,
+	const char *netid)
 {
 	struct address_cache *cptr;
 
@@ -162,8 +163,8 @@ check_cache(host, netid)
 }
 
 static void
-delete_cache(addr)
-	struct netbuf *addr;
+delete_cache(
+	struct netbuf *addr)
 {
 	struct address_cache *cptr, *prevptr = NULL;
 
@@ -189,10 +190,11 @@ delete_cache(addr)
 }
 
 static void
-add_cache(host, netid, taddr, uaddr)
-	const char *host, *netid;
-	char *uaddr;
-	struct netbuf *taddr;
+add_cache(
+	const char *host,
+	const char *netid,
+	char *uaddr,
+	struct netbuf *taddr)
 {
 	struct address_cache  *ad_cache, *cptr, *prevptr;
 
@@ -269,10 +271,10 @@ out_free:
  * On error, returns NULL and free's everything.
  */
 static CLIENT *
-getclnthandle(host, nconf, targaddr)
-	const char *host;
-	const struct netconfig *nconf;
-	char **targaddr;
+getclnthandle(
+	const char *host,
+	const struct netconfig *nconf,
+	char **targaddr)
 {
 	CLIENT *client;
 	struct netbuf *addr, taddr;
@@ -421,10 +423,10 @@ out_err:
  * Create a PMAP client handle.
  */
 static CLIENT *
-getpmaphandle(nconf, hostname, tgtaddr)
-	const struct netconfig *nconf;
-	const char *hostname;
-	char **tgtaddr;
+getpmaphandle(
+	const struct netconfig *nconf,
+	const char *hostname,
+	char **tgtaddr)
 {
 	CLIENT *client = NULL;
 	rpcvers_t pmapvers = 2;
@@ -564,11 +566,11 @@ try_nconf:
  * Calls the rpcbind service to do the mapping.
  */
 bool_t
-rpcb_set(program, version, nconf, address)
-	rpcprog_t program;
-	rpcvers_t version;
-	const struct netconfig *nconf;	/* Network structure of transport */
-	const struct netbuf *address;		/* Services netconfig address */
+rpcb_set(
+	rpcprog_t program,
+	rpcvers_t version,
+	const struct netconfig *nconf,	/* Network structure of transport */
+	const struct netbuf *address)		/* Services netconfig address */
 {
 	CLIENT *client;
 	bool_t rslt = FALSE;
@@ -625,10 +627,10 @@ rpcb_set(program, version, nconf, address)
  * only for the given transport.
  */
 bool_t
-rpcb_unset(program, version, nconf)
-	rpcprog_t program;
-	rpcvers_t version;
-	const struct netconfig *nconf;
+rpcb_unset(
+	rpcprog_t program,
+	rpcvers_t version,
+	const struct netconfig *nconf)
 {
 	CLIENT *client;
 	bool_t rslt = FALSE;
@@ -666,9 +668,9 @@ rpcb_unset(program, version, nconf)
  * From the merged list, find the appropriate entry
  */
 static struct netbuf *
-got_entry(relp, nconf)
-	rpcb_entry_list_ptr relp;
-	const struct netconfig *nconf;
+got_entry(
+	rpcb_entry_list_ptr relp,
+	const struct netconfig *nconf)
 {
 	struct netbuf *na = NULL;
 	rpcb_entry_list_ptr sp;
@@ -732,12 +734,12 @@ __rpcbind_is_up()
 
 #ifdef PORTMAP
 static struct netbuf *
-__try_protocol_version_2(program, version, nconf, host, tp)
-	rpcprog_t program;
-	rpcvers_t version;
-	const struct netconfig *nconf;
-	const char *host;
-	struct timeval *tp;
+__try_protocol_version_2(
+	rpcprog_t program,
+	rpcvers_t version,
+	const struct netconfig *nconf,
+	const char *host,
+	struct timeval *tp)
 {
 	u_short port = 0;
 	struct netbuf remote;
@@ -828,13 +830,13 @@ error:
  * starts working properly.  Also look under clnt_vc.c.
  */
 struct netbuf *
-__rpcb_findaddr_timed(program, version, nconf, host, clpp, tp)
-	rpcprog_t program;
-	rpcvers_t version;
-	const struct netconfig *nconf;
-	const char *host;
-	CLIENT **clpp;
-	struct timeval *tp;
+__rpcb_findaddr_timed(
+	rpcprog_t program,
+	rpcvers_t version,
+	const struct netconfig *nconf,
+	const char *host,
+	CLIENT **clpp,
+	struct timeval *tp)
 {
 #ifdef NOTUSED
 	static bool_t check_rpcbind = TRUE;
@@ -989,12 +991,12 @@ done:
  * Assuming that the address is all properly allocated
  */
 int
-rpcb_getaddr(program, version, nconf, address, host)
-	rpcprog_t program;
-	rpcvers_t version;
-	const struct netconfig *nconf;
-	struct netbuf *address;
-	const char *host;
+rpcb_getaddr(
+	rpcprog_t program,
+	rpcvers_t version,
+	const struct netconfig *nconf,
+	struct netbuf *address,
+	const char *host)
 {
 	struct netbuf *na;
 
@@ -1025,9 +1027,9 @@ rpcb_getaddr(program, version, nconf, address, host)
  * It returns NULL on failure.
  */
 rpcblist *
-rpcb_getmaps(nconf, host)
-	const struct netconfig *nconf;
-	const char *host;
+rpcb_getmaps(
+	const struct netconfig *nconf,
+	const char *host)
 {
 	rpcblist_ptr head = NULL;
 	CLIENT *client;
@@ -1077,17 +1079,18 @@ done:
  * programs to do a lookup and call in one step.
 */
 enum clnt_stat
-rpcb_rmtcall(nconf, host, prog, vers, proc, xdrargs, argsp,
-		xdrres, resp, tout, addr_ptr)
-	const struct netconfig *nconf;	/* Netconfig structure */
-	const char *host;			/* Remote host name */
-	rpcprog_t prog;
-	rpcvers_t vers;
-	rpcproc_t proc;			/* Remote proc identifiers */
-	xdrproc_t xdrargs, xdrres;	/* XDR routines */
-	caddr_t argsp, resp;		/* Argument and Result */
-	struct timeval tout;		/* Timeout value for this call */
-	const struct netbuf *addr_ptr;	/* Preallocated netbuf address */
+rpcb_rmtcall(
+	const struct netconfig *nconf,	/* Netconfig structure */
+	const char *host,			/* Remote host name */
+	rpcprog_t prog,
+	rpcvers_t vers,
+	rpcproc_t proc,			/* Remote proc identifiers */
+	xdrproc_t xdrargs,
+	xdrproc_t xdrres,	/* XDR routines */
+	caddr_t argsp,
+	caddr_t resp,		/* Argument and Result */
+	struct timeval tout,		/* Timeout value for this call */
+	const struct netbuf *addr_ptr)	/* Preallocated netbuf address */
 {
 	CLIENT *client;
 	enum clnt_stat stat;
@@ -1158,9 +1161,9 @@ error:
  * Returns 1 if succeeds else 0.
  */
 bool_t
-rpcb_gettime(host, timep)
-	const char *host;
-	time_t *timep;
+rpcb_gettime(
+	const char *host,
+	time_t *timep)
 {
 	CLIENT *client = NULL;
 	void *handle;
@@ -1218,9 +1221,9 @@ rpcb_gettime(host, timep)
  * really be called because local n2a libraries are always provided.
  */
 char *
-rpcb_taddr2uaddr(nconf, taddr)
-	struct netconfig *nconf;
-	struct netbuf *taddr;
+rpcb_taddr2uaddr(
+	struct netconfig *nconf,
+	struct netbuf *taddr)
 {
 	CLIENT *client;
 	char *uaddr = NULL;
@@ -1252,9 +1255,9 @@ rpcb_taddr2uaddr(nconf, taddr)
  * really be called because local n2a libraries are always provided.
  */
 struct netbuf *
-rpcb_uaddr2taddr(nconf, uaddr)
-	struct netconfig *nconf;
-	char *uaddr;
+rpcb_uaddr2taddr(
+	struct netconfig *nconf,
+	char *uaddr)
 {
 	CLIENT *client;
 	struct netbuf *taddr;
