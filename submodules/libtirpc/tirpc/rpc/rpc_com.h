@@ -82,4 +82,32 @@ char *_get_next_token(char *, int);
 }
 #endif
 
+#ifndef MEASUREMENT_DETAILED
+#define MEASUREMENT_DETAILED
+
+#define MEASUREMENT_DETAILED_SWITCH
+
+#include <sys/time.h>
+#include <time.h>
+
+typedef struct _detailed_info {
+    int id;
+    int cnt;
+    long long time[3];
+    struct timeval start[3], end[3];
+    long long payload_size;
+} detailed_info;
+
+#define TOTAL_TIME 0
+#define SERIALIZATION_TIME 1
+#define NETWORK_TIME 2
+
+void add_cnt(detailed_info *infos, int id);
+void time_start(detailed_info *infos, int id, int type);
+void time_end(detailed_info *infos, int id, int type);
+void add_payload_size(detailed_info *infos, int id, long long size);
+void print_detailed_info(detailed_info *infos, int length);
+
+#endif
+
 #endif /* _RPC_RPCCOM_H */

@@ -92,7 +92,7 @@ rpc_reg(
 	rpcvers_t versnum,			/* version number */
 	rpcproc_t procnum,			/* procedure number */
 	char *(*progname)(char *), /* Server routine */
-	xdrproc_t inproc, outproc,	/* in/out XDR procedures */
+	xdrproc_t inproc, xdrproc_t outproc,	/* in/out XDR procedures */
 	char *nettype)			/* nettype */
 {
 	struct netconfig *nconf;

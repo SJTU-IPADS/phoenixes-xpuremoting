@@ -193,8 +193,9 @@ static void
 add_cache(
 	const char *host,
 	const char *netid,
-	char *uaddr,
-	struct netbuf *taddr)
+	struct netbuf *taddr,
+	char *uaddr
+)
 {
 	struct address_cache  *ad_cache, *cptr, *prevptr;
 

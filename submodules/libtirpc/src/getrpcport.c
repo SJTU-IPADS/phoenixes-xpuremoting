@@ -43,9 +43,10 @@
 #include <rpc/pmap_clnt.h>
 
 int
-getrpcport(host, prognum, versnum, proto)
-	char *host;
-	int prognum, versnum, proto;
+getrpcport(
+	char *host,
+	int prognum, char versnum, char proto
+)
 {
 	struct sockaddr_in addr;
 	struct hostent *hp;

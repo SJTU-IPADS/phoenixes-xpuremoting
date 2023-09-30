@@ -102,8 +102,7 @@ _rpcdata()
 
 #if !HAVE_GETRPCBYNUMBER
 struct rpcent *
-getrpcbynumber(number)
-	int number;
+getrpcbynumber(int number)
 {
 #ifdef	YP
 	int reason;
@@ -150,8 +149,7 @@ no_yp:
 
 #if !HAVE_GETRPCBYNAME
 struct rpcent *
-getrpcbyname(name)
-	const char *name;
+getrpcbyname(const char *name)
 {
 	struct rpcent *rpc = NULL;
 	char **rp;
@@ -175,8 +173,7 @@ done:
 
 #if !HAVE_SETRPCENT
 void
-setrpcent(f)
-	int f;
+setrpcent(int f)
 {
 	struct rpcdata *d = _rpcdata();
 
@@ -279,9 +276,10 @@ no_yp:
 #endif
 
 static struct rpcent *
-interpret(val, len)
-	char *val;
-	size_t len;
+interpret(
+	char *val,
+	size_t len
+)
 {
 	struct rpcdata *d = _rpcdata();
 	char *p;

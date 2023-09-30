@@ -104,9 +104,10 @@ static struct {
  * Service side authenticator for AUTH_DES
  */
 enum auth_stat
-_svcauth_des(rqst, msg)
-	struct svc_req *rqst;
-	struct rpc_msg *msg;
+_svcauth_des(
+	struct svc_req *rqst,
+	struct rpc_msg *msg
+)
 {
 
 	long *ixdr;
@@ -382,8 +383,7 @@ cache_victim()
  * Note that sid was referenced
  */
 static void
-cache_ref(sid)
-	short sid;
+cache_ref(short sid)
 {
 	int i;
 	short curr;
@@ -405,10 +405,11 @@ cache_ref(sid)
  * return the spot in the cache.
  */
 static short
-cache_spot(key, name, timestamp)
-	des_block *key;
-	char *name;
-	struct timeval *timestamp;
+cache_spot(
+	des_block *key,
+	char *name,
+	struct timeval *timestamp
+)
 {
 	struct cache_entry *cp;
 	int i;
@@ -455,12 +456,13 @@ struct bsdcred {
  * the credential.
  */
 int
-authdes_getucred(adc, uid, gid, grouplen, groups)
-	struct authdes_cred *adc;
-	uid_t *uid;
-	gid_t *gid;
-	int *grouplen;
-	gid_t *groups;
+authdes_getucred(
+	struct authdes_cred *adc,
+	uid_t *uid,
+	gid_t *gid,
+	int *grouplen,
+	gid_t *groups
+)
 {
 	unsigned sid;
 	int i;
@@ -519,8 +521,7 @@ authdes_getucred(adc, uid, gid, grouplen, groups)
 }
 
 static void
-invalidate(cred)
-	char *cred;
+invalidate(char *cred)
 {
 	if (cred == NULL) {
 		return;

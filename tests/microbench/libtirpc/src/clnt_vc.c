@@ -155,8 +155,8 @@ struct cmsgcred {
 };
 
 struct cmessage {
-    struct cmsghdr cmsg;
     struct cmsgcred cmcred;
+    struct cmsghdr cmsg;
 };
 
 static enum clnt_stat clnt_vc_call(CLIENT *, rpcproc_t, xdrproc_t, void *,
