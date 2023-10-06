@@ -88,8 +88,8 @@ static void __xprt_do_unregister (SVCXPRT * xprt, bool_t dolock);
  * Activate a transport handle.
  */
 void
-xprt_register (xprt)
-     SVCXPRT *xprt;
+xprt_register (
+     SVCXPRT *xprt)
 {
   int sock;
 
@@ -158,9 +158,9 @@ __xprt_unregister_unlocked (SVCXPRT * xprt)
  * De-activate a transport handle.
  */
 static void
-__xprt_do_unregister (xprt, dolock)
-     SVCXPRT *xprt;
-     bool_t dolock;
+__xprt_do_unregister (
+     SVCXPRT *xprt,
+     bool_t dolock)
 {
   int sock;
 
@@ -200,12 +200,12 @@ __xprt_do_unregister (xprt, dolock)
  * program number comes in.
  */
 bool_t
-svc_reg (xprt, prog, vers, dispatch, nconf)
-     SVCXPRT *xprt;
-     const rpcprog_t prog;
-     const rpcvers_t vers;
-     void (*dispatch) (struct svc_req *, SVCXPRT *);
-     const struct netconfig *nconf;
+svc_reg (
+     SVCXPRT *xprt,
+     const rpcprog_t prog,
+     const rpcvers_t vers,
+     void (*dispatch) (struct svc_req *, SVCXPRT *),
+     const struct netconfig *nconf)
 {
   bool_t dummy;
   struct svc_callout *prev;
@@ -282,9 +282,9 @@ rpcb_it:
  * Remove a service program from the callout list.
  */
 void
-svc_unreg (prog, vers)
-     const rpcprog_t prog;
-     const rpcvers_t vers;
+svc_unreg (
+     const rpcprog_t prog,
+     const rpcvers_t vers)
 {
   struct svc_callout *prev;
   struct svc_callout *s;
@@ -319,12 +319,12 @@ svc_unreg (prog, vers)
  * program number comes in.
  */
 bool_t
-svc_register (xprt, prog, vers, dispatch, protocol)
-     SVCXPRT *xprt;
-     u_long prog;
-     u_long vers;
-     void (*dispatch) (struct svc_req *, SVCXPRT *);
-     int protocol;
+svc_register (
+     SVCXPRT *xprt,
+     u_long prog,
+     u_long vers,
+     void (*dispatch) (struct svc_req *, SVCXPRT *),
+     int protocol)
 {
   struct svc_callout *prev;
   struct svc_callout *s;
@@ -362,9 +362,9 @@ pmap_it:
  * Remove a service program from the callout list.
  */
 void
-svc_unregister (prog, vers)
-     u_long prog;
-     u_long vers;
+svc_unregister (
+     u_long prog,
+     u_long vers)
 {
   struct svc_callout *prev;
   struct svc_callout *s;
@@ -392,11 +392,11 @@ svc_unregister (prog, vers)
  * struct.
  */
 static struct svc_callout *
-svc_find (prog, vers, prev, netid)
-     rpcprog_t prog;
-     rpcvers_t vers;
-     struct svc_callout **prev;
-     char *netid;
+svc_find (
+     rpcprog_t prog,
+     rpcvers_t vers,
+     struct svc_callout **prev,
+     char *netid)
 {
   struct svc_callout *s, *p;
 
@@ -421,10 +421,10 @@ svc_find (prog, vers, prev, netid)
  * Send a reply to an rpc request
  */
 bool_t
-svc_sendreply (xprt, xdr_results, xdr_location)
-     SVCXPRT *xprt;
-     xdrproc_t xdr_results;
-     void *xdr_location;
+svc_sendreply (
+     SVCXPRT *xprt,
+     xdrproc_t xdr_results,
+     void *xdr_location)
 {
   struct rpc_msg rply;
 
@@ -443,8 +443,8 @@ svc_sendreply (xprt, xdr_results, xdr_location)
  * No procedure error reply
  */
 void
-svcerr_noproc (xprt)
-     SVCXPRT *xprt;
+svcerr_noproc (
+     SVCXPRT *xprt)
 {
   struct rpc_msg rply;
 
@@ -461,8 +461,8 @@ svcerr_noproc (xprt)
  * Can't decode args error reply
  */
 void
-svcerr_decode (xprt)
-     SVCXPRT *xprt;
+svcerr_decode (
+     SVCXPRT *xprt)
 {
   struct rpc_msg rply;
 
@@ -479,8 +479,8 @@ svcerr_decode (xprt)
  * Some system error
  */
 void
-svcerr_systemerr (xprt)
-     SVCXPRT *xprt;
+svcerr_systemerr (
+     SVCXPRT *xprt)
 {
   struct rpc_msg rply;
 
@@ -501,29 +501,29 @@ svcerr_systemerr (xprt)
  * protocol: the portmapper (or rpc binder).
  */
 void
-__svc_versquiet_on (xprt)
-     SVCXPRT *xprt;
+__svc_versquiet_on (
+     SVCXPRT *xprt)
 {
   svc_flags (xprt) |= SVC_VERSQUIET;
 }
 
 void
-__svc_versquiet_off (xprt)
-     SVCXPRT *xprt;
+__svc_versquiet_off (
+     SVCXPRT *xprt)
 {
   svc_flags (xprt) &= ~SVC_VERSQUIET;
 }
 
 void
-svc_versquiet (xprt)
-     SVCXPRT *xprt;
+svc_versquiet (
+     SVCXPRT *xprt)
 {
   __svc_versquiet_on (xprt);
 }
 
 int
-__svc_versquiet_get (xprt)
-     SVCXPRT *xprt;
+__svc_versquiet_get (
+     SVCXPRT *xprt)
 {
   return version_keepquiet (xprt);
 }
@@ -533,9 +533,9 @@ __svc_versquiet_get (xprt)
  * Authentication error reply
  */
 void
-svcerr_auth (xprt, why)
-     SVCXPRT *xprt;
-     enum auth_stat why;
+svcerr_auth (
+     SVCXPRT *xprt,
+     enum auth_stat why)
 {
   struct rpc_msg rply;
 
@@ -552,8 +552,8 @@ svcerr_auth (xprt, why)
  * Auth too weak error reply
  */
 void
-svcerr_weakauth (xprt)
-     SVCXPRT *xprt;
+svcerr_weakauth (
+     SVCXPRT *xprt)
 {
 
   assert (xprt != NULL);
@@ -565,8 +565,8 @@ svcerr_weakauth (xprt)
  * Program unavailable error reply
  */
 void
-svcerr_noprog (xprt)
-     SVCXPRT *xprt;
+svcerr_noprog (
+     SVCXPRT *xprt)
 {
   struct rpc_msg rply;
 
@@ -583,10 +583,10 @@ svcerr_noprog (xprt)
  * Program version mismatch error reply
  */
 void
-svcerr_progvers (xprt, low_vers, high_vers)
-     SVCXPRT *xprt;
-     rpcvers_t low_vers;
-     rpcvers_t high_vers;
+svcerr_progvers (
+     SVCXPRT *xprt,
+     rpcvers_t low_vers,
+     rpcvers_t high_vers)
 {
   struct rpc_msg rply;
 
@@ -620,8 +620,8 @@ svcerr_progvers (xprt, low_vers, high_vers)
  */
 
 void
-svc_getreq (rdfds)
-     int rdfds;
+svc_getreq (
+     int rdfds)
 {
   fd_set readfds;
 
@@ -631,8 +631,8 @@ svc_getreq (rdfds)
 }
 
 void
-svc_getreqset (readfds)
-     fd_set *readfds;
+svc_getreqset (
+     fd_set *readfds)
 {
   int bit, fd;
   fd_mask mask, *maskp;
@@ -657,8 +657,8 @@ svc_getreqset (readfds)
 }
 
 void
-svc_getreq_common (fd)
-     int fd;
+svc_getreq_common (
+     int fd)
 {
   SVCXPRT *xprt;
   struct svc_req r;
@@ -759,9 +759,9 @@ svc_getreq_common (fd)
 
 
 void
-svc_getreq_poll (pfdp, pollretval)
-     struct pollfd *pfdp;
-     int pollretval;
+svc_getreq_poll (
+     struct pollfd *pfdp,
+     int pollretval)
 {
   int fds_found, i;
 

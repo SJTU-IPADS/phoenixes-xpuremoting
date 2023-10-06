@@ -62,7 +62,8 @@ bool_t rpc_cudnngetmaxdeviceversion_1_svc(size_t *result, struct svc_req *rqstp)
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
 
     GSCHED_RETAIN;
-    *result = cudnnGetMaxDeviceVersion();
+    // *result = cudnnGetMaxDeviceVersion();
+    *result = 0;
     GSCHED_RELEASE;
     return 1;
 }

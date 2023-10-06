@@ -165,6 +165,23 @@ struct opaque_auth {
 	u_int	oa_length;		/* not to exceed MAX_AUTH_BYTES */
 };
 
+struct auth_ops {
+	void	(*ah_nextverf) (struct __auth *);
+	/* nextverf & serialize */
+	int	(*ah_marshal) (struct __auth *, XDR *);
+	/* validate verifier */
+	int	(*ah_validate) (struct __auth *,
+		    struct opaque_auth *);
+	/* refresh credentials */
+	int	(*ah_refresh) (struct __auth *, void *);
+	/* destroy this structure */
+	void	(*ah_destroy) (struct __auth *);
+	/* encode data for wire */
+	int     (*ah_wrap) (struct __auth *, XDR *, xdrproc_t, caddr_t);
+	/* decode data for wire */
+	int     (*ah_unwrap) (struct __auth *, XDR *, xdrproc_t, caddr_t);
+};
+
 
 /*
  * Auth handle, interface to client side authenticators.
@@ -173,23 +190,7 @@ typedef struct __auth {
 	struct	opaque_auth	ah_cred;
 	struct	opaque_auth	ah_verf;
 	union	des_block	ah_key;
-	struct auth_ops {
-		void	(*ah_nextverf) (struct __auth *);
-		/* nextverf & serialize */
-		int	(*ah_marshal) (struct __auth *, XDR *);
-		/* validate verifier */
-		int	(*ah_validate) (struct __auth *,
-			    struct opaque_auth *);
-		/* refresh credentials */
-		int	(*ah_refresh) (struct __auth *, void *);
-		/* destroy this structure */
-		void	(*ah_destroy) (struct __auth *);
-		/* encode data for wire */
-		int     (*ah_wrap) (struct __auth *, XDR *, xdrproc_t, caddr_t);
-		/* decode data for wire */
-		int     (*ah_unwrap) (struct __auth *, XDR *, xdrproc_t, caddr_t);
-
-	} *ah_ops;
+	struct auth_ops *ah_ops;
 	void *ah_private;
 } AUTH;
 

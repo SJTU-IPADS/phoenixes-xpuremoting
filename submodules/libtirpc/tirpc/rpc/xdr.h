@@ -93,6 +93,26 @@ enum xdr_op {
 #define RNDUP(x)  ((((x) + BYTES_PER_XDR_UNIT - 1) / BYTES_PER_XDR_UNIT) \
 		    * BYTES_PER_XDR_UNIT)
 
+struct xdr_ops {
+	/* get a long from underlying stream */
+	bool_t	(*x_getlong)(struct __rpc_xdr *, long *);
+	/* put a long to " */
+	bool_t	(*x_putlong)(struct __rpc_xdr *, const long *);
+	/* get some bytes from " */
+	bool_t	(*x_getbytes)(struct __rpc_xdr *, char *, u_int);
+	/* put some bytes to " */
+	bool_t	(*x_putbytes)(struct __rpc_xdr *, const char *, u_int);
+	/* returns bytes off from beginning */
+	u_int	(*x_getpostn)(struct __rpc_xdr *);
+	/* lets you reposition the stream */
+	bool_t  (*x_setpostn)(struct __rpc_xdr *, u_int);
+	/* buf quick ptr to buffered data */
+	int32_t *(*x_inline)(struct __rpc_xdr *, u_int);
+	/* free privates of this xdr_stream */
+	void	(*x_destroy)(struct __rpc_xdr *);
+	bool_t	(*x_control)(struct __rpc_xdr *, int, void *);
+};
+
 /*
  * The XDR handle.
  * Contains operation which is being applied to the stream,
@@ -101,25 +121,7 @@ enum xdr_op {
  */
 typedef struct __rpc_xdr {
 	enum xdr_op	x_op;		/* operation; fast additional param */
-	const struct xdr_ops {
-		/* get a long from underlying stream */
-		bool_t	(*x_getlong)(struct __rpc_xdr *, long *);
-		/* put a long to " */
-		bool_t	(*x_putlong)(struct __rpc_xdr *, const long *);
-		/* get some bytes from " */
-		bool_t	(*x_getbytes)(struct __rpc_xdr *, char *, u_int);
-		/* put some bytes to " */
-		bool_t	(*x_putbytes)(struct __rpc_xdr *, const char *, u_int);
-		/* returns bytes off from beginning */
-		u_int	(*x_getpostn)(struct __rpc_xdr *);
-		/* lets you reposition the stream */
-		bool_t  (*x_setpostn)(struct __rpc_xdr *, u_int);
-		/* buf quick ptr to buffered data */
-		int32_t *(*x_inline)(struct __rpc_xdr *, u_int);
-		/* free privates of this xdr_stream */
-		void	(*x_destroy)(struct __rpc_xdr *);
-		bool_t	(*x_control)(struct __rpc_xdr *, int, void *);
-	} *x_ops;
+	const struct xdr_ops  *x_ops;
 	char *	 	x_public;	/* users' data */
 	void *		x_private;	/* pointer to private data */
 	char * 		x_base;		/* private used for position info */

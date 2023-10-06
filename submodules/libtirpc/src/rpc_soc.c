@@ -80,15 +80,15 @@ static bool_t rpc_wrap_bcast(char *, struct netbuf *, struct netconfig *);
  * A common clnt create routine
  */
 static CLIENT *
-clnt_com_create(raddr, prog, vers, sockp, sendsz, recvsz, tp, flags)
-	struct sockaddr_in *raddr;
-	rpcprog_t prog;
-	rpcvers_t vers;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
-	char *tp;
-	int flags;
+clnt_com_create(
+	struct sockaddr_in *raddr,
+	rpcprog_t prog,
+	rpcvers_t vers,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz,
+	char *tp,
+	int flags)
 {
 	CLIENT *cl;
 	int madefd = FALSE;
@@ -174,15 +174,15 @@ err:	if (madefd == TRUE)
 }
 
 CLIENT *
-__libc_clntudp_bufcreate(raddr, prog, vers, wait, sockp, sendsz, recvsz, flags)
-	struct sockaddr_in *raddr;
-	u_long prog;
-	u_long vers;
-	struct timeval wait;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
-	int flags;
+__libc_clntudp_bufcreate(
+	struct sockaddr_in *raddr,
+	u_long prog,
+	u_long vers,
+	struct timeval wait,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz,
+	int flags)
 {
 	CLIENT *cl;
 
@@ -196,14 +196,14 @@ __libc_clntudp_bufcreate(raddr, prog, vers, wait, sockp, sendsz, recvsz, flags)
 }
 
 CLIENT *
-clntudp_bufcreate(raddr, prog, vers, wait, sockp, sendsz, recvsz)
-	struct sockaddr_in *raddr;
-	u_long prog;
-	u_long vers;
-	struct timeval wait;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
+clntudp_bufcreate(
+	struct sockaddr_in *raddr,
+	u_long prog,
+	u_long vers,
+	struct timeval wait,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz)
 {
 	CLIENT *cl;
 
@@ -217,24 +217,24 @@ clntudp_bufcreate(raddr, prog, vers, wait, sockp, sendsz, recvsz)
 }
 
 CLIENT *
-clntudp_create(raddr, program, version, wait, sockp)
-	struct sockaddr_in *raddr;
-	u_long program;
-	u_long version;
-	struct timeval wait;
-	int *sockp;
+clntudp_create(
+	struct sockaddr_in *raddr,
+	u_long program,
+	u_long version,
+	struct timeval wait,
+	int *sockp)
 {
 	return clntudp_bufcreate(raddr, program, version, wait, sockp, UDPMSGSIZE, UDPMSGSIZE);
 }
 
 CLIENT *
-clnttcp_create(raddr, prog, vers, sockp, sendsz, recvsz)
-	struct sockaddr_in *raddr;
-	u_long prog;
-	u_long vers;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
+clnttcp_create(
+	struct sockaddr_in *raddr,
+	u_long prog,
+	u_long vers,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz)
 {
 	return clnt_com_create(raddr, (rpcprog_t)prog, (rpcvers_t)vers, sockp,
 	    sendsz, recvsz, "tcp", 0);
@@ -245,14 +245,14 @@ clnttcp_create(raddr, prog, vers, sockp, sendsz, recvsz)
 #ifdef INET6_NOT_USED
 
 CLIENT *
-clntudp6_bufcreate(raddr, prog, vers, wait, sockp, sendsz, recvsz)
-	struct sockaddr_in6 *raddr;
-	u_long prog;
-	u_long vers;
-	struct timeval wait;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
+clntudp6_bufcreate(
+	struct sockaddr_in6 *raddr,
+	u_long prog,
+	u_long vers,
+	struct timeval wait,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz)
 {
 	CLIENT *cl;
 
@@ -266,24 +266,24 @@ clntudp6_bufcreate(raddr, prog, vers, wait, sockp, sendsz, recvsz)
 }
 
 CLIENT *
-clntudp6_create(raddr, program, version, wait, sockp)
-	struct sockaddr_in6 *raddr;
-	u_long program;
-	u_long version;
-	struct timeval wait;
-	int *sockp;
+clntudp6_create(
+	struct sockaddr_in6 *raddr,
+	u_long program,
+	u_long version,
+	struct timeval wait,
+	int *sockp)
 {
 	return clntudp6_bufcreate(raddr, program, version, wait, sockp, UDPMSGSIZE, UDPMSGSIZE);
 }
 
 CLIENT *
-clnttcp6_create(raddr, prog, vers, sockp, sendsz, recvsz)
-	struct sockaddr_in6 *raddr;
-	u_long prog;
-	u_long vers;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
+clnttcp6_create(
+	struct sockaddr_in6 *raddr,
+	u_long prog,
+	u_long vers,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz)
 {
 	return clnt_com_create(raddr, (rpcprog_t)prog, (rpcvers_t)vers, sockp,
 	    sendsz, recvsz, "tcp6", 0);
@@ -292,9 +292,9 @@ clnttcp6_create(raddr, prog, vers, sockp, sendsz, recvsz)
 #endif
 
 CLIENT *
-clntraw_create(prog, vers)
-	u_long prog;
-	u_long vers;
+clntraw_create(
+	u_long prog,
+	u_long vers)
 {
 	return clnt_raw_create((rpcprog_t)prog, (rpcvers_t)vers);
 }
@@ -303,11 +303,11 @@ clntraw_create(prog, vers)
  * A common server create routine
  */
 static SVCXPRT *
-svc_com_create(fd, sendsize, recvsize, netid)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
-	char *netid;
+svc_com_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize,
+	char *netid)
 {
 	struct netconfig *nconf;
 	SVCXPRT *svc;
@@ -342,10 +342,10 @@ svc_com_create(fd, sendsize, recvsize, netid)
 }
 
 SVCXPRT *
-svctcp_create(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+svctcp_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
 
 	return svc_com_create(fd, sendsize, recvsize, "tcp");
@@ -354,9 +354,10 @@ svctcp_create(fd, sendsize, recvsize)
 
 
 SVCXPRT *
-svcudp_bufcreate(fd, sendsz, recvsz)
-	int fd;
-	u_int sendsz, recvsz;
+svcudp_bufcreate(
+	int fd,
+	u_int sendsz,
+	u_int recvsz)
 {
 
 	return svc_com_create(fd, sendsz, recvsz, "udp");
@@ -365,10 +366,10 @@ svcudp_bufcreate(fd, sendsz, recvsz)
 
 
 SVCXPRT *
-svcfd_create(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+svcfd_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
 
 	return svc_fd_create(fd, sendsize, recvsize);
@@ -376,8 +377,8 @@ svcfd_create(fd, sendsize, recvsize)
 
 
 SVCXPRT *
-svcudp_create(fd)
-	int fd;
+svcudp_create(
+	int fd)
 {
 
 	return svc_com_create(fd, UDPMSGSIZE, UDPMSGSIZE, "udp");
@@ -395,35 +396,36 @@ svcraw_create()
 /* IPV6 version */
 #ifdef INET6_NOT_USED
 SVCXPRT *
-svcudp6_bufcreate(fd, sendsz, recvsz)
-	int fd;
-	u_int sendsz, recvsz;
+svcudp6_bufcreate(
+	int fd,
+	u_int sendsz,
+	u_int recvsz)
 {
 	return svc_com_create(fd, sendsz, recvsz, "udp6");
 }
 
 
 SVCXPRT *
-svctcp6_create(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+svctcp6_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
 	return svc_com_create(fd, sendsize, recvsize, "tcp6");
 }
 
 
 SVCXPRT *
-svcudp6_create(fd)
-	int fd;
+svcudp6_create(
+	int fd)
 {
 	return svc_com_create(fd, UDPMSGSIZE, UDPMSGSIZE, "udp6");
 }
 #endif
 
 int
-get_myaddress(addr)
-	struct sockaddr_in *addr;
+get_myaddress(
+	struct sockaddr_in *addr)
 {
 
 	memset((void *) addr, 0, sizeof(*addr));
@@ -437,11 +439,15 @@ get_myaddress(addr)
  * For connectionless "udp" transport. Obsoleted by rpc_call().
  */
 int
-callrpc(host, prognum, versnum, procnum, inproc, in, outproc, out)
-	const char *host;
-	int prognum, versnum, procnum;
-	xdrproc_t inproc, outproc;
-	void *in, *out;
+callrpc(
+	const char *host,
+	int prognum,
+	int versnum,
+	int procnum,
+	xdrproc_t inproc,
+	xdrproc_t outproc,
+	void *in,
+	void *out)
 {
 
 	return (int)rpc_call(host, (rpcprog_t)prognum, (rpcvers_t)versnum,
@@ -452,10 +458,13 @@ callrpc(host, prognum, versnum, procnum, inproc, in, outproc, out)
  * For connectionless kind of transport. Obsoleted by rpc_reg()
  */
 int
-registerrpc(prognum, versnum, procnum, progname, inproc, outproc)
-	int prognum, versnum, procnum;
-	char *(*progname)(char [UDPMSGSIZE]);
-	xdrproc_t inproc, outproc;
+registerrpc(
+	int prognum,
+	int versnum,
+	int procnum,
+	char *(*progname)(char [UDPMSGSIZE]),
+	xdrproc_t inproc,
+	xdrproc_t outproc)
 {
 
 	return rpc_reg((rpcprog_t)prognum, (rpcvers_t)versnum,
@@ -474,10 +483,10 @@ extern thread_key_t	clnt_broadcast_key;
  */
 /* ARGSUSED */
 static bool_t
-rpc_wrap_bcast(resultp, addr, nconf)
-	char *resultp;		/* results of the call */
-	struct netbuf *addr;	/* address of the guy who responded */
-	struct netconfig *nconf; /* Netconf of the transport */
+rpc_wrap_bcast(
+	char *resultp,		/* results of the call */
+	struct netbuf *addr,	/* address of the guy who responded */
+	struct netconfig *nconf) /* Netconf of the transport */
 {
 	resultproc_t clnt_broadcast_result;
 
@@ -492,15 +501,15 @@ rpc_wrap_bcast(resultp, addr, nconf)
  * Broadcasts on UDP transport. Obsoleted by rpc_broadcast().
  */
 enum clnt_stat
-clnt_broadcast(prog, vers, proc, xargs, argsp, xresults, resultsp, eachresult)
-	u_long		prog;		/* program number */
-	u_long		vers;		/* version number */
-	u_long		proc;		/* procedure number */
-	xdrproc_t	xargs;		/* xdr routine for args */
-	void	       *argsp;		/* pointer to args */
-	xdrproc_t	xresults;	/* xdr routine for results */
-	void	       *resultsp;	/* pointer to results */
-	resultproc_t	eachresult;	/* call with each result obtained */
+clnt_broadcast(
+	u_long		prog,		/* program number */
+	u_long		vers,		/* version number */
+	u_long		proc,		/* procedure number */
+	xdrproc_t	xargs,		/* xdr routine for args */
+	void	       *argsp,		/* pointer to args */
+	xdrproc_t	xresults,	/* xdr routine for results */
+	void	       *resultsp,	/* pointer to results */
+	resultproc_t	eachresult)	/* call with each result obtained */
 {
 	extern mutex_t tsd_lock;
 
@@ -522,11 +531,11 @@ clnt_broadcast(prog, vers, proc, xargs, argsp, xresults, resultsp, eachresult)
  * authdes_seccreate().
  */
 AUTH *
-authdes_create(servername, window, syncaddr, ckey)
-	char *servername;		/* network name of server */
-	u_int window;			/* time to live */
-	struct sockaddr *syncaddr;	/* optional hostaddr to sync with */
-	des_block *ckey;		/* optional conversation key to use */
+authdes_create(
+	char *servername,		/* network name of server */
+	u_int window,			/* time to live */
+	struct sockaddr *syncaddr,	/* optional hostaddr to sync with */
+	des_block *ckey)		/* optional conversation key to use */
 {
 	AUTH *nauth;
 	char hostname[NI_MAXHOST];
@@ -565,12 +574,12 @@ extern AUTH *authdes_pk_seccreate(const char *, netobj *, u_int, const char *,
         const des_block *, nis_server *);
 
 AUTH *
-authdes_pk_create(servername, pkey, window, syncaddr, ckey)
-	char *servername;		/* network name of server */
-	netobj *pkey;			/* public key */
-	u_int window;			/* time to live */
-	struct sockaddr *syncaddr;	/* optional hostaddr to sync with */
-	des_block *ckey;		/* optional conversation key to use */
+authdes_pk_create(
+	char *servername,		/* network name of server */
+	netobj *pkey,			/* public key */
+	u_int window,			/* time to live */
+	struct sockaddr *syncaddr,	/* optional hostaddr to sync with */
+	des_block *ckey)		/* optional conversation key to use */
 {
 	AUTH *nauth;
 	char hostname[NI_MAXHOST];
@@ -597,20 +606,20 @@ fallback:
 }
 #else
 AUTH *
-authdes_create(servername, window, syncaddr, ckey)
-	char *servername;		/* network name of server */
-	u_int window;			/* time to live */
-	struct sockaddr *syncaddr;	/* optional hostaddr to sync with */
-	des_block *ckey;		/* optional conversation key to use */
+authdes_create(
+	char *servername,		/* network name of server */
+	u_int window,			/* time to live */
+	struct sockaddr *syncaddr,	/* optional hostaddr to sync with */
+	des_block *ckey)		/* optional conversation key to use */
 { return (NULL); }
 
 AUTH *
-authdes_pk_create(servername, pkey, window, syncaddr, ckey)
-	char *servername;		/* network name of server */
-	netobj *pkey;			/* public key */
-	u_int window;			/* time to live */
-	struct sockaddr *syncaddr;	/* optional hostaddr to sync with */
-	des_block *ckey;		/* optional conversation key to use */
+authdes_pk_create(
+	char *servername,		/* network name of server */
+	netobj *pkey,			/* public key */
+	u_int window,			/* time to live */
+	struct sockaddr *syncaddr,	/* optional hostaddr to sync with */
+	des_block *ckey)		/* optional conversation key to use */
 { return (NULL); }
 
 AUTH *
@@ -627,13 +636,13 @@ authdes_seccreate(const char *servername, const u_int win,
  * Create a client handle for a unix connection. Obsoleted by clnt_vc_create()
  */
 CLIENT *
-clntunix_create(raddr, prog, vers, sockp, sendsz, recvsz)
-	struct sockaddr_un *raddr;
-	u_long prog;
-	u_long vers;
-	int *sockp;
-	u_int sendsz;
-	u_int recvsz;
+clntunix_create(
+	struct sockaddr_un *raddr,
+	u_long prog,
+	u_long vers,
+	int *sockp,
+	u_int sendsz,
+	u_int recvsz)
 {
 	struct netbuf svcaddr = {0, 0, NULL};
 	CLIENT *cl = NULL;
@@ -669,11 +678,11 @@ done:
  * Obsoleted by svc_vc_create().
  */
 SVCXPRT *
-svcunix_create(sock, sendsize, recvsize, path)
-	int sock;
-	u_int sendsize;
-	u_int recvsize;
-	char *path;
+svcunix_create(
+	int sock,
+	u_int sendsize,
+	u_int recvsize,
+	char *path)
 {
 	struct netconfig *nconf;
 	void *localhandle;
@@ -734,10 +743,10 @@ done:
  * descriptor as its first input. Obsoleted by svc_fd_create();
  */
 SVCXPRT *
-svcunixfd_create(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+svcunixfd_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
  	return (svc_fd_create(fd, sendsize, recvsize));
 }

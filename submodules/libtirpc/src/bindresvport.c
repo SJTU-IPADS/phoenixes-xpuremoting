@@ -57,9 +57,10 @@ extern pthread_mutex_t port_lock;
  * Bind a socket to a privileged IP port
  */
 int
-bindresvport(sd, sin)
-        int sd;
-        struct sockaddr_in *sin;
+bindresvport(
+    int sd,
+    struct sockaddr_in *sin
+)
 {
         return bindresvport_sa(sd, (struct sockaddr *)sin);
 }
@@ -146,9 +147,10 @@ load_blacklist (void)
 }
 
 int
-bindresvport_sa(sd, sa)
-        int sd;
-        struct sockaddr *sa;
+bindresvport_sa(
+    int sd,
+    struct sockaddr *sa
+)
 {
         int res, af;
         struct sockaddr_storage myaddr;
@@ -248,9 +250,10 @@ try_next_port:
  * Bind a socket to a privileged IP port
  */
 int
-bindresvport_sa(sd, sa)
-	int sd;
-	struct sockaddr *sa;
+bindresvport_sa(
+	int sd,
+	struct sockaddr *sa
+)
 {
 	int old, error, af;
 	struct sockaddr_storage myaddr;

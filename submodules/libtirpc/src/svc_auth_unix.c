@@ -49,9 +49,10 @@ extern SVCAUTH svc_auth_none;
  * Unix longhand authenticator
  */
 enum auth_stat
-_svcauth_unix(rqst, msg)
-	struct svc_req *rqst;
-	struct rpc_msg *msg;
+_svcauth_unix(
+	struct svc_req *rqst,
+	struct rpc_msg *msg
+)
 {
 	enum auth_stat stat;
 	XDR xdrs;
@@ -140,9 +141,10 @@ done:
  */
 /*ARGSUSED*/
 enum auth_stat 
-_svcauth_short(rqst, msg)
-	struct svc_req *rqst;
-	struct rpc_msg *msg;
+_svcauth_short(
+	struct svc_req *rqst,
+	struct rpc_msg *msg
+)
 {
 	return (AUTH_REJECTEDCRED);
 }

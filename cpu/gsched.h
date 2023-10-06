@@ -9,7 +9,7 @@ typedef struct _gsched_t {
     void (*deinit)(void);
 } gsched_t;
 
-gsched_t *sched;
+extern gsched_t *sched;
 
 #define GSCHED_RETAIN sched->retain(rqstp->rq_xprt->xp_fd)
 #define GSCHED_RELEASE sched->release(rqstp->rq_xprt->xp_fd)

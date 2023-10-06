@@ -61,7 +61,6 @@ extern u_int __rpc_get_a_size(int);
 extern int __rpc_dtbsize(void);
 extern int _rpc_dtablesize(void);
 extern struct netconfig * __rpcgettp(int);
-extern  int  __rpc_get_default_domain(char **);
 
 char *__rpc_taddr2uaddr_af(int, const struct netbuf *);
 struct netbuf *__rpc_uaddr2taddr_af(int, const char *);
@@ -76,11 +75,12 @@ struct netbuf *__rpcb_findaddr(rpcprog_t, rpcvers_t, const struct netconfig *,
 			       const char *, CLIENT **);
 bool_t rpc_control(int,void *);
 
-char *_get_next_token(char *, int);
-
 #ifdef __cplusplus
 }
 #endif
+
+extern  int  __rpc_get_default_domain(char **);
+char *_get_next_token(char *, int);
 
 #ifndef MEASUREMENT_DETAILED
 #define MEASUREMENT_DETAILED

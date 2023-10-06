@@ -458,8 +458,14 @@ cudnnStatus_t cudnnTransformTensor(cudnnHandle_t handle, const void * alpha, con
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnntransformtensor_1(
         (ptr)handle,
         rpc_alpha,
@@ -488,8 +494,14 @@ cudnnStatus_t cudnnAddTensor(cudnnHandle_t handle, const void * alpha, const cud
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnaddtensor_1(
         (ptr)handle,
         rpc_alpha,
@@ -697,8 +709,14 @@ cudnnStatus_t cudnnTransformFilter(cudnnHandle_t handle, const cudnnTensorTransf
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnntransformfilter_1(
         (ptr)handle,
         (ptr)transDesc,
@@ -747,8 +765,14 @@ cudnnStatus_t cudnnSoftmaxForward(cudnnHandle_t handle, cudnnSoftmaxAlgorithm_t 
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnsoftmaxforward_1(
         (ptr)handle,
         (int)algo,
@@ -1015,8 +1039,14 @@ cudnnStatus_t cudnnPoolingForward(cudnnHandle_t handle, const cudnnPoolingDescri
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnpoolingforward_1(
         (ptr)handle,
         (ptr)poolingDesc,
@@ -1185,8 +1215,14 @@ cudnnStatus_t cudnnActivationForward(cudnnHandle_t handle, cudnnActivationDescri
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnactivationforward_1(
         (ptr)handle,
         (ptr)activationDesc,
@@ -1310,8 +1346,14 @@ cudnnStatus_t cudnnLRNCrossChannelForward(cudnnHandle_t handle, cudnnLRNDescript
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnlrncrosschannelforward_1(
         (ptr)handle,
         (ptr)normDesc,
@@ -1654,8 +1696,14 @@ cudnnStatus_t cudnnConvolutionForward(cudnnHandle_t handle,  const void* alpha, 
     int result;
     enum clnt_stat retval_1;
     //TODO: Check if we have a float instead of always sending doubles
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnconvolutionforward_1(
         (ptr)handle,
         rpc_alpha,
@@ -1759,8 +1807,14 @@ cudnnStatus_t cudnnBatchNormalizationForwardTrainingEx(
     enum clnt_stat retval_1;
     // TODO, some check for configuration
 
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnbatchnormalizationforwardtrainingex_1(
         (ptr)handle,
         mode,
@@ -1881,10 +1935,22 @@ cudnnStatus_t cudnnBatchNormalizationBackwardEx (
     enum clnt_stat retval_1;
     // TODO, some check for configuration
 
-    cudnn_scaling_t rpc_alphaDataDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alphaDataDiff)};
-    cudnn_scaling_t rpc_betaDataDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)betaDataDiff)};
-    cudnn_scaling_t rpc_alphaParamDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alphaParamDiff)};
-    cudnn_scaling_t rpc_betaParamDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)betaParamDiff)};
+    // cudnn_scaling_t rpc_alphaDataDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alphaDataDiff)};
+    // cudnn_scaling_t rpc_betaDataDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)betaDataDiff)};
+    // cudnn_scaling_t rpc_alphaParamDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alphaParamDiff)};
+    // cudnn_scaling_t rpc_betaParamDiff = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)betaParamDiff)};
+    cudnn_scaling_t rpc_alphaDataDiff;
+    rpc_alphaDataDiff.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alphaDataDiff.cudnn_scaling_t_u.d = *((double*)alphaDataDiff);
+    cudnn_scaling_t rpc_betaDataDiff;
+    rpc_betaDataDiff.dataType = CUDNN_DATA_DOUBLE;
+    rpc_betaDataDiff.cudnn_scaling_t_u.d = *((double*)betaDataDiff);
+    cudnn_scaling_t rpc_alphaParamDiff;
+    rpc_alphaParamDiff.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alphaParamDiff.cudnn_scaling_t_u.d = *((double*)alphaParamDiff);
+    cudnn_scaling_t rpc_betaParamDiff;
+    rpc_betaParamDiff.dataType = CUDNN_DATA_DOUBLE;
+    rpc_betaParamDiff.cudnn_scaling_t_u.d = *((double*)betaParamDiff);
 
     retval_1 = rpc_cudnnbatchnormalizationbackwardex_1(
         (ptr)handle,
@@ -1999,8 +2065,14 @@ cudnnStatus_t cudnnConvolutionBackwardData(
     enum clnt_stat retval_1;
     // TODO, some check for configuration
 
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
 
     retval_1 = rpc_cudnnconvolutionbackwarddata_1(
         (ptr)handle,
@@ -2098,8 +2170,14 @@ cudnnStatus_t cudnnConvolutionBackwardFilter(
 #endif //WITH_API_CNT 
     int result;
     enum clnt_stat retval_1;
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnconvolutionbackwardfilter_1(
         (ptr)handle,
         rpc_alpha,
@@ -2147,8 +2225,14 @@ cudnnStatus_t cudnnBatchNormalizationForwardInference(
 #endif //WITH_API_CNT 
     int result;
     enum clnt_stat retval_1;
-    cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
-    cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    // cudnn_scaling_t rpc_alpha = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)alpha)};
+    // cudnn_scaling_t rpc_beta = {.dataType = CUDNN_DATA_DOUBLE, .cudnn_scaling_t_u.d = *((double*)beta)};
+    cudnn_scaling_t rpc_alpha;
+    rpc_alpha.dataType = CUDNN_DATA_DOUBLE;
+    rpc_alpha.cudnn_scaling_t_u.d = *((double*)alpha);
+    cudnn_scaling_t rpc_beta;
+    rpc_beta.dataType = CUDNN_DATA_DOUBLE;
+    rpc_beta.cudnn_scaling_t_u.d = *((double*)beta);
     retval_1 = rpc_cudnnbatchnormalizationforwardinference_1(
         (ptr)handle,
         mode,
