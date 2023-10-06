@@ -36,7 +36,13 @@
 extern int libtirpc_debug_level;
 extern int  log_stderr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void    libtirpc_log_dbg(char *format, ...);
+#ifdef __cplusplus
+}
+#endif
 void 	libtirpc_set_debug(char *name, int level, int use_stderr);
 
 #define LIBTIRPC_DEBUG(level, msg) \

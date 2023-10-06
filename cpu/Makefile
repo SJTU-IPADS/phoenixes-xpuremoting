@@ -8,8 +8,8 @@ CUDA_SRC = /usr/local/cuda
 LIBTIRPC_PREFIX = ../submodules/libtirpc/install
 SUBMODULE_LIBS = ../submodules/lib
 
-CC = gcc
-LD = gcc
+CC = g++
+LD = g++
 RPCGEN = rpcgen
 
 # rpcgen files
@@ -84,7 +84,7 @@ INC_FLAGS += -I$(CUDA_SRC)/include
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
 LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs
-CC_FLAGS += -std=gnu11 $(INC_FLAGS) #-O2
+CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) #-O2
 # TODO: use extern in header files instead of direct definition e.g. in cpu-common.h to remove -fcommon flag
 CC_FLAGS += -fcommon
 LD_FLAGS = $(LIB_FLAGS) -ltirpc -ldl -lcrypto -lelf

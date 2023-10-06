@@ -83,6 +83,29 @@ enum xprt_stat {
 	XPRT_IDLE
 };
 
+struct xp_ops {
+    /* receive incoming requests */
+    bool_t	(*xp_recv)(struct __rpc_svcxprt *, struct rpc_msg *);
+    /* get transport status */
+    enum xprt_stat (*xp_stat)(struct __rpc_svcxprt *);
+    /* get arguments */
+    bool_t	(*xp_getargs)(struct __rpc_svcxprt *, xdrproc_t,
+			void *);
+    /* send reply */
+    bool_t	(*xp_reply)(struct __rpc_svcxprt *, struct rpc_msg *);
+    /* free mem allocated for args */
+    bool_t	(*xp_freeargs)(struct __rpc_svcxprt *, xdrproc_t,
+			void *);
+    /* destroy this struct */
+    void	(*xp_destroy)(struct __rpc_svcxprt *);
+};
+
+struct xp_ops2 {
+	/* catch-all function */
+	bool_t  (*xp_control)(struct __rpc_svcxprt *, const u_int,
+			void *);
+};
+
 /*
  * Server side transport handle
  */
@@ -90,30 +113,11 @@ typedef struct __rpc_svcxprt {
 	int		xp_fd;
 #define	xp_sock		xp_fd
 	u_short		xp_port;	 /* associated port number */
-	const struct xp_ops {
-	    /* receive incoming requests */
-	    bool_t	(*xp_recv)(struct __rpc_svcxprt *, struct rpc_msg *);
-	    /* get transport status */
-	    enum xprt_stat (*xp_stat)(struct __rpc_svcxprt *);
-	    /* get arguments */
-	    bool_t	(*xp_getargs)(struct __rpc_svcxprt *, xdrproc_t,
-				void *);
-	    /* send reply */
-	    bool_t	(*xp_reply)(struct __rpc_svcxprt *, struct rpc_msg *);
-	    /* free mem allocated for args */
-	    bool_t	(*xp_freeargs)(struct __rpc_svcxprt *, xdrproc_t,
-				void *);
-	    /* destroy this struct */
-	    void	(*xp_destroy)(struct __rpc_svcxprt *);
-	} *xp_ops;
+	const struct xp_ops *xp_ops;
 	int		xp_addrlen;	 /* length of remote address */
 	struct sockaddr_in6 xp_raddr;	 /* remote addr. (backward ABI compat) */
 	/* XXX - fvdl stick this here for ABI backward compat reasons */
-	const struct xp_ops2 {
-		/* catch-all function */
-		bool_t  (*xp_control)(struct __rpc_svcxprt *, const u_int,
-				void *);
-	} *xp_ops2;
+	const struct xp_ops2 *xp_ops2;
 	char		*xp_tp;		 /* transport provider device name */
 	char		*xp_netid;	 /* network token */
 	struct netbuf	xp_ltaddr;	 /* local transport address */

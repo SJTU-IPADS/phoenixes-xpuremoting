@@ -275,13 +275,19 @@ bool_t cuda_device_get_stream_priority_range_1_svc(dint_result *result, struct s
 bool_t cuda_device_get_texture_lmw_1_svc(cuda_channel_format_desc fmtDesc, int device, u64_result *result, struct svc_req *rqstp)
 {
 #if CUDART_VERSION >= 11000
-    struct cudaChannelFormatDesc desc = {
-        .f = fmtDesc.f,
-        .w = fmtDesc.w,
-        .x = fmtDesc.x,
-        .y = fmtDesc.y,
-        .z = fmtDesc.z,
-    };
+    // struct cudaChannelFormatDesc desc = {
+    //     .f = fmtDesc.f,
+    //     .w = fmtDesc.w,
+    //     .x = fmtDesc.x,
+    //     .y = fmtDesc.y,
+    //     .z = fmtDesc.z,
+    // };
+    struct cudaChannelFormatDesc desc;
+    desc.f = fmtDesc.f;
+    desc.w = fmtDesc.w;
+    desc.x = fmtDesc.x;
+    desc.y = fmtDesc.y;
+    desc.z = fmtDesc.z;
     LOGE(LOG_DEBUG, "cudaDeviceGetTexture1DLinearMaxWidth");
     result->err = cudaDeviceGetTexture1DLinearMaxWidth(&result->u64_result_u.u64,
                       &desc, device);
@@ -1253,9 +1259,10 @@ bool_t cuda_malloc_3d_1_svc(size_t depth, size_t height, size_t width, pptr_resu
     RECORD_ARG(1, depth);
     RECORD_ARG(2, height);
     RECORD_ARG(3, width);
-    struct cudaExtent extent = {.depth = depth,
-                                .height = height,
-                                .width = width};
+    struct cudaExtent extent;
+    extent.depth = depth;
+    extent.height = height;
+    extent.width = width;
     struct cudaPitchedPtr pptr;
     LOGE(LOG_DEBUG, "cudaMalloc3D");
     result->err = cudaMalloc3D(&pptr, extent);
@@ -1277,15 +1284,25 @@ bool_t cuda_malloc_3d_array_1_svc(cuda_channel_format_desc desc, size_t depth, s
     RECORD_ARG(3, height);
     RECORD_ARG(4, width);
     RECORD_ARG(5, flags);
-    struct cudaChannelFormatDesc cuda_desc = {
-      .f = desc.f,
-      .w = desc.w,
-      .x = desc.x,
-      .y = desc.y,
-      .z = desc.z};
-    struct cudaExtent extent = {.depth = depth,
-                                .height = height,
-                                .width = width};
+    // struct cudaChannelFormatDesc cuda_desc = {
+    //   .f = desc.f,
+    //   .w = desc.w,
+    //   .x = desc.x,
+    //   .y = desc.y,
+    //   .z = desc.z};
+    struct cudaChannelFormatDesc cuda_desc;
+    cuda_desc.f = desc.f;
+    cuda_desc.w = desc.w;
+    cuda_desc.x = desc.x;
+    cuda_desc.y = desc.y;
+    cuda_desc.z = desc.z;
+    // struct cudaExtent extent = {.depth = depth,
+    //                             .height = height,
+    //                             .width = width};
+    struct cudaExtent extent;
+    extent.depth = depth;
+    extent.height = height;
+    extent.width = width;
     LOGE(LOG_DEBUG, "cudaMalloc3DArray");
     result->err = cudaMalloc3DArray((void*)&result->ptr_result_u.ptr, &cuda_desc, extent, flags);
     resource_mg_create(&rm_arrays, (void*)result->ptr_result_u.ptr);
@@ -1301,12 +1318,18 @@ bool_t cuda_malloc_array_1_svc(cuda_channel_format_desc desc, size_t width, size
     RECORD_ARG(2, width);
     RECORD_ARG(3, height);
     RECORD_ARG(4, flags);
-    struct cudaChannelFormatDesc cuda_desc = {
-      .f = desc.f,
-      .w = desc.w,
-      .x = desc.x,
-      .y = desc.y,
-      .z = desc.z};
+    // struct cudaChannelFormatDesc cuda_desc = {
+    //   .f = desc.f,
+    //   .w = desc.w,
+    //   .x = desc.x,
+    //   .y = desc.y,
+    //   .z = desc.z};
+    struct cudaChannelFormatDesc cuda_desc;
+    cuda_desc.f = desc.f;
+    cuda_desc.w = desc.w;
+    cuda_desc.x = desc.x;
+    cuda_desc.y = desc.y;
+    cuda_desc.z = desc.z;
     LOGE(LOG_DEBUG, "cudaMallocArray");
     result->err = cudaMallocArray((void*)&result->ptr_result_u.ptr, &cuda_desc, width, height, flags);
     resource_mg_create(&rm_arrays, (void*)result->ptr_result_u.ptr);
@@ -1776,13 +1799,23 @@ bool_t cuda_memset_3d_1_svc(size_t pitch, ptr devPtr, size_t xsize, size_t ysize
     RECORD_ARG(7, height);
     RECORD_ARG(8, width);
     LOGE(LOG_DEBUG, "cudaMemset3D");
-    struct cudaPitchedPtr pptr = {.pitch = pitch,
-                                  .ptr = resource_mg_get(&rm_memory, (void*)devPtr),
-                                  .xsize = xsize,
-                                  .ysize = ysize};
-    struct cudaExtent extent = {.depth = depth,
-                                .height = height,
-                                .width = width};
+    // struct cudaPitchedPtr pptr = {.pitch = pitch,
+    //                               .ptr = resource_mg_get(&rm_memory, (void*)devPtr),
+    //                               .xsize = xsize,
+    //                               .ysize = ysize};
+    struct cudaPitchedPtr pptr;
+    pptr.pitch = pitch;
+    pptr.ptr = resource_mg_get(&rm_memory, (void*)devPtr);
+    pptr.xsize = xsize;
+    pptr.ysize = ysize;
+
+    // struct cudaExtent extent = {.depth = depth,
+    //                             .height = height,
+    //                             .width = width};
+    struct cudaExtent extent;
+    extent.depth = depth;
+    extent.height = height;
+    extent.width = width;
     *result = cudaMemset3D(pptr, value, extent);
     RECORD_RESULT(integer, *result);
     return 1;
@@ -1801,13 +1834,23 @@ bool_t cuda_memset_3d_async_1_svc(size_t pitch, ptr devPtr, size_t xsize, size_t
     RECORD_ARG(8, width);
     RECORD_ARG(9, stream);
     LOGE(LOG_DEBUG, "cudaMemset3DAsync");
-    struct cudaPitchedPtr pptr = {.pitch = pitch,
-                                  .ptr = resource_mg_get(&rm_memory, (void*)devPtr),
-                                  .xsize = xsize,
-                                  .ysize = ysize};
-    struct cudaExtent extent = {.depth = depth,
-                                .height = height,
-                                .width = width};
+    // struct cudaPitchedPtr pptr = {.pitch = pitch,
+    //                               .ptr = resource_mg_get(&rm_memory, (void*)devPtr),
+    //                               .xsize = xsize,
+    //                               .ysize = ysize};
+    struct cudaPitchedPtr pptr;
+    pptr.pitch = pitch;
+    pptr.ptr = resource_mg_get(&rm_memory, (void*)devPtr);
+    pptr.xsize = xsize;
+    pptr.ysize = ysize;
+
+    // struct cudaExtent extent = {.depth = depth,
+    //                             .height = height,
+    //                             .width = width};
+    struct cudaExtent extent;
+    extent.depth = depth;
+    extent.height = height;
+    extent.width = width;
     *result = cudaMemset3DAsync(pptr, value, extent,
                 resource_mg_get(&rm_streams, (void*)stream));
     RECORD_RESULT(integer, *result);

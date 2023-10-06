@@ -144,10 +144,10 @@ __xprt_set_raddr(SVCXPRT *xprt, const struct sockaddr_storage *ss)
  * 0 => use the system default.
  */
 SVCXPRT *
-svc_vc_create(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+svc_vc_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
 	SVCXPRT *xprt = NULL;
 	SVCXPRT_EXT *ext = NULL;
@@ -215,10 +215,10 @@ cleanup_svc_vc_create:
  * descriptor as its first input.
  */
 SVCXPRT *
-svc_fd_create(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+svc_fd_create(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
 	struct sockaddr_storage ss;
 	socklen_t slen;
@@ -264,10 +264,10 @@ freedata:
 }
 
 static SVCXPRT *
-makefd_xprt(fd, sendsize, recvsize)
-	int fd;
-	u_int sendsize;
-	u_int recvsize;
+makefd_xprt(
+	int fd,
+	u_int sendsize,
+	u_int recvsize)
 {
 	SVCXPRT *xprt;
 	SVCXPRT_EXT *ext;
@@ -318,9 +318,9 @@ done:
 
 /*ARGSUSED*/
 static bool_t
-rendezvous_request(xprt, msg)
-	SVCXPRT *xprt;
-	struct rpc_msg *msg;
+rendezvous_request(
+	SVCXPRT *xprt,
+	struct rpc_msg *msg)
 {
 	int sock, flags;
 	struct cf_rendezvous *r;
@@ -387,16 +387,16 @@ again:
 
 /*ARGSUSED*/
 static enum xprt_stat
-rendezvous_stat(xprt)
-	SVCXPRT *xprt;
+rendezvous_stat(
+	SVCXPRT *xprt)
 {
 
 	return (XPRT_IDLE);
 }
 
 static void
-svc_vc_destroy(xprt)
-	SVCXPRT *xprt;
+svc_vc_destroy(
+	SVCXPRT *xprt)
 {
 	assert(xprt != NULL);
 	
@@ -405,14 +405,14 @@ svc_vc_destroy(xprt)
 }
 
 static bool_t
-__svc_rendezvous_socket(xprt)
-	SVCXPRT *xprt;
+__svc_rendezvous_socket(
+	SVCXPRT *xprt)
 {
 	return (xprt->xp_ops->xp_recv == rendezvous_request);
 }
 static void
-__svc_vc_dodestroy(xprt)
-	SVCXPRT *xprt;
+__svc_vc_dodestroy(
+	SVCXPRT *xprt)
 {
 	print_detailed_info(svc_apis, 6000, "server");
 	SVCXPRT_EXT *ext = SVCEXT(xprt);
@@ -448,19 +448,19 @@ __svc_vc_dodestroy(xprt)
 
 /*ARGSUSED*/
 static bool_t
-svc_vc_control(xprt, rq, in)
-	SVCXPRT *xprt;
-	const u_int rq;
-	void *in;
+svc_vc_control(
+	SVCXPRT *xprt,
+	const u_int rq,
+	void *in)
 {
 	return (FALSE);
 }
 
 static bool_t
-svc_vc_rendezvous_control(xprt, rq, in)
-	SVCXPRT *xprt;
-	const u_int rq;
-	void *in;
+svc_vc_rendezvous_control(
+	SVCXPRT *xprt,
+	const u_int rq,
+	void *in)
 {
 	struct cf_rendezvous *cfp;
 
@@ -488,10 +488,10 @@ svc_vc_rendezvous_control(xprt, rq, in)
  * fatal for the connection.
  */
 static int
-read_vc(xprtp, buf, len)
-	void *xprtp;
-	void *buf;
-	int len;
+read_vc(
+	void *xprtp,
+	void *buf,
+	int len)
 {
 	time_start(svc_apis, svc_api_id, 2);
 	SVCXPRT *xprt;
@@ -564,10 +564,10 @@ end:
  * Any error is fatal and the connection is closed.
  */
 static int
-write_vc(xprtp, buf, len)
-	void *xprtp;
-	void *buf;
-	int len;
+write_vc(
+	void *xprtp,
+	void *buf,
+	int len)
 {
 	time_start(svc_apis, svc_api_id, 2);
 	SVCXPRT *xprt;
@@ -616,8 +616,8 @@ end:
 }
 
 static enum xprt_stat
-svc_vc_stat(xprt)
-	SVCXPRT *xprt;
+svc_vc_stat(
+	SVCXPRT *xprt)
 {
 	struct cf_conn *cd;
 
@@ -633,9 +633,9 @@ svc_vc_stat(xprt)
 }
 
 static bool_t
-svc_vc_recv(xprt, msg)
-	SVCXPRT *xprt;
-	struct rpc_msg *msg;
+svc_vc_recv(
+	SVCXPRT *xprt,
+	struct rpc_msg *msg)
 {
 	struct cf_conn *cd;
 	XDR *xdrs;
@@ -679,10 +679,10 @@ end:
 }
 
 static bool_t
-svc_vc_getargs(xprt, xdr_args, args_ptr)
-	SVCXPRT *xprt;
-	xdrproc_t xdr_args;
-	void *args_ptr;
+svc_vc_getargs(
+	SVCXPRT *xprt,
+	xdrproc_t xdr_args,
+	void *args_ptr)
 {
 	time_start(svc_apis, svc_api_id, 0);
 	time_start(svc_apis, svc_api_id, 1);
@@ -701,10 +701,10 @@ svc_vc_getargs(xprt, xdr_args, args_ptr)
 }
 
 static bool_t
-svc_vc_freeargs(xprt, xdr_args, args_ptr)
-	SVCXPRT *xprt;
-	xdrproc_t xdr_args;
-	void *args_ptr;
+svc_vc_freeargs(
+	SVCXPRT *xprt,
+	xdrproc_t xdr_args,
+	void *args_ptr)
 {
 	XDR *xdrs;
 
@@ -718,9 +718,9 @@ svc_vc_freeargs(xprt, xdr_args, args_ptr)
 }
 
 static bool_t
-svc_vc_reply(xprt, msg)
-	SVCXPRT *xprt;
-	struct rpc_msg *msg;
+svc_vc_reply(
+	SVCXPRT *xprt,
+	struct rpc_msg *msg)
 {
 	time_start(svc_apis, svc_api_id, 0);
 	struct cf_conn *cd;
@@ -765,8 +765,8 @@ svc_vc_reply(xprt, msg)
 }
 
 static void
-svc_vc_ops(xprt)
-	SVCXPRT *xprt;
+svc_vc_ops(
+	SVCXPRT *xprt)
 {
 	static struct xp_ops ops;
 	static struct xp_ops2 ops2;
@@ -790,8 +790,8 @@ svc_vc_ops(xprt)
 }
 
 static void
-svc_vc_rendezvous_ops(xprt)
-	SVCXPRT *xprt;
+svc_vc_rendezvous_ops(
+	SVCXPRT *xprt)
 {
 	static struct xp_ops ops;
 	static struct xp_ops2 ops2;

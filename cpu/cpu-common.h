@@ -18,18 +18,18 @@ typedef struct kernel_info {
     void *host_fun;
 } kernel_info_t;
 
-enum socktype_t {UNIX, TCP, UDP} socktype;
+extern enum socktype_t {UNIX, TCP, UDP} socktype;
 #define INIT_SOCKTYPE enum socktype_t socktype = TCP;
 
-int connection_is_local;
-int shm_enabled;
+extern int connection_is_local;
+extern int shm_enabled;
 //#define INIT_SOCKTYPE enum socktype_t socktype = UNIX;
 #define WITH_API_CNT
 //#define WITH_IB
 
 
-CLIENT *clnt;
-list kernel_infos;
+extern CLIENT *clnt;
+extern list kernel_infos;
 
 #endif //_CD_COMMON_H_
 

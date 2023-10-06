@@ -41,17 +41,19 @@
 #ifndef _RPC_SVC_AUTH_H
 #define _RPC_SVC_AUTH_H
 
+struct svc_auth_ops {
+	int     (*svc_ah_wrap)(struct SVCAUTH *, XDR *, xdrproc_t,
+			       caddr_t);
+	int     (*svc_ah_unwrap)(struct SVCAUTH *, XDR *, xdrproc_t,
+				 caddr_t);
+	int     (*svc_ah_destroy)(struct SVCAUTH *);
+};
+
 /*
  * Interface to server-side authentication flavors.
  */
 typedef struct SVCAUTH {
-	struct svc_auth_ops {
-		int     (*svc_ah_wrap)(struct SVCAUTH *, XDR *, xdrproc_t,
-				       caddr_t);
-		int     (*svc_ah_unwrap)(struct SVCAUTH *, XDR *, xdrproc_t,
-					 caddr_t);
-		int     (*svc_ah_destroy)(struct SVCAUTH *);
-		} *svc_ah_ops;
+	struct svc_auth_ops *svc_ah_ops;
 	caddr_t svc_ah_private;
 } SVCAUTH;
 

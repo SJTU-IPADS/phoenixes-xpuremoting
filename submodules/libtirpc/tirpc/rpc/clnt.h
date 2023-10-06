@@ -86,6 +86,25 @@ struct rpc_err {
 #define	re_lb		ru.RE_lb
 };
 
+struct clnt_ops {
+	/* call remote procedure */
+	enum clnt_stat	(*cl_call)(struct __rpc_client *,
+			    rpcproc_t, xdrproc_t, void *, xdrproc_t,
+			        void *, struct timeval);
+	/* abort a call */
+	void		(*cl_abort)(struct __rpc_client *);
+	/* get specific error code */
+	void		(*cl_geterr)(struct __rpc_client *,
+				struct rpc_err *);
+	/* frees results */
+	bool_t		(*cl_freeres)(struct __rpc_client *,
+				xdrproc_t, void *);
+	/* destroy this structure */
+	void		(*cl_destroy)(struct __rpc_client *);
+	/* the ioctl() of rpc */
+	bool_t          (*cl_control)(struct __rpc_client *, u_int,
+			    void *);
+};
 
 /*
  * Client rpc handle.
@@ -94,25 +113,7 @@ struct rpc_err {
  */
 typedef struct __rpc_client {
 	AUTH	*cl_auth;			/* authenticator */
-	struct clnt_ops {
-		/* call remote procedure */
-		enum clnt_stat	(*cl_call)(struct __rpc_client *,
-				    rpcproc_t, xdrproc_t, void *, xdrproc_t,
-				        void *, struct timeval);
-		/* abort a call */
-		void		(*cl_abort)(struct __rpc_client *);
-		/* get specific error code */
-		void		(*cl_geterr)(struct __rpc_client *,
-					struct rpc_err *);
-		/* frees results */
-		bool_t		(*cl_freeres)(struct __rpc_client *,
-					xdrproc_t, void *);
-		/* destroy this structure */
-		void		(*cl_destroy)(struct __rpc_client *);
-		/* the ioctl() of rpc */
-		bool_t          (*cl_control)(struct __rpc_client *, u_int,
-				    void *);
-	} *cl_ops;
+	struct clnt_ops *cl_ops;
 	void 			*cl_private;	/* private stuff */
 	char			*cl_netid;	/* network token */
 	char			*cl_tp;		/* device name */

@@ -276,7 +276,7 @@ cudaError_t cudaDeviceSynchronize(void)
 
     struct timeval timeout = {.tv_sec = -1, .tv_usec = 0};
 
-    return (clnt_call (clnt, CUDA_DEVICE_SYNCHRONIZE, (xdrproc_t) xdr_void, (caddr_t) NULL,
+    (clnt_call (clnt, CUDA_DEVICE_SYNCHRONIZE, (xdrproc_t) xdr_void, (caddr_t) NULL,
 		    (xdrproc_t) xdr_int, (caddr_t) &result,
 		    timeout));
     return result;
