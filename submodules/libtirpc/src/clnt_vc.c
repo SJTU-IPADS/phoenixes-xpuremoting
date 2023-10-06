@@ -232,13 +232,14 @@ static const char __no_mem_str[] = "out of memory";
  *
  * fd should be an open socket
  */
-CLIENT *clnt_vc_create(fd, raddr, prog, vers, sendsz, recvsz)
-int fd;                     /* open file descriptor */
-const struct netbuf *raddr; /* servers address */
-const rpcprog_t prog;       /* program number */
-const rpcvers_t vers;       /* version number */
-u_int sendsz;               /* buffer recv size */
-u_int recvsz;               /* buffer send size */
+CLIENT *clnt_vc_create(
+int fd,                     /* open file descriptor */
+const struct netbuf *raddr, /* servers address */
+const rpcprog_t prog,       /* program number */
+const rpcvers_t vers,       /* version number */
+u_int sendsz,               /* buffer recv size */
+u_int recvsz               /* buffer send size */
+)
 {
     CLIENT *cl;                /* client handle */
     struct ct_data *ct = NULL; /* client handle */
@@ -387,15 +388,15 @@ err:
     return ((CLIENT *)NULL);
 }
 
-static enum clnt_stat clnt_vc_call(cl, proc, xdr_args, args_ptr, xdr_results,
-                                   results_ptr, timeout)
-CLIENT *cl;
-rpcproc_t proc;
-xdrproc_t xdr_args;
-void *args_ptr;
-xdrproc_t xdr_results;
-void *results_ptr;
-struct timeval timeout;
+static enum clnt_stat clnt_vc_call(
+CLIENT *cl,
+rpcproc_t proc,
+xdrproc_t xdr_args,
+void *args_ptr,
+xdrproc_t xdr_results,
+void *results_ptr,
+struct timeval timeout
+)
 {
     struct ct_data *ct = (struct ct_data *)cl->cl_private;
     api_id = proc;
@@ -516,8 +517,7 @@ call_again:
     return (ct->ct_error.re_status);
 }
 
-static void clnt_vc_geterr(cl, errp) CLIENT *cl;
-struct rpc_err *errp;
+static void clnt_vc_geterr(CLIENT *cl, struct rpc_err *errp)
 {
     struct ct_data *ct;
 
@@ -528,10 +528,11 @@ struct rpc_err *errp;
     *errp = ct->ct_error;
 }
 
-static bool_t clnt_vc_freeres(cl, xdr_res, res_ptr)
-CLIENT *cl;
-xdrproc_t xdr_res;
-void *res_ptr;
+static bool_t clnt_vc_freeres(
+CLIENT *cl,
+xdrproc_t xdr_res,
+void *res_ptr
+)
 {
     struct ct_data *ct;
     XDR *xdrs;
@@ -559,14 +560,15 @@ void *res_ptr;
 }
 
 /*ARGSUSED*/
-static void clnt_vc_abort(cl) CLIENT *cl;
+static void clnt_vc_abort(CLIENT *cl)
 {
 }
 
-static bool_t clnt_vc_control(cl, request, info)
-CLIENT *cl;
-u_int request;
-void *info;
+static bool_t clnt_vc_control(
+CLIENT *cl,
+u_int request,
+void *info
+)
 {
     struct ct_data *ct;
     void *infop = info;
@@ -689,7 +691,7 @@ void *info;
 }
 
 
-static void clnt_vc_destroy(cl) CLIENT *cl;
+static void clnt_vc_destroy(CLIENT *cl)
 {
     print_detailed_info(apis, 6000);
     assert(cl != NULL);
@@ -727,9 +729,10 @@ static void clnt_vc_destroy(cl) CLIENT *cl;
  * Behaves like the system calls, read & write, but keeps some error state
  * around for the rpc level.
  */
-static int read_vc(ctp, buf, len) void *ctp;
-void *buf;
-int len;
+static int read_vc(void *ctp,
+void *buf,
+int len
+)
 {
     /*
     struct sockaddr sa;
@@ -778,9 +781,10 @@ int len;
     return (len);
 }
 
-static int write_vc(ctp, buf, len) void *ctp;
-void *buf;
-int len;
+static int write_vc(void *ctp,
+void *buf,
+int len
+)
 {
     struct ct_data *ct = (struct ct_data *)ctp;
     int i = 0, cnt;
@@ -823,8 +827,7 @@ static struct clnt_ops *clnt_vc_ops()
  * Make sure that the time is not garbage.   -1 value is disallowed.
  * Note this is different from time_not_ok in clnt_dg.c
  */
-static bool_t time_not_ok(t)
-struct timeval *t;
+static bool_t time_not_ok(struct timeval *t)
 {
     return (t->tv_sec <= -1 || t->tv_sec > 100000000 || t->tv_usec <= -1 ||
             t->tv_usec > 1000000);
