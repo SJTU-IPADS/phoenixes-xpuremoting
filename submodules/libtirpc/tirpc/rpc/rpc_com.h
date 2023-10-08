@@ -90,12 +90,11 @@ char *_get_next_token(char *, int);
 #include <sys/time.h>
 #include <time.h>
 
-#define TIMETYPE 4
+#define TIMETYPE 3
 enum {
     TOTAL_TIME = 0,
     SERIALIZATION_AND_NETWORK_TIME,
-    NETWORK_TIME,
-    TCP_IP_TIME
+    NETWORK_TIME
 };
 
 typedef struct _detailed_info {

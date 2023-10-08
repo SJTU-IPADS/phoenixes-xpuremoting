@@ -688,7 +688,6 @@ int len
     if (len == 0)
         goto end;
 
-    time_start(clnt_apis, clnt_api_id, TCP_IP_TIME);
     fd.fd = ct->ct_fd;
     fd.events = POLLIN;
     for (;;) {
@@ -725,7 +724,6 @@ int len
         break;
     }
 end:
-    time_end(clnt_apis, clnt_api_id, TCP_IP_TIME);
     add_payload_size(clnt_apis, clnt_api_id, len);
     time_end(clnt_apis, clnt_api_id, NETWORK_TIME);
     return (len);
@@ -740,7 +738,6 @@ int len
     struct ct_data *ct = (struct ct_data *)ctp;
     int i = 0, cnt;
 
-    time_start(clnt_apis, clnt_api_id, TCP_IP_TIME);
     for (cnt = len; cnt > 0; cnt -= i, buf += i) {
         if ((i = write(ct->ct_fd, buf, (size_t)cnt)) == -1) {
             ct->ct_error.re_errno = errno;
@@ -750,7 +747,6 @@ int len
         }
     }
 end:
-    time_end(clnt_apis, clnt_api_id, TCP_IP_TIME);
     add_payload_size(clnt_apis, clnt_api_id, len);
 	time_end(clnt_apis, clnt_api_id, NETWORK_TIME);
     return (len);

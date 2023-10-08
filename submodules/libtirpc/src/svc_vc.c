@@ -503,7 +503,6 @@ read_vc(
 	xprt = (SVCXPRT *)xprtp;
 	assert(xprt != NULL);
 
-	time_start(svc_apis, svc_api_id, TCP_IP_TIME);
 	sock = xprt->xp_fd;
 
 	cfp = (struct cf_conn *)xprt->xp_p1;
@@ -553,7 +552,6 @@ fatal_err:
 	((struct cf_conn *)(xprt->xp_p1))->strm_stat = XPRT_DIED;
 
 end:
-	time_end(svc_apis, svc_api_id, TCP_IP_TIME);
 	add_payload_size(svc_apis, svc_api_id, len);
 	time_end(svc_apis, svc_api_id, NETWORK_TIME);
 	return (len);
@@ -583,7 +581,6 @@ write_vc(
 	if (cd->nonblock)
 		gettimeofday(&tv0, NULL);
 	
-	time_start(svc_apis, svc_api_id, TCP_IP_TIME);
 	for (cnt = len; cnt > 0; cnt -= i, buf += i) {
 		i = write(xprt->xp_fd, buf, (size_t)cnt);
 		if (i  < 0) {
@@ -609,7 +606,6 @@ write_vc(
 		}
 	}
 end:
-	time_end(svc_apis, svc_api_id, TCP_IP_TIME);
 	add_payload_size(svc_apis, svc_api_id, len);
 	time_end(svc_apis, svc_api_id, NETWORK_TIME);
 	return (len);

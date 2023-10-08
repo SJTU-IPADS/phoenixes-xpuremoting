@@ -27,6 +27,7 @@
  */
 
 #include <rpc/rpc.h>
+#include <cstring>
 #include "rpc_com.h"
 
 
@@ -101,13 +102,15 @@ void print_detailed_info(detailed_info *infos, int length, const char* str)
         if (infos[i].cnt == 0)
             break;
         printf("api %d: count %d, payload_size %lf, total_time %lf, "
-               "serialization_time %lf, network_time %lf, tcpip_time %lf\n",
+               "serialization_time %lf, network_time %lf\n",
                infos[i].id, infos[i].cnt,
                1.0 * infos[i].payload_size / infos[i].cnt,
                1.0 * infos[i].time[TOTAL_TIME] / infos[i].cnt,
                1.0 * (infos[i].time[SERIALIZATION_AND_NETWORK_TIME] - infos[i].time[NETWORK_TIME]) / infos[i].cnt,
-               1.0 * infos[i].time[NETWORK_TIME] / infos[i].cnt,
-               1.0 * infos[i].time[TCP_IP_TIME] / infos[i].cnt);
+               1.0 * infos[i].time[NETWORK_TIME] / infos[i].cnt);
+        infos[i].cnt = 0;
+        infos[i].payload_size = 0;
+        memset(infos[i].time, 0, sizeof(infos[i].time));
     }
 #endif
 }
