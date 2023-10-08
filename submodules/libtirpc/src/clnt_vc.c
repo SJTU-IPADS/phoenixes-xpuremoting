@@ -342,7 +342,7 @@ struct timeval timeout
     struct ct_data *ct = (struct ct_data *)cl->cl_private;
     clnt_api_id = proc;
     add_cnt(clnt_apis, clnt_api_id);
-    time_start(clnt_apis, clnt_api_id, 0);
+    time_start(clnt_apis, clnt_api_id, TOTAL_TIME);
     XDR *xdrs = &(ct->ct_xdrs);
     struct rpc_msg reply_msg;
     u_int32_t x_id;
@@ -372,7 +372,7 @@ struct timeval timeout
             TRUE;
 
 call_again:
-    time_start(clnt_apis, clnt_api_id, 1);
+    time_start(clnt_apis, clnt_api_id, SERIALIZATION_AND_NETWORK_TIME);
     xdrs->x_op = XDR_ENCODE;
     ct->ct_error.re_status = RPC_SUCCESS;
     x_id = ntohl(--(*msg_x_id));
@@ -394,7 +394,7 @@ call_again:
     }
     if (!shipnow) {
         release_fd_lock(ct->ct_fd_lock, mask);
-        time_end(clnt_apis, clnt_api_id, 1);
+        time_end(clnt_apis, clnt_api_id, SERIALIZATION_AND_NETWORK_TIME);
         return (RPC_SUCCESS);
     }
     /*
@@ -445,16 +445,16 @@ call_again:
             xdrs->x_op = XDR_FREE;
             (void)xdr_opaque_auth(xdrs, &(reply_msg.acpted_rply.ar_verf));
         }
-        time_end(clnt_apis, clnt_api_id, 1);
+        time_end(clnt_apis, clnt_api_id, SERIALIZATION_AND_NETWORK_TIME);
     } /* end successful completion */
     else {
         /* maybe our credentials need to be refreshed ... */
-        time_end(clnt_apis, clnt_api_id, 1);
+        time_end(clnt_apis, clnt_api_id, SERIALIZATION_AND_NETWORK_TIME);
         if (refreshes-- && AUTH_REFRESH(cl->cl_auth, &reply_msg))
             goto call_again;
     } /* end of unsuccessful completion */
     release_fd_lock(ct->ct_fd_lock, mask);
-    time_end(clnt_apis, clnt_api_id, 0);
+    time_end(clnt_apis, clnt_api_id, TOTAL_TIME);
     return (ct->ct_error.re_status);
 }
 
@@ -675,7 +675,7 @@ void *buf,
 int len
 )
 {
-    time_start(clnt_apis, clnt_api_id, 2);
+    time_start(clnt_apis, clnt_api_id, NETWORK_TIME);
     /*
     struct sockaddr sa;
     socklen_t sal;
@@ -688,7 +688,7 @@ int len
     if (len == 0)
         goto end;
 
-    time_start(clnt_apis, clnt_api_id, 3);
+    time_start(clnt_apis, clnt_api_id, TCP_IP_TIME);
     fd.fd = ct->ct_fd;
     fd.events = POLLIN;
     for (;;) {
@@ -725,9 +725,9 @@ int len
         break;
     }
 end:
-    time_end(clnt_apis, clnt_api_id, 3);
+    time_end(clnt_apis, clnt_api_id, TCP_IP_TIME);
     add_payload_size(clnt_apis, clnt_api_id, len);
-    time_end(clnt_apis, clnt_api_id, 2);
+    time_end(clnt_apis, clnt_api_id, NETWORK_TIME);
     return (len);
 }
 
@@ -736,11 +736,11 @@ void *buf,
 int len
 )
 {
-    time_start(clnt_apis, clnt_api_id, 2);
+    time_start(clnt_apis, clnt_api_id, NETWORK_TIME);
     struct ct_data *ct = (struct ct_data *)ctp;
     int i = 0, cnt;
 
-    time_start(clnt_apis, clnt_api_id, 3);
+    time_start(clnt_apis, clnt_api_id, TCP_IP_TIME);
     for (cnt = len; cnt > 0; cnt -= i, buf += i) {
         if ((i = write(ct->ct_fd, buf, (size_t)cnt)) == -1) {
             ct->ct_error.re_errno = errno;
@@ -750,9 +750,9 @@ int len
         }
     }
 end:
-    time_end(clnt_apis, clnt_api_id, 3);
+    time_end(clnt_apis, clnt_api_id, TCP_IP_TIME);
     add_payload_size(clnt_apis, clnt_api_id, len);
-	time_end(clnt_apis, clnt_api_id, 2);
+	time_end(clnt_apis, clnt_api_id, NETWORK_TIME);
     return (len);
 }
 

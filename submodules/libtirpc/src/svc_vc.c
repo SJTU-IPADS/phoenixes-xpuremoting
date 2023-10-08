@@ -493,7 +493,7 @@ read_vc(
 	void *buf,
 	int len)
 {
-	time_start(svc_apis, svc_api_id, 2);
+	time_start(svc_apis, svc_api_id, NETWORK_TIME);
 	SVCXPRT *xprt;
 	int sock;
 	int milliseconds = 35 * 1000;
@@ -503,7 +503,7 @@ read_vc(
 	xprt = (SVCXPRT *)xprtp;
 	assert(xprt != NULL);
 
-	time_start(svc_apis, svc_api_id, 3);
+	time_start(svc_apis, svc_api_id, TCP_IP_TIME);
 	sock = xprt->xp_fd;
 
 	cfp = (struct cf_conn *)xprt->xp_p1;
@@ -553,9 +553,9 @@ fatal_err:
 	((struct cf_conn *)(xprt->xp_p1))->strm_stat = XPRT_DIED;
 
 end:
-	time_end(svc_apis, svc_api_id, 3);
+	time_end(svc_apis, svc_api_id, TCP_IP_TIME);
 	add_payload_size(svc_apis, svc_api_id, len);
-	time_end(svc_apis, svc_api_id, 2);
+	time_end(svc_apis, svc_api_id, NETWORK_TIME);
 	return (len);
 }
 
@@ -569,7 +569,7 @@ write_vc(
 	void *buf,
 	int len)
 {
-	time_start(svc_apis, svc_api_id, 2);
+	time_start(svc_apis, svc_api_id, NETWORK_TIME);
 	SVCXPRT *xprt;
 	int i, cnt;
 	struct cf_conn *cd;
@@ -583,7 +583,7 @@ write_vc(
 	if (cd->nonblock)
 		gettimeofday(&tv0, NULL);
 	
-	time_start(svc_apis, svc_api_id, 3);
+	time_start(svc_apis, svc_api_id, TCP_IP_TIME);
 	for (cnt = len; cnt > 0; cnt -= i, buf += i) {
 		i = write(xprt->xp_fd, buf, (size_t)cnt);
 		if (i  < 0) {
@@ -609,9 +609,9 @@ write_vc(
 		}
 	}
 end:
-	time_end(svc_apis, svc_api_id, 3);
+	time_end(svc_apis, svc_api_id, TCP_IP_TIME);
 	add_payload_size(svc_apis, svc_api_id, len);
-	time_end(svc_apis, svc_api_id, 2);
+	time_end(svc_apis, svc_api_id, NETWORK_TIME);
 	return (len);
 }
 
@@ -671,10 +671,10 @@ svc_vc_recv(
 	cd->strm_stat = XPRT_DIED;
 end:
 	add_cnt(svc_apis, svc_api_id);
-    set_start(svc_apis, svc_api_id, 0, &start_0);
-	set_start(svc_apis, svc_api_id, 1, &start_1);
-	time_end(svc_apis, svc_api_id, 1);
-	time_end(svc_apis, svc_api_id, 0);
+    set_start(svc_apis, svc_api_id, TOTAL_TIME, &start_0);
+	set_start(svc_apis, svc_api_id, SERIALIZATION_AND_NETWORK_TIME, &start_1);
+	time_end(svc_apis, svc_api_id, SERIALIZATION_AND_NETWORK_TIME);
+	time_end(svc_apis, svc_api_id, TOTAL_TIME);
 	return flg;
 }
 
@@ -684,8 +684,8 @@ svc_vc_getargs(
 	xdrproc_t xdr_args,
 	void *args_ptr)
 {
-	time_start(svc_apis, svc_api_id, 0);
-	time_start(svc_apis, svc_api_id, 1);
+	time_start(svc_apis, svc_api_id, TOTAL_TIME);
+	time_start(svc_apis, svc_api_id, SERIALIZATION_AND_NETWORK_TIME);
 	assert(xprt != NULL);
 	/* args_ptr may be NULL */
 	bool_t flg = TRUE;
@@ -695,8 +695,8 @@ svc_vc_getargs(
 			    xdr_args, args_ptr)) {
 		flg = FALSE;
 	}
-	time_end(svc_apis, svc_api_id, 1);
-	time_end(svc_apis, svc_api_id, 0);
+	time_end(svc_apis, svc_api_id, SERIALIZATION_AND_NETWORK_TIME);
+	time_end(svc_apis, svc_api_id, TOTAL_TIME);
 	return flg;
 }
 
@@ -722,7 +722,7 @@ svc_vc_reply(
 	SVCXPRT *xprt,
 	struct rpc_msg *msg)
 {
-	time_start(svc_apis, svc_api_id, 0);
+	time_start(svc_apis, svc_api_id, TOTAL_TIME);
 	struct cf_conn *cd;
 	XDR *xdrs;
 	bool_t rstat;
@@ -748,7 +748,7 @@ svc_vc_reply(
 	} else
 		has_args = FALSE;
 
-	time_start(svc_apis, svc_api_id, 1);
+	time_start(svc_apis, svc_api_id, SERIALIZATION_AND_NETWORK_TIME);
 	xdrs->x_op = XDR_ENCODE;
 	msg->rm_xid = cd->x_id;
 	rstat = FALSE;
@@ -759,8 +759,8 @@ svc_vc_reply(
 		rstat = TRUE;
 	}
 	(void)xdrrec_endofrecord(xdrs, TRUE);
-	time_end(svc_apis, svc_api_id, 1);
-	time_end(svc_apis, svc_api_id, 0);
+	time_end(svc_apis, svc_api_id, SERIALIZATION_AND_NETWORK_TIME);
+	time_end(svc_apis, svc_api_id, TOTAL_TIME);
 	return (rstat);
 }
 

@@ -104,10 +104,10 @@ void print_detailed_info(detailed_info *infos, int length, const char* str)
                "serialization_time %lf, network_time %lf, tcpip_time %lf\n",
                infos[i].id, infos[i].cnt,
                1.0 * infos[i].payload_size / infos[i].cnt,
-               1.0 * infos[i].time[0] / infos[i].cnt,
-               1.0 * (infos[i].time[1] - infos[i].time[2]) / infos[i].cnt,
-               1.0 * infos[i].time[2] / infos[i].cnt,
-               1.0 * infos[i].time[3] / infos[i].cnt);
+               1.0 * infos[i].time[TOTAL_TIME] / infos[i].cnt,
+               1.0 * (infos[i].time[SERIALIZATION_AND_NETWORK_TIME] - infos[i].time[NETWORK_TIME]) / infos[i].cnt,
+               1.0 * infos[i].time[NETWORK_TIME] / infos[i].cnt,
+               1.0 * infos[i].time[TCP_IP_TIME] / infos[i].cnt);
     }
 #endif
 }

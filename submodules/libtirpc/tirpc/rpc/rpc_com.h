@@ -90,19 +90,22 @@ char *_get_next_token(char *, int);
 #include <sys/time.h>
 #include <time.h>
 
+#define TIMETYPE 4
+enum {
+    TOTAL_TIME = 0,
+    SERIALIZATION_AND_NETWORK_TIME,
+    NETWORK_TIME,
+    TCP_IP_TIME
+};
+
 typedef struct _detailed_info {
     int id;
     int cnt;
-#define TIMETYPE 4
-    // 0: total time, 1: serialization time, 2: network time, 3: tcp/ip time
     long long time[TIMETYPE];
     struct timeval start[TIMETYPE], end[TIMETYPE];
     long long payload_size;
 } detailed_info;
 
-#define TOTAL_TIME 0
-#define SERIALIZATION_TIME 1
-#define NETWORK_TIME 2
 #define API_COUNT 6000
 
 void add_cnt(detailed_info *infos, int id);
