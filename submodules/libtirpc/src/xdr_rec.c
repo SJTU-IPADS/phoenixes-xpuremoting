@@ -64,9 +64,6 @@
 #include <errno.h>
 #include "rpc_com.h"
 
-extern detailed_info apis[6000];
-extern int api_id;
-
 static bool_t	xdrrec_getlong(XDR *, long *);
 static bool_t	xdrrec_putlong(XDR *, const long *);
 static bool_t	xdrrec_getbytes(XDR *, char *, u_int);
@@ -644,7 +641,6 @@ flush_out(
 	bool_t eor
 )
 {
-	time_start(apis, api_id, 2);
 	u_int32_t eormask = (eor == TRUE) ? LAST_FRAG : 0;
 	u_int32_t len = (u_int32_t)((u_long)(rstrm->out_finger) - 
 		(u_long)(rstrm->frag_header) - sizeof(u_int32_t));
@@ -657,15 +653,12 @@ flush_out(
 		return (FALSE);
 	rstrm->frag_header = (u_int32_t *)(void *)rstrm->out_base;
 	rstrm->out_finger = (char *)rstrm->out_base + sizeof(u_int32_t);
-	add_payload_size(apis, api_id, len);
-	time_end(apis, api_id, 2);
 	return (TRUE);
 }
 
 static bool_t  /* knows nothing about records!  Only about input buffers */
 fill_input_buf(RECSTREAM *rstrm)
 {
-	time_start(apis, api_id, 2);
 	char *where;
 	u_int32_t i;
 	int len;
@@ -682,8 +675,6 @@ fill_input_buf(RECSTREAM *rstrm)
 	rstrm->in_finger = where;
 	where += len;
 	rstrm->in_boundry = where;
-	add_payload_size(apis, api_id, len);
-	time_end(apis, api_id, 2);
 	return (TRUE);
 }
 
