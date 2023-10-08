@@ -63,7 +63,7 @@
 
 #include <getpeereid.h>
 
-detailed_info svc_apis[6000];
+detailed_info svc_apis[API_COUNT];
 int svc_api_id = 0;
 
 extern rwlock_t svc_fd_lock;
@@ -414,7 +414,7 @@ static void
 __svc_vc_dodestroy(
 	SVCXPRT *xprt)
 {
-	print_detailed_info(svc_apis, 6000, "server");
+	print_detailed_info(svc_apis, API_COUNT, "server");
 	SVCXPRT_EXT *ext = SVCEXT(xprt);
 	struct cf_conn *cd;
 	struct cf_rendezvous *r;

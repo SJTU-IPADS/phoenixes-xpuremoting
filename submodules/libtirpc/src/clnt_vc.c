@@ -69,7 +69,7 @@
 #include "clnt_fd_locks.h"
 #include "rpc_com.h"
 
-detailed_info clnt_apis[6000];
+detailed_info clnt_apis[API_COUNT];
 int clnt_api_id = 0;
 
 #define MCALL_MSG_SIZE 24
@@ -634,7 +634,7 @@ void *info
 
 static void clnt_vc_destroy(CLIENT *cl)
 {
-    print_detailed_info(clnt_apis, 6000, "client");
+    print_detailed_info(clnt_apis, API_COUNT, "client");
     assert(cl != NULL);
     struct ct_data *ct = (struct ct_data *)cl->cl_private;
     int ct_fd = ct->ct_fd;

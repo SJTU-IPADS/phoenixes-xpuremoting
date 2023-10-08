@@ -103,6 +103,7 @@ typedef struct _detailed_info {
 #define TOTAL_TIME 0
 #define SERIALIZATION_TIME 1
 #define NETWORK_TIME 2
+#define API_COUNT 6000
 
 void add_cnt(detailed_info *infos, int id);
 void set_start(detailed_info *infos, int id, int type, struct timeval *start);
