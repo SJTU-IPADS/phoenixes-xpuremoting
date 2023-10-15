@@ -4,6 +4,7 @@
 #include <link.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unordered_map>
 
 // For TCP socket
 #include <arpa/inet.h>
@@ -32,7 +33,8 @@ const char *LIBCUDA_PATH = "/usr/local/cuda/lib64/libcudart.so";
 
 CLIENT *clnt = NULL;
 
-list kernel_infos = { 0 };
+std::unordered_map<std::string, kernel_info_t*> name_to_kernel_infos;
+std::unordered_map<void*, kernel_info_t*> func_ptr_to_kernel_infos;
 
 char server[256];
 
@@ -217,10 +219,6 @@ void __attribute__((constructor)) init_rpc(void)
         clnt_perror(clnt, "call failed");
     }
 
-    if (list_init(&kernel_infos, sizeof(kernel_info_t)) != 0) {
-        LOGE(LOG_ERROR, "list init failed.");
-    }
-
     if (elf2_init() != 0) {
         LOGE(LOG_ERROR, "libelf init failed");
     }
@@ -246,8 +244,7 @@ void __attribute__((destructor)) deinit_rpc(void)
         if (retval_1 != RPC_SUCCESS) {
             LOGE(LOG_ERROR, "call failed.");
         }
-        kernel_infos_free(kernel_infos.elements, kernel_infos.length);
-        list_free(&kernel_infos);
+        kernel_infos_free();
 #ifdef WITH_API_CNT
         cpu_runtime_print_api_call_cnt();
 #endif // WITH_API_CNT
@@ -373,7 +370,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
            fatCubinHandle, hostFun, deviceFun, deviceName, thread_limit, tid,
            bid, bDim, gDim, wSize);
 
-    kernel_info_t *info = utils_search_info(&kernel_infos, (char *)deviceName);
+    kernel_info_t *info = utils_search_info((char *)deviceName);
     if (info == NULL) {
         LOGE(LOG_ERROR, "request to register unknown function: \"%s\"",
              deviceName);
@@ -393,6 +390,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
             exit(1);
         }
         info->host_fun = (void *)hostFun;
+        add_kernel((void *) hostFun, info);
     }
 end_measurement:
     time_end(totals, proc);
@@ -413,7 +411,6 @@ void **__cudaRegisterFatBinary(void *fatCubin)
     mem_data rpc_fat = { .mem_data_len = 0, .mem_data_val = NULL };
 
     if (elf2_get_fatbin_info((struct fat_header *)fatCubin,
-                                &kernel_infos,
                                 (uint8_t **)&rpc_fat.mem_data_val,
                                 &fatbin_size) != 0) {
         LOGE(LOG_ERROR, "error getting fatbin info");

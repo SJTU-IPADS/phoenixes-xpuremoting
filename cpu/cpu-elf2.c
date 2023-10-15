@@ -442,7 +442,7 @@ static size_t decompress_fatbin(const uint8_t* fatbin_data, size_t fatbin_size, 
     return 0;
 }
 
-int elf2_get_fatbin_info(const struct fat_header *fatbin, list *kernel_infos, uint8_t** fatbin_mem, size_t* fatbin_size)
+int elf2_get_fatbin_info(const struct fat_header *fatbin, uint8_t** fatbin_mem, size_t* fatbin_size)
 {
     struct fat_elf_header* eh;
     struct fat_text_header* th;
@@ -504,7 +504,7 @@ int elf2_get_fatbin_info(const struct fat_header *fatbin, list *kernel_infos, ui
             input_pos += th->size;
         }
         // print_header(th);
-        if (elf2_parameter_info(kernel_infos, text_data , text_data_size) != 0) {
+        if (elf2_parameter_info(text_data , text_data_size) != 0) {
             LOGE(LOG_ERROR, "error getting parameter info");
             goto error;
         }
@@ -868,7 +868,7 @@ cleanup:
     return ret;
 }
 
-int elf2_parameter_info(list *kernel_infos, void* memory, size_t memsize)
+int elf2_parameter_info(void* memory, size_t memsize)
 {
     struct __attribute__((__packed__)) nv_info_entry{
         uint8_t format;
@@ -960,16 +960,13 @@ int elf2_parameter_info(list *kernel_infos, void* memory, size_t memsize)
             continue;
         }
 
-        if (utils_search_info(kernel_infos, kernel_str) != NULL) {
+        if (utils_search_info(kernel_str) != NULL) {
             continue;
         }
 
         LOGE(LOG_DEBUG, "found new kernel: %s (symbol table id: %#x)", kernel_str, entry->kernel_id);
 
-        if (list_append(kernel_infos, (void**)&ki) != 0) {
-            LOGE(LOG_ERROR, "error on appending to list");
-            goto cleanup;
-        }
+        ki = (kernel_info_t*) malloc(sizeof(*ki));
 
         size_t buflen = strlen(kernel_str)+1;
         if ((ki->name = malloc(buflen)) == NULL) {
@@ -985,6 +982,8 @@ int elf2_parameter_info(list *kernel_infos, void* memory, size_t memsize)
             LOGE(LOG_ERROR, "get_parm_for_kernel failed for kernel %s", kernel_str);
             goto cleanup;
         }
+
+        add_kernel(std::string(ki->name), ki);
     }
 
     ret = 0;

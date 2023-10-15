@@ -2,6 +2,8 @@
 #define _CD_COMMON_H_
 
 #include <rpc/rpc.h>
+#include <unordered_map>
+#include <iostream>
 #include "list.h"
 
 #define CD_SOCKET_PATH "/tmp/cricketd_sock"
@@ -29,7 +31,30 @@ extern int shm_enabled;
 
 
 extern CLIENT *clnt;
-extern list kernel_infos;
+extern std::unordered_map<std::string, kernel_info_t*> name_to_kernel_infos;
+extern std::unordered_map<void*, kernel_info_t*> func_ptr_to_kernel_infos;
+static kernel_info_t* find_kernel(const void* func) {
+    auto it = func_ptr_to_kernel_infos.find(func);
+    if (it == func_ptr_to_kernel_infos.end()) {
+        return NULL;
+    } else {
+        return it->second;
+    }
+}
+static kernel_info_t* find_kernel(const std::string& name) {
+    auto it = name_to_kernel_infos.find(name);
+    if (it == name_to_kernel_infos.end()) {
+        return NULL;
+    } else {
+        return it->second;
+    }
+}
+static void add_kernel(const void* func, kernel_info_t* info) {
+    func_ptr_to_kernel_infos[(void*) func] = info;
+}
+static void add_kernel(const std::string& name, kernel_info_t* info) {
+    name_to_kernel_infos[name] = info;
+}
 
 #endif //_CD_COMMON_H_
 
