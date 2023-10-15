@@ -102,23 +102,14 @@ int cpu_utils_launch_child(const char *file, char **args)
     return filedes[0];
 }
 
-kernel_info_t* utils_search_info(list *kernel_infos, const char *kernelname)
+kernel_info_t* utils_search_info(const char *kernelname)
 {
-    kernel_info_t *info = NULL;
-    if (kernel_infos == NULL) {
-        LOGE(LOG_ERROR, "list is NULL.");
+    LOGE(LOG_DBG(1), "searching for %s in %d entries", kernelname, name_to_kernel_infos.size());
+    auto it = name_to_kernel_infos.find(std::string(kernelname));
+    if (it == name_to_kernel_infos.end()) {
         return NULL;
     }
-    LOGE(LOG_DBG(1), "searching for %s in %d entries", kernelname, kernel_infos->length);
-    for (int i=0; i < kernel_infos->length; ++i) {
-        if (list_at(kernel_infos, i, (void**)&info) != 0) {
-            LOGE(LOG_ERROR, "no element at index %d", i);
-        }
-        if (strcmp(kernelname, info->name) == 0) {
-            return info;
-        }
-    }
-    return NULL;
+    return it->second;
 }
 
 int cpu_utils_is_local_connection(struct svc_req *rqstp)
@@ -293,7 +284,7 @@ int cpu_utils_contains_kernel(const char *path)
     return ret == 0 && child_exit == 0;
 }
 
-int cpu_utils_parameter_info(list *kernel_infos, char *path)
+int cpu_utils_parameter_info(char *path)
 {
     int ret = 1;
     char linktarget[PATH_MAX] = {0};
@@ -310,11 +301,6 @@ int cpu_utils_parameter_info(list *kernel_infos, char *path)
 
     if (path == NULL) {
         LOGE(LOG_ERROR, "path is NULL.");
-        goto out;
-    }
-
-    if (kernel_infos == NULL) {
-        LOGE(LOG_ERROR, "list is NULL.");
         goto out;
     }
 
@@ -357,10 +343,7 @@ int cpu_utils_parameter_info(list *kernel_infos, char *path)
             goto cleanup2;
         }
 
-        if (list_append(kernel_infos, (void**)&buf) != 0) {
-            LOGE(LOG_ERROR, "error on appending to list");
-            goto cleanup2;
-        }
+        buf = (kernel_info_t*) malloc(sizeof(*buf));
 
         size_t buflen = strlen(kernelname);
         if ((buf->name = malloc(buflen)) == NULL) {
@@ -375,7 +358,7 @@ int cpu_utils_parameter_info(list *kernel_infos, char *path)
             LOGE(LOG_ERROR, "reading paramter infos failed.\n");
             goto cleanup2;
         }
-
+        add_kernel(std::string(buf->name), buf);
         LOG(LOG_DEBUG, "found kernel \"%s\" [param_num: %d, param_size: %d]",
             buf->name, buf->param_num, buf->param_size);
 
@@ -398,12 +381,12 @@ int cpu_utils_parameter_info(list *kernel_infos, char *path)
     return ret == 0 && child_exit == 0;
 }
 
-void kernel_infos_free(kernel_info_t *infos, size_t kernelnum)
+void kernel_infos_free()
 {
-    for (int i=0; i < kernelnum; ++i) {
-        free(infos[i].name);
-        free(infos[i].param_offsets);
-        free(infos[i].param_sizes);
+    for (auto it = name_to_kernel_infos.begin(); it != name_to_kernel_infos.end(); it++) {
+        free(it->second->name);
+        free(it->second->param_offsets);
+        free(it->second->param_sizes);
     }
 }
 

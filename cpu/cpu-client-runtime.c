@@ -862,21 +862,8 @@ cudaError_t cudaLaunchCooperativeKernel(const void* func, dim3 gridDim, dim3 blo
     enum clnt_stat retval_1;
     size_t i;
     char *buf;
-    kernel_info_t *info;
-    int found_kernel = 0;
-
-    for (i=0; i < kernel_infos.length; ++i) {
-        if (list_at(&kernel_infos, i, (void**)&info) != 0) {
-            LOGE(LOG_ERROR, "error gettint element at %d", i);
-            return cudaErrorInvalidDeviceFunction;
-        }
-        if (func != NULL && info != NULL && info->host_fun == func) {
-            LOG(LOG_DEBUG, "calling kernel \"%s\" (param_size: %zd, param_num: %zd)", info->name, info->param_size, info->param_num);
-            found_kernel = 1;
-            break;
-        }
-    }
-    if (!found_kernel) {
+    kernel_info_t *info = find_kernel(func);
+    if (!info) {
         LOGE(LOG_ERROR, "request to call unknown kernel.");
         return cudaErrorInvalidDeviceFunction;
     }
@@ -913,23 +900,11 @@ cudaError_t cudaLaunchCooperativeKernelMultiDevice(struct cudaLaunchParams* laun
     size_t i;
     char *buf;
     void* func = launchParamsList->func;
-    kernel_info_t *info;
-    int found_kernel = 0;
+    kernel_info_t *info = find_kernel(func);
     dim3 gridDim = launchParamsList->gridDim;
     dim3 blockDim = launchParamsList->blockDim;
 
-    for (i=0; i < kernel_infos.length; ++i) {
-        if (list_at(&kernel_infos, i, (void**)&info) != 0) {
-            LOGE(LOG_ERROR, "error gettint element at %d", i);
-            return cudaErrorInvalidDeviceFunction;
-        }
-        if (func != NULL && info != NULL && info->host_fun == func) {
-            LOG(LOG_DEBUG, "calling kernel \"%s\" (param_size: %zd, param_num: %zd)", info->name, info->param_size, info->param_num);
-            found_kernel = 1;
-            break;
-        }
-    }
-    if (!found_kernel) {
+    if (!info) {
         LOGE(LOG_ERROR, "request to call unknown kernel.");
         return cudaErrorInvalidDeviceFunction;
     }
@@ -972,24 +947,10 @@ cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void
     enum clnt_stat retval_1;
     size_t i;
     char *buf;
-    int found_kernel = 0;
-    kernel_info_t *info;
+    kernel_info_t *info = find_kernel(func);
     //printf("cudaLaunchKernel(func=%p, gridDim=[%d,%d,%d], blockDim=[%d,%d,%d], args=%p->%p,%p, sharedMem=%d, stream=%p)\n", func, gridDim.x, gridDim.y, gridDim.z, blockDim.x, blockDim.y, blockDim.z, args, args[0], args[1], sharedMem, stream);
-    LOGE(LOG_DEBUG, "cudaLaunchKernel(%p) %d", func, kernel_infos.length);
-
-    for (i=0; i < kernel_infos.length; ++i) {
-        if (list_at(&kernel_infos, i, (void**)&info) != 0) {
-            LOGE(LOG_ERROR, "error gettint element at %d", i);
-            return cudaErrorInvalidDeviceFunction;
-        }
-        if (func != NULL && info != NULL && info->host_fun == func) {
-            LOG(LOG_DEBUG, "calling kernel \"%s\" (param_size: %zd, param_num: %zd)", info->name, info->param_size, info->param_num);
-            found_kernel = 1;
-            break;
-        }
-    }
-
-    if (!found_kernel) {
+    LOGE(LOG_DEBUG, "cudaLaunchKernel(%p) %d", func, func_ptr_to_kernel_infos.size());
+    if (!info) {
         LOGE(LOG_ERROR, "request to call unknown kernel.");
         return cudaErrorInvalidDeviceFunction;
     }

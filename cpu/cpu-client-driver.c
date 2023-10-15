@@ -422,7 +422,7 @@ CUresult cuModuleLoad(CUmodule* module, const char* fname)
         LOGE(LOG_ERROR, "fname is NULL!");
         return CUDA_ERROR_FILE_NOT_FOUND;
     }
-    if (cpu_utils_parameter_info(&kernel_infos, (char*)fname) != 0) {
+    if (cpu_utils_parameter_info((char*)fname) != 0) {
         LOGE(LOG_ERROR, "could not get kernel infos from %s", fname);
         return CUDA_ERROR_FILE_NOT_FOUND;
     }
@@ -466,7 +466,7 @@ CUresult cuModuleGetFunction(CUfunction* hfun, CUmodule hmod, const char* name)
         return CUDA_ERROR_UNKNOWN;
 	}
     *hfun = (CUfunction)result.ptr_result_u.ptr;
-    if ((info = utils_search_info(&kernel_infos, (char*)name)) == NULL) {
+    if ((info = utils_search_info((char*)name)) == NULL) {
         LOGE(LOG_ERROR, "cannot find kernel %s kernel_info_t", name);
         return CUDA_ERROR_UNKNOWN;
     }
@@ -619,22 +619,10 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX, unsigned int gridDi
     int result;
     int found_kernel = 0;
     int i;
-    kernel_info_t *info;
+    kernel_info_t *info = find_kernel(f);
     LOGE(LOG_DEBUG, "cuLaunchKernel(%p)", f);
 
-    for (i=0; i < kernel_infos.length; ++i) {
-        if (list_at(&kernel_infos, i, (void**)&info) != 0) {
-            LOGE(LOG_ERROR, "error getting element at %d", i);
-            return CUDA_ERROR_INVALID_CONTEXT;
-        }
-        if (f != NULL && info != NULL && info->host_fun == f) {
-            LOG(LOG_DEBUG, "calling kernel \"%s\" (param_size: %zd, param_num: %zd)", info->name, info->param_size, info->param_num);
-            found_kernel = 1;
-            break;
-        }
-    }
-
-    if (!found_kernel) {
+    if (!info) {
         LOGE(LOG_ERROR, "request to call unknown kernel.");
         return CUDA_ERROR_INVALID_CONTEXT;
     }

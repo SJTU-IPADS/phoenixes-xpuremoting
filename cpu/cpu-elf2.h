@@ -16,9 +16,9 @@ struct __attribute__((__packed__)) fat_header {
 };
 
 int elf2_init(void);
-int elf2_get_fatbin_info(const struct fat_header *fatbin, list *kernel_infos, uint8_t** fatbin_mem, size_t* fatbin_size);
+int elf2_get_fatbin_info(const struct fat_header *fatbin, uint8_t** fatbin_mem, size_t* fatbin_size);
 
-int elf2_parameter_info(list *kernel_infos, void* memory, size_t memsize);
+int elf2_parameter_info(void* memory, size_t memsize);
 void* elf2_symbol_address(const char *symbol);
 //int elf2_contains_kernel(void* memory, size_t memsize);
 
