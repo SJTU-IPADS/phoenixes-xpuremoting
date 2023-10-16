@@ -387,7 +387,10 @@ void kernel_infos_free()
         free(it->second->name);
         free(it->second->param_offsets);
         free(it->second->param_sizes);
+        free(it->second);
     }
+    name_to_kernel_infos.clear();
+    func_ptr_to_kernel_infos.clear();
 }
 
 void hexdump(const uint8_t* data, size_t size)
