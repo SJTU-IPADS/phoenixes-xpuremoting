@@ -15,12 +15,18 @@
 #include "cpu-utils.h"
 #include "log.h"
 
+#include "cpu-measurement.h"
+
+extern cpu_measurement_info totals[CPU_API_COUNT];
+
 #ifdef WITH_API_CNT
 extern int api_call_cnt;
 #endif //WITH_API_CNT
 
 cublasStatus_t cublasCreate_v2(cublasHandle_t* handle)
 {
+    int proc = 3001;
+    cpu_time_start(totals, proc); 
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -33,6 +39,7 @@ cublasStatus_t cublasCreate_v2(cublasHandle_t* handle)
     if (result.err == 0) {
         *handle = (void*)result.ptr_result_u.ptr;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -472,6 +479,8 @@ cublasStatus_t cublasSgemm_v2(cublasHandle_t handle,
                            const float *beta,
                            float *C, int ldc)
 {
+    int proc = 3004;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -491,6 +500,7 @@ cublasStatus_t cublasSgemm_v2(cublasHandle_t handle,
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 DEF_FN(cublasStatus_t, cublasSgemm_v2_64, cublasHandle_t, handle, cublasOperation_t, transa, cublasOperation_t, transb, int64_t, m, int64_t, n, int64_t, k, const float*, alpha, const float*, A, int64_t, lda, const float*, B, int64_t, ldb, const float*, beta, float*, C, int64_t, ldc);
@@ -571,6 +581,8 @@ cublasStatus_t cublasSgemmEx(cublasHandle_t handle,
 
 cublasStatus_t cublasSetStream(cublasHandle_t handle, cudaStream_t streamId)
 {
+    int proc = 3008;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -585,11 +597,14 @@ cublasStatus_t cublasSetStream(cublasHandle_t handle, cudaStream_t streamId)
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
 cublasStatus_t cublasSetMathMode(cublasHandle_t handle, cublasMath_t mode)
 {
+    int proc = 3010;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -602,5 +617,6 @@ cublasStatus_t cublasSetMathMode(cublasHandle_t handle, cublasMath_t mode)
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
 }

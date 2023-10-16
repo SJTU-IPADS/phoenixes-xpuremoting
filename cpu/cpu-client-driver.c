@@ -16,7 +16,9 @@
 #include "cpu-common.h"
 #include "cpu-utils.h"
 #include "cpu-elf2.h"
+#include "cpu-measurement.h"
 
+extern cpu_measurement_info totals[CPU_API_COUNT];
 
 //DEF_FN(CUresult, cuProfilerInitialize, const char*, configFile, const char*, outputFile, CUoutput_mode, outputMode)
 //DEF_FN(CUresult, cuProfilerStart)
@@ -339,6 +341,8 @@ DEF_FN(CUresult, cuDevicePrimaryCtxRelease, CUdevice, dev)
 DEF_FN(CUresult, cuDevicePrimaryCtxSetFlags, CUdevice, dev, unsigned int, flags)
 CUresult cuDevicePrimaryCtxGetState(CUdevice dev, unsigned int* flags, int* active)
 {
+    int proc = 1022;
+    cpu_time_start(totals, proc);
 	enum clnt_stat retval;
     dint_result result;
     if (flags == NULL || active == NULL) {
@@ -355,6 +359,7 @@ CUresult cuDevicePrimaryCtxGetState(CUdevice dev, unsigned int* flags, int* acti
 	}
     *flags = result.dint_result_u.data.i1;
     *active = result.dint_result_u.data.i2; 
+    cpu_time_end(totals, proc);
     return result.err;
 }
 #undef cuDevicePrimaryCtxReset

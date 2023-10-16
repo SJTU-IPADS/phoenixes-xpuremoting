@@ -1,7 +1,7 @@
-#ifndef MEASUREMENT_H
-#define MEASUREMENT_H
+#ifndef CPU_MEASUREMENT_H
+#define CPU_MEASUREMENT_H
 
-#define MEASUREMRNT_SWITCH
+#define CPU_MEASUREMRNT_SWITCH
 
 #include <sys/time.h>
 #include <time.h>
@@ -11,11 +11,13 @@ typedef struct _measurement_info {
     int cnt;
     long long time;
     struct timeval start, end;
-} measurement_info;
+} cpu_measurement_info;
 
-void time_start(measurement_info *infos, int id);
-void time_end(measurement_info *infos, int id);
-void print_measurement_info(const char *str, measurement_info *infos,
+void cpu_time_start(cpu_measurement_info *infos, int id);
+void cpu_time_end(cpu_measurement_info *infos, int id);
+void cpu_print_measurement_info(const char *str, cpu_measurement_info *infos,
                             int length);
 
-#endif // MEASUREMENT_H
+#define CPU_API_COUNT 6000
+
+#endif // CPU_MEASUREMENT_H
