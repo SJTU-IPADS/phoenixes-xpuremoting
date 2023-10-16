@@ -6,6 +6,10 @@ import psutil
 
 failed_tests = []
 
+VERSION = os.environ.get('VERSION')
+if VERSION is None:
+    VERSION = 'NO_OPTIMIZATION'
+
 def start_server():
     process = subprocess.Popen(['bash', 'startserver.sh'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return process.pid
@@ -24,7 +28,8 @@ def compile():
     print('start to compile cricket!')
     current_directory = os.getcwd()
     os.chdir('..')
-    make_result = os.system('make cpu')
+    compile_command = 'make -C cpu clean && make cpu VERSION=%s' % (VERSION)
+    make_result = os.system(compile_command)
     if make_result == 0:
         print('successfully build cricket!')
         os.chdir(current_directory)
@@ -45,6 +50,8 @@ def find_unittests():
             print('ignore %s' % directory)
     return results
 
+import time
+
 def run_unittests(tests):
     print('start running unit tests!')
     upper_directory = os.getcwd()
@@ -53,6 +60,7 @@ def run_unittests(tests):
         print('=======================')
         server_pid = start_server()
         print('run unit test in %s, server pid: %d' % (test, server_pid))
+        time.sleep(1)
         os.chdir(test)
         compile_result = os.system('bash compile.sh')
         if compile_result != 0:

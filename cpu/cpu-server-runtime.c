@@ -36,7 +36,7 @@
 #include "mt-memcpy.h"
 #include "cpu-measurement.h"
 
-extern measurement_info vanillas[6000];
+extern cpu_measurement_info vanillas[CPU_API_COUNT];
 
 typedef struct host_alloc_info {
     size_t idx;
@@ -351,16 +351,19 @@ bool_t cuda_get_device_1_svc(int_result *result, struct svc_req *rqstp)
 {
     int proc = 117;
     LOGE(LOG_DEBUG, "cudaGetDevice");
-    time_start(vanillas, proc);
+    cpu_time_start(vanillas, proc);
     result->err = cudaGetDevice(&result->int_result_u.data);
-    time_end(vanillas, proc);
+    cpu_time_end(vanillas, proc);
     return 1;
 }
 
 bool_t cuda_get_device_count_1_svc(int_result *result, struct svc_req *rqstp)
 {
     LOGE(LOG_DEBUG, "cudaGetDeviceCount");
+    int proc = 118;
+    cpu_time_start(vanillas, proc);
     result->err = cudaGetDeviceCount(&result->int_result_u.data);
+    cpu_time_end(vanillas, proc);
     return 1;
 }
 
@@ -379,7 +382,10 @@ bool_t cuda_get_device_properties_1_svc(int device, cuda_device_prop_result *res
         LOGE(LOG_ERROR, "cuda_device_prop_result size mismatch");
         return 0;
     }
+    int proc = 120;
+    cpu_time_start(vanillas, proc);
     result->err = cudaGetDeviceProperties((void*)result->cuda_device_prop_result_u.data, device);
+    cpu_time_end(vanillas, proc);
     return 1;
 }
 
@@ -394,7 +400,10 @@ bool_t cuda_set_device_1_svc(int device, int *result, struct svc_req *rqstp)
     RECORD_API(int);
     RECORD_SINGLE_ARG(device);
     LOGE(LOG_DEBUG, "cudaSetDevice(%d)", device);
+    int proc = 126;
+    cpu_time_start(vanillas, proc);
     *result = cudaSetDevice(device);
+    cpu_time_end(vanillas, proc);
     RECORD_RESULT(integer, *result);
     return 1;
 }
@@ -466,7 +475,10 @@ bool_t cuda_get_error_string_1_svc(int error, str_result *result, struct svc_req
 bool_t cuda_get_last_error_1_svc(int *result, struct svc_req *rqstp)
 {
     LOGE(LOG_DEBUG, "cudaGetLastError");
+    int proc = 142;
+    cpu_time_start(vanillas, proc);
     *result = cudaGetLastError();
+    cpu_time_end(vanillas, proc);
     return 1;
 }
 
@@ -602,9 +614,12 @@ bool_t cuda_stream_get_priority_1_svc(ptr hStream, int_result *result, struct sv
 bool_t cuda_stream_is_capturing_1_svc(ptr stream, int_result *result, struct svc_req *rqstp)
 {
     LOGE(LOG_DEBUG, "cudaStreamIsCapturing");
+    int proc = 264;
+    cpu_time_start(vanillas, proc);
     result->err = cudaStreamIsCapturing(
       resource_mg_get(&rm_streams, (void*)stream),
       (enum cudaStreamCaptureStatus*)&result->int_result_u.data);
+    cpu_time_end(vanillas, proc);
     return 1;
 }
 
@@ -624,8 +639,11 @@ bool_t cuda_stream_synchronize_1_svc(ptr stream, int *result, struct svc_req *rq
     RECORD_API(uint64_t);
     RECORD_SINGLE_ARG(stream);
     LOGE(LOG_DEBUG, "cudaStreamSynchronize");
+    int proc = 267;
+    cpu_time_start(vanillas, proc);
     *result = cudaStreamSynchronize(
       resource_mg_get(&rm_streams, (void*)stream));
+    cpu_time_end(vanillas, proc);
     RECORD_RESULT(integer, *result);
     return 1;
 }
@@ -852,8 +870,7 @@ bool_t cuda_launch_cooperative_kernel_1_svc(ptr func, rpc_dim3 gridDim, rpc_dim3
 bool_t cuda_launch_kernel_1_svc(ptr func, rpc_dim3 gridDim, rpc_dim3 blockDim,
                                 mem_data args, size_t sharedMem, ptr stream,
                                 int *result, struct svc_req *rqstp)
-{
-    int proc = 317;
+{   
     RECORD_API(cuda_launch_kernel_1_argument);
     RECORD_ARG(1, func);
     RECORD_ARG(2, gridDim);
@@ -881,14 +898,15 @@ bool_t cuda_launch_kernel_1_svc(ptr func, rpc_dim3 gridDim, rpc_dim3 blockDim,
                     cuda_args,
                     sharedMem,
                     (void*)stream);
-    time_start(vanillas, proc);
+    int proc = 317;
+    cpu_time_start(vanillas, proc);
     *result = cuLaunchKernel((CUfunction)resource_mg_get(&rm_functions, (void*)func),
                             gridDim.x, gridDim.y, gridDim.z,
                             blockDim.x, blockDim.y, blockDim.z,
                             sharedMem,
                             resource_mg_get(&rm_streams, (void*)stream),
                             cuda_args, NULL);
-    time_end(vanillas, proc);
+    cpu_time_end(vanillas, proc);
     // *result = cudaLaunchKernel(
     //   resource_mg_get(&rm_functions, (void*)func),
     //   cuda_gridDim,
@@ -1234,7 +1252,8 @@ bool_t cuda_malloc_1_svc(size_t argp, ptr_result *result, struct svc_req *rqstp)
     RECORD_SINGLE_ARG(argp);
     LOGE(LOG_DEBUG, "cudaMalloc");
 
-
+    int proc = 414;
+    cpu_time_start(vanillas, proc);
 #ifdef WITH_IB
         result->err = ib_allocate_memreg((void**)&result->ptr_result_u.ptr, argp, hainfo_cnt, true);
             if (result->err == 0) {
@@ -1248,6 +1267,7 @@ bool_t cuda_malloc_1_svc(size_t argp, ptr_result *result, struct svc_req *rqstp)
     result->err = cudaMalloc((void **)&result->ptr_result_u.ptr, argp);
     resource_mg_create(&rm_memory, (void *)result->ptr_result_u.ptr);
 #endif
+    cpu_time_end(vanillas, proc);
 
     RECORD_RESULT(ptr_result_u, *result);
     return 1;
@@ -1406,7 +1426,6 @@ bool_t cuda_mem_prefetch_async_1_svc(ptr devPtr, size_t count, int dstDevice, pt
 
 bool_t cuda_memcpy_htod_1_svc(uint64_t ptr, mem_data mem, size_t size, int *result, struct svc_req *rqstp)
 {
-    int proc = 440;
     RECORD_API(cuda_memcpy_htod_1_argument);
     RECORD_ARG(1, ptr);
     RECORD_ARG(2, mem);
@@ -1418,7 +1437,8 @@ bool_t cuda_memcpy_htod_1_svc(uint64_t ptr, mem_data mem, size_t size, int *resu
         *result = cudaErrorUnknown;
         return 1;
     }
-    time_start(vanillas, proc);
+    int proc = 440;
+    cpu_time_start(vanillas, proc);
 #ifdef WITH_MEMCPY_REGISTER
     if ((*result = cudaHostRegister(mem.mem_data_val, size, cudaHostRegisterMapped)) != cudaSuccess) {
         LOGE(LOG_ERROR, "cudaHostRegister failed: %d.", *result);
@@ -1433,7 +1453,7 @@ bool_t cuda_memcpy_htod_1_svc(uint64_t ptr, mem_data mem, size_t size, int *resu
 #ifdef WITH_MEMCPY_REGISTER
     cudaHostUnregister(mem.mem_data_val);
 #endif
-    time_end(vanillas, proc);
+    cpu_time_end(vanillas, proc);
 
     RECORD_RESULT(integer, *result);
     return 1;
@@ -1529,10 +1549,13 @@ bool_t cuda_memcpy_dtod_1_svc(ptr dst, ptr src, size_t size, int *result, struct
     RECORD_ARG(3, size);
 
     LOGE(LOG_DEBUG, "cudaMemcpyDtoD");
+    int proc = 443;
+    cpu_time_start(vanillas, proc);
     *result = cudaMemcpy(
       resource_mg_get(&rm_memory, (void*)dst),
       resource_mg_get(&rm_memory, (void*)src),
       size, cudaMemcpyDeviceToDevice);
+    cpu_time_end(vanillas, proc);
 
     RECORD_RESULT(integer, *result);
     return 1;
@@ -1655,12 +1678,12 @@ out:
 
 bool_t cuda_memcpy_dtoh_1_svc(uint64_t ptr, size_t size, mem_result *result, struct svc_req *rqstp)
 {
-    int proc = 441;
     //Does not need to be recorded because doesn't change device state
     LOGE(LOG_DEBUG, "cudaMemcpyDtoH(%p, %zu)", ptr, size);
     result->mem_result_u.data.mem_data_len = size;
     result->mem_result_u.data.mem_data_val = malloc(size);
-    time_start(vanillas, proc);
+    int proc = 441;
+    cpu_time_start(vanillas, proc);
 #ifdef WITH_MEMCPY_REGISTER
     if ((result->err = cudaHostRegister(result->mem_result_u.data.mem_data_val,
                                         size, cudaHostRegisterMapped)) != cudaSuccess) {
@@ -1676,7 +1699,7 @@ bool_t cuda_memcpy_dtoh_1_svc(uint64_t ptr, size_t size, mem_result *result, str
 #ifdef WITH_MEMCPY_REGISTER
     cudaHostUnregister(result->mem_result_u.data.mem_data_val);
 #endif
-    time_end(vanillas, proc);
+    cpu_time_end(vanillas, proc);
     if (result->err != 0) {
         free(result->mem_result_u.data.mem_data_val);
     }

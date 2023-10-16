@@ -26,7 +26,7 @@
 #include "mt-memcpy.h"
 #include "cpu-measurement.h"
 
-extern measurement_info totals[6000];
+extern cpu_measurement_info totals[CPU_API_COUNT];
 
 #ifdef WITH_IB
 #include "cpu-ib.h"
@@ -285,7 +285,7 @@ cudaError_t cudaDeviceSynchronize(void)
 cudaError_t cudaGetDevice(int* device)
 {
     int proc = 117;
-    time_start(totals, proc);
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -298,12 +298,14 @@ cudaError_t cudaGetDevice(int* device)
     if (result.err == 0) {
         *device = result.int_result_u.data;
     }
-    time_end(totals, proc);
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
 cudaError_t cudaGetDeviceCount(int* count)
 {
+    int proc = 118;
+    cpu_time_start(totals, proc); 
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -316,6 +318,7 @@ cudaError_t cudaGetDeviceCount(int* count)
     if (result.err == 0) {
         *count = result.int_result_u.data;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -339,6 +342,8 @@ cudaError_t cudaGetDeviceFlags(unsigned int* flags)
 #undef cudaGetDeviceProperties
 cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp* prop, int device)
 {
+    int proc = 120;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -361,6 +366,7 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp* prop, int device)
         LOGE(LOG_ERROR, "error: memcpy failed");
         return result.err;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -378,6 +384,8 @@ DEF_FN(cudaError_t, cudaIpcOpenMemHandle, void**, devPtr, cudaIpcMemHandle_t, ha
 
 cudaError_t cudaSetDevice(int device)
 {
+    int proc = 126;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -387,6 +395,7 @@ cudaError_t cudaSetDevice(int device)
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -455,6 +464,8 @@ const char* cudaGetErrorString(cudaError_t error)
 
 cudaError_t cudaGetLastError(void)
 {
+    int proc = 142;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -464,6 +475,7 @@ cudaError_t cudaGetLastError(void)
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -592,6 +604,8 @@ cudaError_t cudaStreamGetPriority(cudaStream_t hStream, int* priority)
 
 cudaError_t cudaStreamIsCapturing(cudaStream_t stream, enum cudaStreamCaptureStatus* pCaptureStatus)
 {
+    int proc = 264;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -607,6 +621,7 @@ cudaError_t cudaStreamIsCapturing(cudaStream_t stream, enum cudaStreamCaptureSta
     if (result.err == 0) {
         *pCaptureStatus = (enum cudaStreamCaptureStatus)result.int_result_u.data;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -630,6 +645,8 @@ DEF_FN(cudaError_t, cudaStreamSetAttribute, cudaStream_t, hStream, enum cudaStre
 
 cudaError_t cudaStreamSynchronize(cudaStream_t stream)
 {
+    int proc = 267;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -639,6 +656,7 @@ cudaError_t cudaStreamSynchronize(cudaStream_t stream)
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -939,7 +957,7 @@ DEF_FN(cudaError_t, cudaLaunchHostFunc, cudaStream_t, stream, cudaHostFn_t, fn, 
 cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void** args, size_t sharedMem, cudaStream_t stream)
 {
     int proc = 317;
-    time_start(totals, proc);
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -975,7 +993,7 @@ cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void
         clnt_perror (clnt, "call failed");
     }
     free(rpc_args.mem_data_val);
-    time_end(totals, proc);
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -1315,6 +1333,8 @@ DEF_FN(cudaError_t, cudaHostUnregister, void*, ptr)
 
 cudaError_t cudaMalloc(void** devPtr, size_t size)
 {
+    int proc = 414;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1328,6 +1348,7 @@ cudaError_t cudaMalloc(void** devPtr, size_t size)
         return result.err;
     }
     *devPtr = (void*)result.ptr_result_u.ptr;
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -1536,8 +1557,17 @@ extern char server[256];
 #define WITH_MT_MEMCPY
 cudaError_t cudaMemcpy(void* dst, const void* src, size_t count, enum cudaMemcpyKind kind)
 {
-    int proc = (kind == cudaMemcpyHostToDevice ? 440 : 441);
-    time_start(totals, proc);
+    int proc = 0;
+    if(kind == cudaMemcpyHostToDevice) {
+        proc = 440;
+    } else if(kind == cudaMemcpyDeviceToHost) {
+        proc = 441;
+    } else if(kind == cudaMemcpyDeviceToDevice) {
+        proc = 443;
+    } else {
+        proc = -1;
+    }
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
     memcpy_cnt += count;
@@ -1683,7 +1713,7 @@ cudaError_t cudaMemcpy(void* dst, const void* src, size_t count, enum cudaMemcpy
         LOGE(LOG_ERROR, "unknown kind");
     }
 cleanup:
-    time_end(totals, proc);
+    cpu_time_end(totals, proc);
     return ret;
 }
 DEF_FN(cudaError_t, cudaMemcpy2D, void*, dst, size_t, dpitch, const void*, src, size_t, spitch, size_t, width, size_t, height, enum cudaMemcpyKind, kind)

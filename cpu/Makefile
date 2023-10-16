@@ -21,6 +21,20 @@ RPC_DEF = cpu_rpc_prot.x
 RPC_H = $(RPC_DEF:%.x=%.h)
 
 
+PROXY_PREFIX = ./proxy
+# VERSION = NO_OPTIMIZATION / WITH_SHARED_MEMORY / WITH_RDMA
+VERSION ?= WITH_SHARED_MEMORY
+
+ifeq ($(VERSION), NO_OPTIMIZATION)
+else
+SRC_PROXY = $(PROXY_PREFIX)/dispatch.cpp	\
+			$(PROXY_PREFIX)/shm_buffer.cpp	\
+			$(PROXY_PREFIX)/xdr_memory.cpp	\
+			$(PROXY_PREFIX)/svc.cpp			\
+			$(PROXY_PREFIX)/clnt.cpp		\
+			$(PROXY_PREFIX)/measurement.cpp
+endif
+
 
 SRC_SERVER = $(RPC_XDR)                 \
 			 $(RPC_SERVER_MOD)          \
@@ -68,6 +82,8 @@ SRC_CLIENT = $(RPC_XDR)                 \
 
 # 			 cpu-client-driver-hidden.c \
 
+OBJ_PROXY = $(SRC_PROXY:%.cpp=%.o)
+
 ifdef WITH_IB
 SRC_SERVER += cpu-ib.c
 SRC_CLIENT += cpu-ib.c
@@ -80,6 +96,7 @@ OBJ_CLIENT = $(SRC_CLIENT:%.c=%.o)
 RPCGEN_FLAGS = -C -M -N
 INC_FLAGS += -I$(LIBTIRPC_PREFIX)/include/tirpc
 INC_FLAGS += -I$(CUDA_SRC)/include
+INC_FLAGS += -I$(PROXY_PREFIX)
 
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
@@ -87,7 +104,8 @@ LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs
 CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) #-O2
 # TODO: use extern in header files instead of direct definition e.g. in cpu-common.h to remove -fcommon flag
 CC_FLAGS += -fcommon
-LD_FLAGS = $(LIB_FLAGS) -ltirpc -ldl -lcrypto -lelf
+CC_FLAGS += -D$(VERSION)
+LD_FLAGS = $(LIB_FLAGS) -ltirpc -ldl -lcrypto -lelf -lrt
 
 ifdef WITH_DEBUG
 # use ASAN_OPTIONS=protect_shadow_gap=0  LSAN_OPTIONS=fast_unwind_on_malloc=0 when running
@@ -110,7 +128,7 @@ ifdef WITH_IB
 CC_FLAGS += -DWITH_IB=$(WITH_IB)
 endif
 
-SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lrt -lpthread -lnvidia-ml -lcudnn
+SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lpthread -lnvidia-ml -lcudnn
 SERVER_BIN_LD_FLAGS = $(SERVER_LD_FLAGS) -Wl,--unresolved-symbols=ignore-in-object-files
 CLIENT_LD_FLAGS = $(LD_FLAGS)
 
@@ -119,13 +137,13 @@ CLIENT_LD_FLAGS = $(LD_FLAGS)
 
 all : $(SERVER) $(CLIENT)
 
-$(CLIENT) : $(OBJ_CLIENT)
+$(CLIENT) : $(OBJ_CLIENT) $(OBJ_PROXY)
 	$(LD) $(CC_FLAGS) -shared -o $@ $^ $(CLIENT_LD_FLAGS)
 
-$(SERVER_LIB) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o)
+$(SERVER_LIB) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY)
 	$(LD) $(CC_FLAGS) -shared -o $@ $^ $(SERVER_BIN_LD_FLAGS)
 
-$(SERVER) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o)
+$(SERVER) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY)
 	$(LD) $(CC_FLAGS) -o $@ $^ $(SERVER_BIN_LD_FLAGS)
 
 $(RPC_H) : $(RPC_DEF)
@@ -146,9 +164,8 @@ $(RPC_XDR) : $(RPC_DEF)
 %.o : %.c $(RPC_H)
 	$(CC) $(CC_FLAGS) -c -fpic -o $@ $< $(LD_FLAGS) 
 
+%.o : %.cpp $(RPC_H)
+	$(CC) $(CC_FLAGS) -c -fpic -o $@ $< $(LD_FLAGS)
+
 clean:
-	 rm -f $(RPC_H) $(RPC_CLIENT) $(RPC_SERVER) $(RPC_SERVER_MOD) $(RPC_XDR) $(OBJ_CLIENT) $(OBJ_SERVER) $(SERVER) $(SERVER_LIB) $(CLIENT) $(SRC_SERVER_EXE:%.c=%.o)
-
-
-
-
+	 rm -f $(RPC_H) $(RPC_CLIENT) $(RPC_SERVER) $(RPC_SERVER_MOD) $(RPC_XDR) $(OBJ_CLIENT) $(OBJ_SERVER) $(SERVER) $(SERVER_LIB) $(CLIENT) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY)

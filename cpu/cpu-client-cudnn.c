@@ -9,7 +9,7 @@
 #include "log.h"
 #include "cpu-measurement.h"
 
-extern measurement_info totals[6000];
+extern cpu_measurement_info totals[CPU_API_COUNT];
 
 #ifdef WITH_API_CNT
 extern int api_call_cnt;
@@ -120,6 +120,8 @@ cudnnStatus_t cudnnGetProperty(libraryPropertyType type, int * value)
 
 cudnnStatus_t cudnnCreate(cudnnHandle_t* handle)
 {
+    int proc = 5006;
+    cpu_time_start(totals, proc); 
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -138,6 +140,7 @@ cudnnStatus_t cudnnCreate(cudnnHandle_t* handle)
     } else {
         *handle = (cudnnHandle_t)result.ptr_result_u.ptr;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -160,6 +163,8 @@ cudnnStatus_t cudnnDestroy(cudnnHandle_t handle)
 
 cudnnStatus_t cudnnSetStream(cudnnHandle_t handle, cudaStream_t streamId)
 {
+    int proc = 5008;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -172,6 +177,7 @@ cudnnStatus_t cudnnSetStream(cudnnHandle_t handle, cudaStream_t streamId)
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -201,7 +207,7 @@ cudnnStatus_t cudnnGetStream(cudnnHandle_t handle, cudaStream_t * streamId)
 cudnnStatus_t cudnnCreateTensorDescriptor(cudnnTensorDescriptor_t * tensorDesc)
 {
     int proc = 5010;
-    time_start(totals, proc);
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -220,7 +226,7 @@ cudnnStatus_t cudnnCreateTensorDescriptor(cudnnTensorDescriptor_t * tensorDesc)
     } else {
         *tensorDesc = (cudnnTensorDescriptor_t)result.ptr_result_u.ptr;
     }
-    time_end(totals, proc);
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -303,6 +309,8 @@ cudnnStatus_t cudnnGetTensor4dDescriptor(const cudnnTensorDescriptor_t tensorDes
 
 cudnnStatus_t cudnnSetTensorNdDescriptor(cudnnTensorDescriptor_t tensorDesc, cudnnDataType_t dataType, int nbDims, const int* dimA, const int* strideA)
 {
+    int proc = 5014;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -328,6 +336,7 @@ cudnnStatus_t cudnnSetTensorNdDescriptor(cudnnTensorDescriptor_t tensorDesc, cud
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     } 
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -424,7 +433,7 @@ cudnnStatus_t cudnnGetTensorSizeInBytes(const cudnnTensorDescriptor_t tensorDesc
 cudnnStatus_t cudnnDestroyTensorDescriptor(cudnnTensorDescriptor_t tensorDesc)
 {
     int proc = 5018;
-    time_start(totals, proc);
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -440,7 +449,7 @@ cudnnStatus_t cudnnDestroyTensorDescriptor(cudnnTensorDescriptor_t tensorDesc)
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
-    time_end(totals, proc);
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -537,6 +546,8 @@ DEF_FN(cudnnStatus_t, cudnnScaleTensor, cudnnHandle_t, handle, const cudnnTensor
 
 cudnnStatus_t cudnnCreateFilterDescriptor(cudnnFilterDescriptor_t * filterDesc)
 {
+    int proc = 5041;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -555,6 +566,7 @@ cudnnStatus_t cudnnCreateFilterDescriptor(cudnnFilterDescriptor_t * filterDesc)
     } else {
         *filterDesc = (cudnnFilterDescriptor_t)result.ptr_result_u.ptr;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -613,6 +625,8 @@ cudnnStatus_t cudnnGetFilter4dDescriptor(const cudnnFilterDescriptor_t filterDes
 
 cudnnStatus_t cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc, cudnnDataType_t dataType, cudnnTensorFormat_t format, int nbDims, const int* filterDimA)
 {
+    int proc = 5044;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -635,6 +649,7 @@ cudnnStatus_t cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc, cud
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     } 
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -739,6 +754,8 @@ cudnnStatus_t cudnnTransformFilter(cudnnHandle_t handle, const cudnnTensorTransf
 
 cudnnStatus_t cudnnDestroyFilterDescriptor(cudnnFilterDescriptor_t filterDesc)
 {
+    int proc = 5048;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -754,6 +771,7 @@ cudnnStatus_t cudnnDestroyFilterDescriptor(cudnnFilterDescriptor_t filterDesc)
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -1413,6 +1431,8 @@ DEF_FN(cudnnStatus_t, cudnnOpsInferVersionCheck)
 
 cudnnStatus_t cudnnCreateConvolutionDescriptor(cudnnConvolutionDescriptor_t* convDesc)
 {
+    int proc = 5301;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1431,11 +1451,14 @@ cudnnStatus_t cudnnCreateConvolutionDescriptor(cudnnConvolutionDescriptor_t* con
     } else {
         *convDesc = (cudnnConvolutionDescriptor_t)result.ptr_result_u.ptr;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
     
 cudnnStatus_t cudnnDestroyConvolutionDescriptor(cudnnConvolutionDescriptor_t convDesc)
 {
+    int proc = 5302;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1451,11 +1474,14 @@ cudnnStatus_t cudnnDestroyConvolutionDescriptor(cudnnConvolutionDescriptor_t con
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
 cudnnStatus_t cudnnSetConvolutionGroupCount(cudnnConvolutionDescriptor_t convDesc, int groupCnt)
 {
+    int proc = 5309;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1473,11 +1499,14 @@ cudnnStatus_t cudnnSetConvolutionGroupCount(cudnnConvolutionDescriptor_t convDes
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
 cudnnStatus_t cudnnSetConvolutionMathType(cudnnConvolutionDescriptor_t convDesc, cudnnMathType_t mathType)
 {
+    int proc = 5310;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1495,6 +1524,7 @@ cudnnStatus_t cudnnSetConvolutionMathType(cudnnConvolutionDescriptor_t convDesc,
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -1509,6 +1539,8 @@ DEF_FN(cudnnStatus_t, cudnnGetConvolution2dDescriptor,  const cudnnConvolutionDe
     
 cudnnStatus_t cudnnSetConvolutionNdDescriptor(cudnnConvolutionDescriptor_t convDesc,  int arrayLength,  const int* padA,  const int* filterStrideA,  const int* dilationA,  cudnnConvolutionMode_t mode,  cudnnDataType_t computeType)
 {
+    int proc = 5304;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1542,6 +1574,7 @@ cudnnStatus_t cudnnSetConvolutionNdDescriptor(cudnnConvolutionDescriptor_t convD
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     } 
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -1580,6 +1613,8 @@ DEF_FN(cudnnStatus_t, cudnnGetConvolutionForwardAlgorithmMaxCount,  cudnnHandle_
 
 cudnnStatus_t cudnnGetConvolutionForwardAlgorithm_v7(cudnnHandle_t handle,  const cudnnTensorDescriptor_t srcDesc,  const cudnnFilterDescriptor_t filterDesc,  const cudnnConvolutionDescriptor_t convDesc,  const cudnnTensorDescriptor_t destDesc,  const int requestedAlgoCount,  int* returnedAlgoCount,  cudnnConvolutionFwdAlgoPerf_t* perfResults)
 {
+    int proc = 5305;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1613,6 +1648,7 @@ cudnnStatus_t cudnnGetConvolutionForwardAlgorithm_v7(cudnnHandle_t handle,  cons
         memcpy(perfResults, result.mem_result_u.data.mem_data_val + sizeof(int), *returnedAlgoCount * sizeof(cudnnConvolutionFwdAlgoPerf_t));
     }
     free(result.mem_result_u.data.mem_data_val);
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -1690,6 +1726,8 @@ cudnnStatus_t cudnnGetConvolutionForwardWorkspaceSize( cudnnHandle_t handle,  co
 
 cudnnStatus_t cudnnConvolutionForward(cudnnHandle_t handle,  const void* alpha,  const cudnnTensorDescriptor_t xDesc,  const void* x,  const cudnnFilterDescriptor_t wDesc,  const void* w,  const cudnnConvolutionDescriptor_t convDesc,  cudnnConvolutionFwdAlgo_t algo,  void* workSpace,  size_t workSpaceSizeInBytes,  const void* beta,  const cudnnTensorDescriptor_t yDesc,  void* y)
 {
+    int proc = 5308;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1725,6 +1763,7 @@ cudnnStatus_t cudnnConvolutionForward(cudnnHandle_t handle,  const void* alpha, 
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -1741,6 +1780,8 @@ DEF_FN(cudnnStatus_t, cudnnCnnInferVersionCheck)
 // norm funcs
 cudnnStatus_t cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize(cudnnHandle_t handle, cudnnBatchNormMode_t mode, cudnnBatchNormOps_t bnOps, const cudnnTensorDescriptor_t xDesc, const cudnnTensorDescriptor_t zDesc, const cudnnTensorDescriptor_t yDesc, const cudnnTensorDescriptor_t bnScaleBiasMeanVarDesc, const cudnnActivationDescriptor_t activationDesc, size_t *sizeInBytes)
 {
+    int proc = 5311;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1770,6 +1811,7 @@ cudnnStatus_t cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize(cudnnHand
     } else {
         *sizeInBytes = result.sz_result_u.data;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -1800,6 +1842,8 @@ cudnnStatus_t cudnnBatchNormalizationForwardTrainingEx(
     void                                *reserveSpace,
     size_t                              reserveSpaceSizeInBytes)
 {
+    int proc = 5312;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1850,6 +1894,7 @@ cudnnStatus_t cudnnBatchNormalizationForwardTrainingEx(
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -1866,6 +1911,8 @@ cudnnStatus_t cudnnGetBatchNormalizationBackwardExWorkspaceSize(
     const cudnnActivationDescriptor_t   activationDesc, 
     size_t                              *sizeInBytes)
 {
+    int proc = 5313;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1893,6 +1940,7 @@ cudnnStatus_t cudnnGetBatchNormalizationBackwardExWorkspaceSize(
     } else {
         *sizeInBytes = result.sz_result_u.data;
     }
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -1928,6 +1976,8 @@ cudnnStatus_t cudnnBatchNormalizationBackwardEx (
     void                                *reserveSpace,
     size_t                              reserveSpaceSizeInBytes)
 {
+    int proc = 5314;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -1992,6 +2042,7 @@ cudnnStatus_t cudnnBatchNormalizationBackwardEx (
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -2005,6 +2056,8 @@ cudnnStatus_t cudnnGetConvolutionBackwardDataAlgorithm_v7(
     int                                   *returnedAlgoCount,
     cudnnConvolutionBwdDataAlgoPerf_t     *perfResults)
 {
+    int proc = 5315;
+    cpu_time_start(totals, proc); 
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -2040,6 +2093,7 @@ cudnnStatus_t cudnnGetConvolutionBackwardDataAlgorithm_v7(
         memcpy(perfResults, result.mem_result_u.data.mem_data_val + sizeof(int), *returnedAlgoCount * sizeof(cudnnConvolutionBwdDataAlgoPerf_t));
     }
     free(result.mem_result_u.data.mem_data_val);
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -2058,6 +2112,8 @@ cudnnStatus_t cudnnConvolutionBackwardData(
     const cudnnTensorDescriptor_t       dxDesc,
     void                               *dx)
 {
+    int proc = 5316;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -2097,6 +2153,7 @@ cudnnStatus_t cudnnConvolutionBackwardData(
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -2110,6 +2167,8 @@ cudnnStatus_t cudnnGetConvolutionBackwardFilterAlgorithm_v7(
     int                                   *returnedAlgoCount,
     cudnnConvolutionBwdFilterAlgoPerf_t   *perfResults)
 {
+    int proc = 5317;
+    cpu_time_start(totals, proc); 
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
@@ -2146,6 +2205,7 @@ cudnnStatus_t cudnnGetConvolutionBackwardFilterAlgorithm_v7(
         memcpy(perfResults, result.mem_result_u.data.mem_data_val + sizeof(int), *returnedAlgoCount * sizeof(cudnnConvolutionBwdFilterAlgoPerf_t));
     }
     free(result.mem_result_u.data.mem_data_val);
+    cpu_time_end(totals, proc);
     return result.err;
 }
 
@@ -2165,6 +2225,8 @@ cudnnStatus_t cudnnConvolutionBackwardFilter(
     const cudnnFilterDescriptor_t       dwDesc,
     void                               *dw)
 {
+    int proc = 5318;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT 
@@ -2201,6 +2263,7 @@ cudnnStatus_t cudnnConvolutionBackwardFilter(
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }
 
@@ -2220,6 +2283,8 @@ cudnnStatus_t cudnnBatchNormalizationForwardInference(
       const void                      *estimatedVariance,
       double                           epsilon)
 {
+    int proc = 5319;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT 
@@ -2257,5 +2322,6 @@ cudnnStatus_t cudnnBatchNormalizationForwardInference(
     if (result != CUDNN_STATUS_SUCCESS) {
         LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
     }
+    cpu_time_end(totals, proc);
     return result;
 }

@@ -17,6 +17,9 @@
 #include "api-recorder.h"
 #include "cpu-server-cublas.h"
 #include "gsched.h"
+#include "cpu-measurement.h"
+
+extern cpu_measurement_info vanillas[CPU_API_COUNT];
 
 
 
@@ -45,8 +48,11 @@ bool_t rpc_cublascreate_1_svc(ptr_result *result, struct svc_req *rqstp)
     LOGE(LOG_DEBUG, "cublasCreate_v2");
 
     GSCHED_RETAIN;
+    int proc = 3001;
+    cpu_time_start(vanillas, proc);
     result->err = cublasCreate_v2((cublasHandle_t*)&result->ptr_result_u.ptr);
     resource_mg_create(&rm_cublas, (void*)result->ptr_result_u.ptr);
+    cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     
     RECORD_RESULT(ptr_result_u, *result);
@@ -124,6 +130,8 @@ bool_t rpc_cublassgemm_1_svc(ptr handle, int transa, int transb, int m, int n, i
     RECORD_ARG(14, ldc);
     LOGE(LOG_DEBUG, "cublasSgemm");
     GSCHED_RETAIN;
+    int proc = 3004;
+    cpu_time_start(vanillas, proc);
     *result = cublasSgemm(resource_mg_get(&rm_cublas, (void*)handle),
                     (cublasOperation_t) transa,
                     (cublasOperation_t) transb,
@@ -132,6 +140,7 @@ bool_t rpc_cublassgemm_1_svc(ptr handle, int transa, int transb, int m, int n, i
                     resource_mg_get(&rm_memory, (void*)B), ldb, &beta,
                     resource_mg_get(&rm_memory, (void*)C), ldc
     );
+    cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
     return 1;
@@ -251,9 +260,12 @@ bool_t rpc_cublassetstream_1_svc(ptr handle, ptr streamId, int *result, struct s
     RECORD_NARG(streamId);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
     GSCHED_RETAIN;
+    int proc = 3008;
+    cpu_time_start(vanillas, proc);
     *result = cublasSetStream(
         resource_mg_get(&rm_cublas, (void*)handle),
         resource_mg_get(&rm_streams, (void*)streamId));
+    cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
     return 1;
@@ -288,9 +300,12 @@ bool_t rpc_cublassetmathmode_1_svc(ptr handle, int mode, int *result, struct svc
     RECORD_NARG(mode);
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
     GSCHED_RETAIN;
+    int proc = 3010;
+    cpu_time_start(vanillas, proc);
     *result = cublasSetMathMode(
         resource_mg_get(&rm_cublas, (void*)handle),
         (cublasMath_t)mode);
+    cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
     return 1;

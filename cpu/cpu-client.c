@@ -13,16 +13,17 @@
 #include <sys/socket.h>
 
 #include "cpu-common.h"
+#include "cpu-elf2.h"
 #include "cpu-libwrap.h"
 #include "cpu-utils.h"
 #include "cpu_rpc_prot.h"
 #include "list.h"
-#include "cpu-elf2.h"
 #include "resource-mg.h"
 
 #include "cpu-measurement.h"
+#include "proxy/clnt.h"
 
-extern measurement_info totals[6000];
+extern cpu_measurement_info totals[CPU_API_COUNT];
 
 #ifdef WITH_IB
 #include "cpu-ib.h"
@@ -43,23 +44,23 @@ int connection_is_local = 0;
 int shm_enabled = 1;
 int initialized = 0;
 
-//Runtime API RMs
+// Runtime API RMs
 resource_mg rm_streams;
 resource_mg rm_events;
 resource_mg rm_arrays;
 resource_mg rm_memory;
 resource_mg rm_kernels;
 
-//Driver API RMs
+// Driver API RMs
 resource_mg rm_modules;
 resource_mg rm_functions;
 resource_mg rm_globals;
 
-//Other RMs
+// Other RMs
 resource_mg rm_cusolver;
 resource_mg rm_cublas;
 
-//CUDNN RMs
+// CUDNN RMs
 resource_mg rm_cudnn;
 resource_mg rm_cudnn_tensors;
 resource_mg rm_cudnn_filters;
@@ -80,6 +81,11 @@ extern void cpu_runtime_print_api_call_cnt(void);
 
 static void rpc_connect(void)
 {
+#ifndef NO_OPTIMIZATION
+    clnt = clnt_shm_create();
+    return;
+#endif // WITH_OPTIMIZATION
+
     int isock;
     struct sockaddr_un sock_un = { 0 };
     struct sockaddr_in sock_in = { 0 };
@@ -154,7 +160,7 @@ static void rpc_connect(void)
         // inet_aton("137.226.133.199", &sock_in.sin_addr);
 
         clnt = clnttcp_create(&sock_in, prog, vers, &isock, 0, 0);
-        getsockname(isock, (sockaddr*) &local_addr, &sockaddr_len);
+        getsockname(isock, (sockaddr *)&local_addr, &sockaddr_len);
         connection_is_local =
             (local_addr.sin_addr.s_addr == sock_in.sin_addr.s_addr);
         break;
@@ -214,10 +220,13 @@ void __attribute__((constructor)) init_rpc(void)
         exit(1);
     }
 
+    int proc = 2;
+    cpu_time_start(totals, proc); 
     retval_1 = rpc_printmessage_1(printmessage_1_arg1, &result_1, clnt);
-    if (retval_1 != RPC_SUCCESS) {
-        clnt_perror(clnt, "call failed");
-    }
+    cpu_time_end(totals, proc);
+    // if (retval_1 != RPC_SUCCESS) {
+    //     clnt_perror(clnt, "call failed");
+    // }
 
     if (elf2_init() != 0) {
         LOGE(LOG_ERROR, "libelf init failed");
@@ -225,8 +234,8 @@ void __attribute__((constructor)) init_rpc(void)
 
     // if (cpu_utils_parameter_info(&kernel_infos, "/proc/self/exe") != 0) {
     //     LOG(LOG_ERROR, "error while getting parameter size. Check whether "
-    //                    "cuobjdump binary is in PATH! Trying anyway (will only "
-    //                    "work if there is no kernel in this binary)");
+    //                    "cuobjdump binary is in PATH! Trying anyway (will only
+    //                    " "work if there is no kernel in this binary)");
     // }
 #ifdef WITH_IB
     if (ib_init(ib_device, server) != 0) {
@@ -236,7 +245,8 @@ void __attribute__((constructor)) init_rpc(void)
 }
 void __attribute__((destructor)) deinit_rpc(void)
 {
-    print_measurement_info("client_total_", totals, 6000);
+    int proc = 1;
+    cpu_time_start(totals, proc); 
     enum clnt_stat retval_1;
     int result;
     if (initialized) {
@@ -249,9 +259,16 @@ void __attribute__((destructor)) deinit_rpc(void)
         cpu_runtime_print_api_call_cnt();
 #endif // WITH_API_CNT
     }
+    cpu_time_end(totals, proc);
+
+    cpu_print_measurement_info("client_total_", totals, CPU_API_COUNT);
 
     if (clnt != NULL) {
+#ifndef NO_OPTIMIZATION
+        clnt_shm_destroy(clnt);
+#else
         clnt_destroy(clnt);
+#endif // WITH_OPTIMIZATION
     }
 }
 
@@ -278,13 +295,12 @@ void *dlopen(const char *filename, int flag)
     }
 
     if (filename == NULL) {
-      assert(dlopen_orig != NULL);
-      return dlopen_orig(filename, flag);
+        assert(dlopen_orig != NULL);
+        return dlopen_orig(filename, flag);
     }
 
-    if (filename != NULL && 
-        (strcmp(filename, "libcuda.so.1") == 0 ||
-        strcmp(filename, "libcuda.so") == 0) ||
+    if (filename != NULL && (strcmp(filename, "libcuda.so.1") == 0 ||
+                             strcmp(filename, "libcuda.so") == 0) ||
         strcmp(filename, "libnvidia-ml.so.1") == 0) {
         LOG(LOG_DEBUG, "replacing dlopen call to cuda library with "
                        "cricket-client.so");
@@ -294,13 +310,16 @@ void *dlopen(const char *filename, int flag)
         }
         return dl_handle;
     } else {
-        // if ((has_kernel = cpu_utils_parameter_info(&kernel_infos, (char *)filename)) == 0) {
-        //     LOGE(LOG_DBG(1), "dlopen file \"%s\", but does not contain a kernel", filename);
+        // if ((has_kernel = cpu_utils_parameter_info(&kernel_infos, (char
+        // *)filename)) == 0) {
+        //     LOGE(LOG_DBG(1), "dlopen file \"%s\", but does not contain a
+        //     kernel", filename);
         // } else {
-        //     LOGE(LOG_DEBUG, "dlopen file \"%s\", contains a kernel", filename);
+        //     LOGE(LOG_DEBUG, "dlopen file \"%s\", contains a kernel",
+        //     filename);
         // }
         if ((ret = dlopen_orig(filename, flag)) == NULL) {
-            LOGE(LOG_ERROR, "dlopen failed");
+            LOGE(LOG_ERROR, "dlopen failed: %s", filename);
         } else if (has_kernel) {
             dlinfo(ret, RTLD_DI_LINKMAP, &map);
             LOGE(LOG_DEBUG, "dlopen to  %p", map->l_addr);
@@ -334,24 +353,30 @@ int dlclose(void *handle)
 extern "C" {
 #endif
 
-void __cudaRegisterVar(void **fatCubinHandle, char *hostVar, char *deviceAddress,
-                       const char *deviceName, int ext, size_t size, int constant,
-                       int global);
+void __cudaRegisterVar(void **fatCubinHandle, char *hostVar,
+                       char *deviceAddress, const char *deviceName, int ext,
+                       size_t size, int constant, int global);
 
-void __cudaRegisterVar(void **fatCubinHandle, char *hostVar, char *deviceAddress,
-                       const char *deviceName, int ext, size_t size, int constant,
-                       int global)
+void __cudaRegisterVar(void **fatCubinHandle, char *hostVar,
+                       char *deviceAddress, const char *deviceName, int ext,
+                       size_t size, int constant, int global)
 {
+    int proc = 53;
+    cpu_time_start(totals, proc);
     enum clnt_stat retval_1;
     int result;
-    LOGE(LOG_DEBUG, "__cudaRegisterVar(fatCubinHandle=%p, hostVar=%p, deviceAddress=%p, "
-           "deviceName=%s, ext=%d, size=%zu, constant=%d, global=%d)\n",
-           fatCubinHandle, hostVar, deviceAddress, deviceName, ext, size, constant, global);
-    retval_1 = rpc_register_var_1((ptr)fatCubinHandle, (ptr)hostVar, (ptr)deviceAddress, (char*)deviceName, ext, size, constant, global,
-                                       &result, clnt);
+    LOGE(LOG_DEBUG,
+         "__cudaRegisterVar(fatCubinHandle=%p, hostVar=%p, deviceAddress=%p, "
+         "deviceName=%s, ext=%d, size=%zu, constant=%d, global=%d)\n",
+         fatCubinHandle, hostVar, deviceAddress, deviceName, ext, size,
+         constant, global);
+    retval_1 = rpc_register_var_1((ptr)fatCubinHandle, (ptr)hostVar,
+                                  (ptr)deviceAddress, (char *)deviceName, ext,
+                                  size, constant, global, &result, clnt);
     if (retval_1 != RPC_SUCCESS) {
         LOGE(LOG_ERROR, "call failed.");
     }
+    cpu_time_end(totals, proc);
 }
 
 void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
@@ -360,15 +385,16 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
                             dim3 *bDim, dim3 *gDim, int *wSize)
 {
     int proc = 50;
-    time_start(totals, proc);
+    cpu_time_start(totals, proc);
     ptr_result result;
     enum clnt_stat retval_1;
 
-    LOGE(LOG_DEBUG, "__cudaRegisterFunction(fatCubinHandle=%p, hostFun=%p, devFunc=%s, "
-           "deviceName=%s, thread_limit=%d, tid=[%p], bid=[%p], bDim=[%p], "
-           "gDim=[%p], wSize=%p)\n",
-           fatCubinHandle, hostFun, deviceFun, deviceName, thread_limit, tid,
-           bid, bDim, gDim, wSize);
+    LOGE(LOG_DEBUG,
+         "__cudaRegisterFunction(fatCubinHandle=%p, hostFun=%p, devFunc=%s, "
+         "deviceName=%s, thread_limit=%d, tid=[%p], bid=[%p], bDim=[%p], "
+         "gDim=[%p], wSize=%p)\n",
+         fatCubinHandle, hostFun, deviceFun, deviceName, thread_limit, tid, bid,
+         bDim, gDim, wSize);
 
     kernel_info_t *info = utils_search_info((char *)deviceName);
     if (info == NULL) {
@@ -379,8 +405,8 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
         LOGE(LOG_DEBUG, "request to register known function: \"%s\"",
              deviceName);
         retval_1 = rpc_register_function_1((ptr)fatCubinHandle, (ptr)hostFun,
-                                           deviceFun, (char*)deviceName, thread_limit,
-                                           &result, clnt);
+                                           deviceFun, (char *)deviceName,
+                                           thread_limit, &result, clnt);
         if (retval_1 != RPC_SUCCESS) {
             LOGE(LOG_ERROR, "call failed.");
             exit(1);
@@ -393,7 +419,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
         add_kernel((void *) hostFun, info);
     }
 end_measurement:
-    time_end(totals, proc);
+    cpu_time_end(totals, proc);
     return;
 }
 
@@ -401,7 +427,7 @@ end_measurement:
 void **__cudaRegisterFatBinary(void *fatCubin)
 {
     int proc = 51;
-    time_start(totals, proc);
+    cpu_time_start(totals, proc);
     void **result;
     int rpc_result;
     enum clnt_stat retval_1;
@@ -420,7 +446,7 @@ void **__cudaRegisterFatBinary(void *fatCubin)
 
     // CUDA registers an atexit handler for fatbin cleanup that accesses
     // the fatbin data structure. Let's allocate some zeroes to avoid segfaults.
-    result = (void**)calloc(1, 0x58);
+    result = (void **)calloc(1, 0x58);
 
     retval_1 = rpc_elf_load_1(rpc_fat, (ptr)result, &rpc_result, clnt);
     if (retval_1 != RPC_SUCCESS) {
@@ -432,13 +458,13 @@ void **__cudaRegisterFatBinary(void *fatCubin)
     }
     LOG(LOG_DEBUG, "fatbin loaded to %p", result);
     // we return a bunch of zeroes to avoid segfaults. The memory is
-    // mapped by the modules resource 
-    time_end(totals, proc);
+    // mapped by the modules resource
+    cpu_time_end(totals, proc);
     return result;
 }
 
 void __cudaUnregisterFatBinary(void **fatCubinHandle)
-{  
+{
     int result;
     enum clnt_stat retval_1;
 
@@ -446,7 +472,9 @@ void __cudaUnregisterFatBinary(void **fatCubinHandle)
          fatCubinHandle);
 
     if (fatCubinHandle == NULL) {
-        LOGE(LOG_WARNING, "fatCubinHandle is NULL - so we have nothing to unload. (This is okay if this binary does not contain a kernel.)");
+        LOGE(LOG_WARNING, "fatCubinHandle is NULL - so we have nothing to "
+                          "unload. (This is okay if this binary does not "
+                          "contain a kernel.)");
         return;
     }
 

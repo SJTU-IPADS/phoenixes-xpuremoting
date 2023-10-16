@@ -29,8 +29,14 @@
 #include "cpu-server-cudnn.h"
 
 #include "cpu-measurement.h"
+#ifndef NO_OPTIMIZATION
+#include "proxy/measurement.h"
+#endif //WITH_OPTIMIZATION
 
-extern measurement_info vanillas[6000];
+extern cpu_measurement_info vanillas[CPU_API_COUNT];
+#ifndef NO_OPTIMIZATION
+extern detailed_info svc_apis[API_COUNT];
+#endif //WITH_OPTIMIZATION
 
 INIT_SOCKTYPE
 
@@ -85,14 +91,20 @@ void int_handler(int signal) {
 
 bool_t rpc_printmessage_1_svc(char *argp, int *result, struct svc_req *rqstp)
 {
+    int proc = 2;
+    cpu_time_start(vanillas, proc);
     LOG(LOG_INFO, "string: \"%s\"\n", argp);
     *result = 42;
+    cpu_time_end(vanillas, proc);
     return 1;
 }
 
 bool_t rpc_deinit_1_svc(int *result, struct svc_req *rqstp)
 {
-    print_measurement_info("server_vanilla_", vanillas, 6000);
+    cpu_print_measurement_info("server_vanilla_", vanillas, CPU_API_COUNT);
+#ifndef NO_OPTIMIZATION
+    print_detailed_info(svc_apis, API_COUNT, "server");
+#endif //WITH_OPTIMIZATION
     LOG(LOG_INFO, "RPC deinit requested.");
     // svc_exit();
     return 1;
