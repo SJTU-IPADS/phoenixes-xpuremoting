@@ -27,6 +27,7 @@
 #include "cpu-measurement.h"
 
 extern cpu_measurement_info totals[CPU_API_COUNT];
+int local_device = -1;
 
 #ifdef WITH_IB
 #include "cpu-ib.h"
@@ -289,6 +290,11 @@ cudaError_t cudaGetDevice(int* device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
+    if (local_device != -1) {
+        *device = local_device;
+        cpu_time_end(totals, proc);
+        return 0;
+    }
     int_result result;
     enum clnt_stat retval_1;
     retval_1 = cuda_get_device_1(&result, clnt);
@@ -296,7 +302,8 @@ cudaError_t cudaGetDevice(int* device)
         clnt_perror (clnt, "call failed");
     }
     if (result.err == 0) {
-        *device = result.int_result_u.data;
+        local_device = result.int_result_u.data;
+        *device = local_device;
     }
     cpu_time_end(totals, proc);
     return result.err;
@@ -389,6 +396,11 @@ cudaError_t cudaSetDevice(int device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
+    if (local_device == device) {
+        cpu_time_end(totals, proc);
+        return 0;
+    }
+    local_device = device;
     int result;
     enum clnt_stat retval_1;
     retval_1 = cuda_set_device_1(device, &result, clnt);
