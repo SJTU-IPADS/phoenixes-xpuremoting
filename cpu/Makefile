@@ -27,12 +27,18 @@ VERSION ?= WITH_SHARED_MEMORY
 
 ifeq ($(VERSION), NO_OPTIMIZATION)
 else
-SRC_PROXY = $(PROXY_PREFIX)/dispatch.cpp	\
-			$(PROXY_PREFIX)/shm_buffer.cpp	\
-			$(PROXY_PREFIX)/xdr_memory.cpp	\
-			$(PROXY_PREFIX)/svc.cpp			\
-			$(PROXY_PREFIX)/clnt.cpp		\
-			$(PROXY_PREFIX)/measurement.cpp
+SRC_PROXY_CLIENT = $(PROXY_PREFIX)/shm_buffer.cpp	\
+					$(PROXY_PREFIX)/xdr_memory.cpp	\
+					$(PROXY_PREFIX)/clnt.cpp		\
+					$(PROXY_PREFIX)/measurement.cpp	\
+					$(PROXY_PREFIX)/proxy_header.cpp
+
+SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp	\
+				$(PROXY_PREFIX)/shm_buffer.cpp	\
+				$(PROXY_PREFIX)/xdr_memory.cpp	\
+				$(PROXY_PREFIX)/svc.cpp			\
+				$(PROXY_PREFIX)/measurement.cpp	\
+				$(PROXY_PREFIX)/proxy_header.cpp
 endif
 
 
@@ -82,7 +88,8 @@ SRC_CLIENT = $(RPC_XDR)                 \
 
 # 			 cpu-client-driver-hidden.c \
 
-OBJ_PROXY = $(SRC_PROXY:%.cpp=%.o)
+OBJ_PROXY_CLIENT = $(SRC_PROXY_CLIENT:%.cpp=%.o)
+OBJ_PROXY_SERVER = $(SRC_PROXY_SERVER:%.cpp=%.o)
 
 ifdef WITH_IB
 SRC_SERVER += cpu-ib.c
@@ -137,13 +144,13 @@ CLIENT_LD_FLAGS = $(LD_FLAGS)
 
 all : $(SERVER) $(CLIENT)
 
-$(CLIENT) : $(OBJ_CLIENT) $(OBJ_PROXY)
+$(CLIENT) : $(OBJ_CLIENT) $(OBJ_PROXY_CLIENT)
 	$(LD) $(CC_FLAGS) -shared -o $@ $^ $(CLIENT_LD_FLAGS)
 
-$(SERVER_LIB) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY)
+$(SERVER_LIB) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY_SERVER)
 	$(LD) $(CC_FLAGS) -shared -o $@ $^ $(SERVER_BIN_LD_FLAGS)
 
-$(SERVER) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY)
+$(SERVER) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY_SERVER)
 	$(LD) $(CC_FLAGS) -o $@ $^ $(SERVER_BIN_LD_FLAGS)
 
 $(RPC_H) : $(RPC_DEF)
@@ -168,4 +175,5 @@ $(RPC_XDR) : $(RPC_DEF)
 	$(CC) $(CC_FLAGS) -c -fpic -o $@ $< $(LD_FLAGS)
 
 clean:
-	 rm -f $(RPC_H) $(RPC_CLIENT) $(RPC_SERVER) $(RPC_SERVER_MOD) $(RPC_XDR) $(OBJ_CLIENT) $(OBJ_SERVER) $(SERVER) $(SERVER_LIB) $(CLIENT) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY)
+	 rm -f $(RPC_H) $(RPC_CLIENT) $(RPC_SERVER) $(RPC_SERVER_MOD) $(RPC_XDR) \
+	 $(OBJ_CLIENT) $(OBJ_SERVER) $(SERVER) $(SERVER_LIB) $(CLIENT) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY_CLIENT) $(OBJ_PROXY_SERVER)
