@@ -1,5 +1,6 @@
 #include "clnt.h"
 #include "measurement.h"
+#include "proxy_header.h"
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -56,6 +57,7 @@ void clnt_shm_destroy(CLIENT *clnt)
 }
 
 std::mutex mut;
+extern int local_device;
 
 static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
@@ -71,14 +73,15 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     std::lock_guard<std::mutex> lk(mut);
 
     time_start(clnt_apis, proc, NETWORK_TIME);
-    auto ret = sender->putBytes((char *)&proc, sizeof(int));
+    ProxyHeader header(proc, local_device);
+    auto ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
     if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
                __LINE__, proc);
         exit(-1);
     }
     time_end(clnt_apis, proc, NETWORK_TIME);
-    payload += sizeof(int);
+    payload += sizeof(ProxyHeader);
 
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
     XDR *xdrs_arg = new_xdrmemory(XDR_ENCODE);
@@ -91,13 +94,13 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     // max_len = std::max(max_len, len);
     ret = sender->putBytes((char *)&len, sizeof(int));
     if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
                __LINE__, proc);
         exit(-1);
     }
     ret = sender->putBytes(xdrmemory->Data(), len);
     if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
+        printf("timeout in %s in %s:%d, proc_id: %lu, len: %d\n", __func__,
                __FILE__, __LINE__, proc, len);
         exit(-1);
     }
@@ -108,7 +111,7 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     time_start(clnt_apis, proc, NETWORK_TIME);
     ret = receiver->getBytes((char *)&len, sizeof(int));
     if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
                __LINE__, proc);
         exit(-1);
     }
@@ -117,7 +120,7 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     xdrmemory->Resize(len);
     ret = receiver->getBytes(xdrmemory->Data(), len);
     if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
+        printf("timeout in %s in %s:%d, proc_id: %lu, len: %d\n", __func__,
                __FILE__, __LINE__, proc, len);
         exit(-1);
     }

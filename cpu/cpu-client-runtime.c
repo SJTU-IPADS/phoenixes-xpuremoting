@@ -27,7 +27,9 @@
 #include "cpu-measurement.h"
 
 extern cpu_measurement_info totals[CPU_API_COUNT];
+#ifndef NO_OPTIMIZATION
 int local_device = -1;
+#endif // WITH_OPTIMIZATION
 
 #ifdef WITH_IB
 #include "cpu-ib.h"
@@ -290,6 +292,7 @@ cudaError_t cudaGetDevice(int* device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
+#ifndef NO_OPTIMIZATION
     if (local_device != -1) {
         *device = local_device;
         cpu_time_end(totals, proc);
@@ -307,6 +310,19 @@ cudaError_t cudaGetDevice(int* device)
     }
     cpu_time_end(totals, proc);
     return result.err;
+#else
+    int_result result;
+    enum clnt_stat retval_1;
+    retval_1 = cuda_get_device_1(&result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    if (result.err == 0) {
+        *device = result.int_result_u.data;
+    }
+    cpu_time_end(totals, proc);
+    return result.err;
+#endif // WITH_OPTIMIZATION
 }
 
 cudaError_t cudaGetDeviceCount(int* count)
@@ -396,11 +412,13 @@ cudaError_t cudaSetDevice(int device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
-    if (local_device == device) {
-        cpu_time_end(totals, proc);
-        return 0;
+#ifndef NO_OPTIMIZATION
+    if (local_device != device) {
+        local_device = device;
     }
-    local_device = device;
+    cpu_time_end(totals, proc);
+    return 0;
+#else
     int result;
     enum clnt_stat retval_1;
     retval_1 = cuda_set_device_1(device, &result, clnt);
@@ -409,6 +427,7 @@ cudaError_t cudaSetDevice(int device)
     }
     cpu_time_end(totals, proc);
     return result;
+#endif // WITH_OPTIMIZATION
 }
 
 cudaError_t cudaSetDeviceFlags(unsigned int  flags)

@@ -38,6 +38,10 @@
 
 extern cpu_measurement_info vanillas[CPU_API_COUNT];
 
+#ifndef NO_OPTIMIZATION
+int current_device = -1;
+#endif // WITH_OPTIMIZATION
+
 typedef struct host_alloc_info {
     size_t idx;
     size_t size;
@@ -353,6 +357,9 @@ bool_t cuda_get_device_1_svc(int_result *result, struct svc_req *rqstp)
     LOGE(LOG_DEBUG, "cudaGetDevice");
     cpu_time_start(vanillas, proc);
     result->err = cudaGetDevice(&result->int_result_u.data);
+#ifndef NO_OPTIMIZATION
+    current_device = result->int_result_u.data;
+#endif // WITH_OPTIMIZATION
     cpu_time_end(vanillas, proc);
     return 1;
 }
