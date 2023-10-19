@@ -9,44 +9,22 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-ShmBuffer::ShmBuffer(const char* shm_name, int buf_size)
+ShmBuffer::ShmBuffer(BufferPrivilege privilege, const char* shm_name, int buf_size)
+    : DeviceBuffer(privilege)
 {
-    int fd, err;
-
     shm_name_ = new char(strlen(shm_name) + 1);
     if (shm_name_ == NULL) {
         std::cerr << "Error on new" << std::endl;
         exit(1);
     }
     strcpy(shm_name_, shm_name);
-
-    fd = shm_open(shm_name_, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-    if (fd == -1) {
-        std::cerr << "Error on shm_open" << std::endl;
-        delete[] shm_name_;
-        exit(1);
-    }
-
-    shm_len_ = buf_size + sizeof(int) * 2;
-    if (ftruncate(fd, shm_len_) == -1) {
-        std::cerr << "Error on ftruncate" << std::endl;
-        shm_unlink(shm_name_);
-        delete[] shm_name_;
-        exit(1);
-    }
-
-    shm_ptr_ = mmap(NULL, shm_len_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (shm_ptr_ == MAP_FAILED) {
-        std::cerr << "Error on mmap" << std::endl;
-        shm_unlink(shm_name_);
-        delete[] shm_name_;
-        exit(1);
-    }
-
-    buf_ = (char*)shm_ptr_;
     buf_size_ = buf_size;
-    buf_head_ = (int*)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
-    *buf_head_ = *buf_tail_ = 0;
+
+    if (privilege_ == BufferHost) {
+        HostInit();
+    } else {
+        GuestInit();
+    }
     // std::cout << "size: " << buf_size_ << std::endl;
 }
 
@@ -110,8 +88,8 @@ int ShmBuffer::FlushOut()
             count = 0;
             auto end = std::chrono::system_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-            if (duration.count() > SHM_BUFFER_TIMEOUT) {
-                std::cerr << "timeout in " << __func__ << " in "<< __FILE__ << ":" << __LINE__ << std::endl;
+            if (duration.count() > BUFFER_IO_TIMEOUT) {
+                std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
                 return -1;
             }
         }
@@ -160,11 +138,70 @@ int ShmBuffer::FillIn()
             count = 0;
             auto end = std::chrono::system_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-            if (duration.count() > SHM_BUFFER_TIMEOUT) {
-                std::cerr << "timeout in " << __func__ << " in "<< __FILE__ << ":" << __LINE__ << std::endl;
+            if (duration.count() > BUFFER_IO_TIMEOUT) {
+                std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
                 return -1;
             }
         }
     }
     return 0;
+}
+
+void ShmBuffer::HostInit()
+{
+    int fd;
+
+    fd = shm_open(shm_name_, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR);
+    if (fd == -1) {
+        std::cerr << "Error on shm_open" << std::endl;
+        delete[] shm_name_;
+        exit(1);
+    }
+
+    // two int for head and tail
+    shm_len_ = buf_size_ + sizeof(int) * 2;
+    if (ftruncate(fd, shm_len_) == -1) {
+        std::cerr << "Error on ftruncate" << std::endl;
+        shm_unlink(shm_name_);
+        delete[] shm_name_;
+        exit(1);
+    }
+
+    shm_ptr_ = mmap(NULL, shm_len_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (shm_ptr_ == MAP_FAILED) {
+        std::cerr << "Error on mmap" << std::endl;
+        shm_unlink(shm_name_);
+        delete[] shm_name_;
+        exit(1);
+    }
+
+    buf_ = (char*)shm_ptr_;
+    buf_head_ = (int*)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
+    *buf_head_ = *buf_tail_ = 0;
+}
+
+void ShmBuffer::GuestInit()
+{
+    int fd;
+
+    fd = shm_open(shm_name_, O_RDWR, S_IRUSR | S_IWUSR);
+    if (fd == -1) {
+        std::cerr << "Error on shm_open" << std::endl;
+        delete[] shm_name_;
+        exit(1);
+    }
+
+    // two int for head and tail
+    shm_len_ = buf_size_ + sizeof(int) * 2;
+
+    shm_ptr_ = mmap(NULL, shm_len_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (shm_ptr_ == MAP_FAILED) {
+        std::cerr << "Error on mmap" << std::endl;
+        shm_unlink(shm_name_);
+        delete[] shm_name_;
+        exit(1);
+    }
+
+    buf_ = (char*)shm_ptr_;
+    buf_head_ = (int*)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
 }

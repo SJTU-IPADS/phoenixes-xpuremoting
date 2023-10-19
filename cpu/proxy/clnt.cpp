@@ -1,13 +1,13 @@
 #include "clnt.h"
 #include "measurement.h"
 #include "proxy_header.h"
+#include "shm_buffer.h"
+#include "tcpip_buffer.h"
 #include <fstream>
 #include <iostream>
 #include <mutex>
 #include <rpc/xdr.h>
 #include <unistd.h>
-
-ShmBuffer *sender, *receiver;
 
 static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
@@ -16,7 +16,52 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
 static const struct clnt_ops clnt_shm_ops = { clnt_shm_call, NULL, NULL,
                                               NULL,          NULL, NULL };
 
+DeviceBuffer *sender, *receiver;
+
+static void createDeviceBuffer()
+{
+#ifdef WITH_TCPIP
+    struct sockaddr_in address_receiver;
+    int addrlen = sizeof(address_receiver);
+    address_receiver.sin_family = AF_INET;
+    address_receiver.sin_port = htons(TCPIP_PORT_STOC);
+    inet_pton(AF_INET, "127.0.0.1", &address_receiver.sin_addr);
+    receiver =
+        new TcpipBuffer(BufferGuest, (struct sockaddr *)&address_receiver,
+                        (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
+    struct sockaddr_in address_sender;
+    addrlen = sizeof(address_sender);
+    address_sender.sin_family = AF_INET;
+    address_sender.sin_port = htons(TCPIP_PORT_CTOS);
+    inet_pton(AF_INET, "127.0.0.1", &address_sender.sin_addr);
+    sender = new TcpipBuffer(BufferGuest, (struct sockaddr *)&address_sender,
+                             (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
+#endif // WITH_TCPIP
+#ifdef WITH_SHARED_MEMORY
+    receiver = new ShmBuffer(BufferGuest, SHM_NAME_STOC, SHM_BUFFER_SIZE);
+    sender = new ShmBuffer(BufferGuest, SHM_NAME_CTOS, SHM_BUFFER_SIZE);
+#endif // WITH_SHARED_MEMORY
+}
+
+static void destroyDeviceBuffer()
+{
+#ifdef WITH_TCPIP
+    TcpipBuffer *tcpip_sender = dynamic_cast<TcpipBuffer *>(sender),
+                *tcpip_receiver = dynamic_cast<TcpipBuffer *>(receiver);
+    delete tcpip_sender;
+    delete tcpip_receiver;
+#endif // WITH_TCPIP
+#ifdef WITH_SHARED_MEMORY
+    ShmBuffer *shm_sender = dynamic_cast<ShmBuffer *>(sender),
+              *shm_receiver = dynamic_cast<ShmBuffer *>(receiver);
+    delete shm_sender;
+    delete shm_receiver;
+#endif // WITH_SHARED_MEMORY
+    sender = receiver = NULL;
+}
+
 int is_client = 0;
+XDR *xdrs_arg, *xdrs_res;
 
 CLIENT *clnt_shm_create()
 {
@@ -25,10 +70,9 @@ CLIENT *clnt_shm_create()
         std::ofstream outfile("client_exist.txt");
         outfile << "1";
         outfile.close();
-        // sender = new ShmBuffer("/ctos", 62914552);
-        // receiver = new ShmBuffer("/stoc", 62914552);
-        sender = new ShmBuffer("/ctos", 10485752);
-        receiver = new ShmBuffer("/stoc", 10485752);
+        createDeviceBuffer();
+        xdrs_arg = new_xdrmemory(XDR_ENCODE);
+        xdrs_res = new_xdrmemory(XDR_DECODE);
     } else {
         is_client = 0;
     }
@@ -48,8 +92,9 @@ void clnt_shm_destroy(CLIENT *clnt)
 {
     free(clnt);
     if (is_client) {
-        delete sender;
-        delete receiver;
+        destroy_xdrmemory(&xdrs_res);
+        destroy_xdrmemory(&xdrs_arg);
+        destroyDeviceBuffer();
         remove("client_exist.txt");
         print_detailed_info(clnt_apis, API_COUNT, "client");
     }
@@ -84,12 +129,12 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     payload += sizeof(ProxyHeader);
 
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
-    XDR *xdrs_arg = new_xdrmemory(XDR_ENCODE);
+    XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
+    xdrmemory->Clear();
     (*xargs)(xdrs_arg, argsp);
     time_end(clnt_apis, proc, SERIALIZATION_TIME);
 
     time_start(clnt_apis, proc, NETWORK_TIME);
-    XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
     int len = xdrmemory->Size();
     // max_len = std::max(max_len, len);
     ret = sender->putBytes((char *)&len, sizeof(int));
@@ -104,7 +149,7 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                __FILE__, __LINE__, proc, len);
         exit(-1);
     }
-    destroy_xdrmemory(&xdrs_arg);
+    sender->FlushOut();
     time_end(clnt_apis, proc, NETWORK_TIME);
     payload += len + sizeof(int);
 
@@ -115,7 +160,6 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                __LINE__, proc);
         exit(-1);
     }
-    XDR *xdrs_res = new_xdrmemory(XDR_DECODE);
     xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
     xdrmemory->Resize(len);
     ret = receiver->getBytes(xdrmemory->Data(), len);

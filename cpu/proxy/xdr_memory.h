@@ -19,6 +19,7 @@ public:
     int Size();
     void Resize(int size);
     char *Data();
+    void Clear();
 
     // inner XDR ops
     bool_t Getlong(long *lp);

@@ -4,12 +4,55 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
-extern XDR *dispatch(int proc_id, XDR **xdrs_arg);
+extern int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res);
+
+DeviceBuffer *sender, *receiver;
+
+static void createDeviceBuffer()
+{
+#ifdef WITH_TCPIP
+    struct sockaddr_in address_sender;
+    int addrlen = sizeof(address_sender);
+    address_sender.sin_family = AF_INET;
+    address_sender.sin_addr.s_addr = INADDR_ANY;
+    address_sender.sin_port = htons(TCPIP_PORT_STOC);
+    sender = new TcpipBuffer(BufferHost, (struct sockaddr *)&address_sender,
+                             (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
+    struct sockaddr_in address_receiver;
+    addrlen = sizeof(address_receiver);
+    address_receiver.sin_family = AF_INET;
+    address_receiver.sin_addr.s_addr = INADDR_ANY;
+    address_receiver.sin_port = htons(TCPIP_PORT_CTOS);
+    receiver = new TcpipBuffer(BufferHost, (struct sockaddr *)&address_receiver,
+                               (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
+#endif // WITH_TCPIP
+#ifdef WITH_SHARED_MEMORY
+    sender = new ShmBuffer(BufferHost, SHM_NAME_STOC, SHM_BUFFER_SIZE);
+    receiver = new ShmBuffer(BufferHost, SHM_NAME_CTOS, SHM_BUFFER_SIZE);
+#endif // WITH_SHARED_MEMORY
+}
+
+static void destroyDeviceBuffer()
+{
+#ifdef WITH_TCPIP
+    TcpipBuffer *tcpip_sender = dynamic_cast<TcpipBuffer *>(sender),
+                *tcpip_receiver = dynamic_cast<TcpipBuffer *>(receiver);
+    delete tcpip_sender;
+    delete tcpip_receiver;
+#endif // WITH_TCPIP
+#ifdef WITH_SHARED_MEMORY
+    ShmBuffer *shm_sender = dynamic_cast<ShmBuffer *>(sender),
+              *shm_receiver = dynamic_cast<ShmBuffer *>(receiver);
+    delete shm_sender;
+    delete shm_receiver;
+#endif // WITH_SHARED_MEMORY
+    sender = receiver = NULL;
+}
 
 detailed_info svc_apis[API_COUNT];
 extern int current_device;
 
-void process_header(ProxyHeader &header)
+int process_header(ProxyHeader &header)
 {
 #define cudaSetDevice_API 126
     int local_device = header.get_device_id();
@@ -20,16 +63,20 @@ void process_header(ProxyHeader &header)
         int result = cudaSetDevice(current_device);
         if (result != cudaSuccess) {
             printf("cudaSetDevice failed, error code: %d\n", result);
-            exit(-1);
+            return -1;
         }
         time_end(svc_apis, cudaSetDevice_API, TOTAL_TIME);
     }
+    return 0;
 }
+
+XDR *xdrs_arg, *xdrs_res;
 
 void svc_run()
 {
-    // ShmBuffer sender("/stoc", 62914552), receiver("/ctos", 62914552);
-    ShmBuffer sender("/stoc", 10485752), receiver("/ctos", 10485752);
+    createDeviceBuffer();
+    xdrs_arg = new_xdrmemory(XDR_DECODE);
+    xdrs_res = new_xdrmemory(XDR_ENCODE);
     printf("Shm_svc_run\n");
 
     while (1) {
@@ -38,55 +85,58 @@ void svc_run()
         int payload = 0;
 
         ProxyHeader header;
-        auto ret = receiver.getBytes((char *)&header, sizeof(ProxyHeader));
+        auto ret = receiver->getBytes((char *)&header, sizeof(ProxyHeader));
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
                    __LINE__, header.get_proc_id());
-            exit(-1);
+            goto end;
         }
         // printf("proc_id = %d\n", proc_id);
         int proc_id = header.get_proc_id();
-        process_header(header);
+        if (process_header(header) < 0) {
+            goto end;
+        }
 
         int len = 0;
-        ret = receiver.getBytes((char *)&len, sizeof(int));
+        ret = receiver->getBytes((char *)&len, sizeof(int));
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
                    __LINE__, proc_id);
-            exit(-1);
+            goto end;
         }
-        XDR *xdrs_arg = new_xdrmemory(XDR_DECODE);
         XDRMemory *xdrmemory =
             reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
         xdrmemory->Resize(len);
-        ret = receiver.getBytes(xdrmemory->Data(), len);
+        ret = receiver->getBytes(xdrmemory->Data(), len);
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
                    __FILE__, __LINE__, proc_id, len);
-            exit(-1);
+            goto end;
         }
         set_start(svc_apis, proc_id, NETWORK_TIME, &start_0);
         time_end(svc_apis, proc_id, NETWORK_TIME);
         payload += len + sizeof(int) + sizeof(ProxyHeader);
 
-        XDR *xdrs_res = dispatch(proc_id, &xdrs_arg);
+        if (dispatch(proc_id, xdrs_arg, xdrs_res) < 0) {
+            goto end;
+        }
 
         time_start(svc_apis, proc_id, NETWORK_TIME);
         xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
         len = xdrmemory->Size();
-        ret = sender.putBytes((char *)&len, sizeof(int));
+        ret = sender->putBytes((char *)&len, sizeof(int));
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
                    __FILE__, __LINE__, proc_id, len);
-            exit(-1);
+            goto end;
         }
-        ret = sender.putBytes(xdrmemory->Data(), len);
+        ret = sender->putBytes(xdrmemory->Data(), len);
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
                    __FILE__, __LINE__, proc_id, len);
-            exit(-1);
+            goto end;
         }
-        destroy_xdrmemory(&xdrs_res);
+        sender->FlushOut();
         time_end(svc_apis, proc_id, NETWORK_TIME);
         payload += len + sizeof(int);
 
@@ -95,4 +145,9 @@ void svc_run()
         add_cnt(svc_apis, proc_id);
         add_payload_size(svc_apis, proc_id, payload);
     }
+
+end:
+    destroy_xdrmemory(&xdrs_res);
+    destroy_xdrmemory(&xdrs_arg);
+    destroyDeviceBuffer();
 }

@@ -60,7 +60,7 @@ def run_unittests(tests):
         print('=======================')
         server_pid = start_server()
         print('run unit test in %s, server pid: %d' % (test, server_pid))
-        time.sleep(1)
+        time.sleep(3)
         os.chdir(test)
         compile_result = os.system('bash compile.sh')
         if compile_result != 0:
@@ -74,6 +74,7 @@ def run_unittests(tests):
             failed_tests.append(test)
             kill_server(server_pid)
             continue
+        kill_server(server_pid)
 
 if __name__ == '__main__':
     compile()
