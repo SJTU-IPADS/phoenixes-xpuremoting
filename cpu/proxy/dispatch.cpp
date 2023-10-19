@@ -1540,7 +1540,7 @@ static int _rpc_cudnnbatchnormalizationforwardinference_1(
 
 extern detailed_info svc_apis[API_COUNT];
 
-XDR *dispatch(int proc_id, XDR **xdrs_arg)
+int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res)
 {
     union {
         char *rpc_printmessage_1_arg;
@@ -3563,7 +3563,7 @@ XDR *dispatch(int proc_id, XDR **xdrs_arg)
 
     time_start(svc_apis, proc_id, SERIALIZATION_TIME);
     memset((char *)&argument, 0, sizeof(argument));
-    (*_xdr_argument)(*xdrs_arg, (caddr_t)&argument);
+    (*_xdr_argument)(xdrs_arg, (caddr_t)&argument);
     time_end(svc_apis, proc_id, SERIALIZATION_TIME);
 
     struct svc_req *rqstp = (struct svc_req *)malloc(sizeof(struct svc_req));
@@ -3571,27 +3571,28 @@ XDR *dispatch(int proc_id, XDR **xdrs_arg)
     rqstp->rq_proc = proc_id;
 
     retval = (bool_t)(*local)((char *)&argument, (void *)&result, rqstp);
-    XDR *xdrs_res = new_xdrmemory(XDR_ENCODE);
+    XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
+    xdrmemory->Clear();
     if (retval > 0) {
         time_start(svc_apis, proc_id, SERIALIZATION_TIME);
         (*_xdr_result)(xdrs_res, (caddr_t)&result);
         time_end(svc_apis, proc_id, SERIALIZATION_TIME);
     } else {
         std::cout << "Local call failed." << std::endl;
-        exit(1);
+        return -1;
     }
 
-    (*xdrs_arg)->x_op = XDR_FREE;
-    if (!(*_xdr_argument)(*xdrs_arg, (caddr_t)&argument)) {
+    xdrs_arg->x_op = XDR_FREE;
+    if (!(*_xdr_argument)(xdrs_arg, (caddr_t)&argument)) {
         std::cout << "Unable to free arguments." << std::endl;
-        exit(1);
+        return -1;
     }
-    destroy_xdrmemory(xdrs_arg);
+    xdrs_arg->x_op = XDR_DECODE;
 
     if (!rpc_cd_prog_1_freeresult(NULL, _xdr_result, (caddr_t)&result)) {
         std::cout << "Unable to free results." << std::endl;
-        exit(1);
+        return -1;
     }
 
-    return xdrs_res;
+    return 0;
 }

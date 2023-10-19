@@ -21,6 +21,12 @@ void XDRMemory::Resize(int size)
     position = 0;
 }
 
+void XDRMemory::Clear()
+{
+    buffer.clear();
+    position = 0;
+}
+
 bool_t XDRMemory::Getlong(long *lp)
 {
     if (position + sizeof(long) <= buffer.size()) {

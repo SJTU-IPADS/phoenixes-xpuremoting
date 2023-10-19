@@ -22,23 +22,25 @@ RPC_H = $(RPC_DEF:%.x=%.h)
 
 
 PROXY_PREFIX = ./proxy
-# VERSION = NO_OPTIMIZATION / WITH_SHARED_MEMORY / WITH_RDMA
+# VERSION = NO_OPTIMIZATION / WITH_TCPIP / WITH_SHARED_MEMORY / WITH_RDMA
 VERSION ?= WITH_SHARED_MEMORY
 
 ifeq ($(VERSION), NO_OPTIMIZATION)
 else
-SRC_PROXY_CLIENT = $(PROXY_PREFIX)/shm_buffer.cpp	\
-					$(PROXY_PREFIX)/xdr_memory.cpp	\
-					$(PROXY_PREFIX)/clnt.cpp		\
-					$(PROXY_PREFIX)/measurement.cpp	\
-					$(PROXY_PREFIX)/proxy_header.cpp
+SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_memory.cpp		\
+					$(PROXY_PREFIX)/clnt.cpp			\
+					$(PROXY_PREFIX)/measurement.cpp		\
+					$(PROXY_PREFIX)/proxy_header.cpp 	\
+					$(PROXY_PREFIX)/shm_buffer.cpp		\
+					$(PROXY_PREFIX)/tcpip_buffer.cpp
 
-SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp	\
-				$(PROXY_PREFIX)/shm_buffer.cpp	\
-				$(PROXY_PREFIX)/xdr_memory.cpp	\
-				$(PROXY_PREFIX)/svc.cpp			\
-				$(PROXY_PREFIX)/measurement.cpp	\
-				$(PROXY_PREFIX)/proxy_header.cpp
+SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
+				$(PROXY_PREFIX)/xdr_memory.cpp		\
+				$(PROXY_PREFIX)/svc.cpp				\
+				$(PROXY_PREFIX)/measurement.cpp		\
+				$(PROXY_PREFIX)/proxy_header.cpp 	\
+				$(PROXY_PREFIX)/shm_buffer.cpp		\
+				$(PROXY_PREFIX)/tcpip_buffer.cpp
 endif
 
 

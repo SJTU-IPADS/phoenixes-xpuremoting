@@ -3,12 +3,14 @@
 
 #include "device_buffer.h"
 
-#define SHM_BUFFER_TIMEOUT 10 // seconds
+#define SHM_BUFFER_SIZE 10485752
+#define SHM_NAME_STOC "/stoc"
+#define SHM_NAME_CTOS "/ctos"
 
 // Shared Memory Buffer, should act like a ring buffer.
 class ShmBuffer final : public DeviceBuffer {
 public:
-    ShmBuffer(const char* shm_name, int buf_size);
+    ShmBuffer(BufferPrivilege privilege, const char* shm_name, int buf_size);
     ~ShmBuffer();
     const char* getShmName();
     int getShmLen();
@@ -30,6 +32,8 @@ private:
     int buf_size_;
     int *buf_head_, *buf_tail_;
 
+    void HostInit();
+    void GuestInit();
     int WriteCapacity(int read_head);
     int ReadCapacity(int read_tail);
 };
