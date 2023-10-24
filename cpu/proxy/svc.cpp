@@ -62,7 +62,7 @@ int process_header(ProxyHeader &header)
         current_device = local_device;
         int result = cudaSetDevice(current_device);
         if (result != cudaSuccess) {
-            printf("cudaSetDevice failed, error code: %d\n", result);
+            printf("cudaSetDevice failed, error code: %d, current device: %d, proc id: %d\n", result, current_device, header.get_proc_id());
             return -1;
         }
         time_end(svc_apis, cudaSetDevice_API, TOTAL_TIME);
@@ -84,8 +84,57 @@ void svc_run()
         gettimeofday(&start_0, NULL);
         int payload = 0;
 
+        int request_count;
+        auto ret = receiver->getBytes((char *)&request_count, sizeof(request_count));
+        if (ret < 0) {
+            printf("timeout in %s in %s:%d\n", __func__, __FILE__,
+                   __LINE__);
+            goto end;
+        }
+        payload += sizeof(request_count);
+        // printf("request count: %d\n", request_count);
+
+        for (int i = 0; i < request_count-1; i++) {
+            ProxyHeader header;
+            auto ret = receiver->getBytes((char *)&header, sizeof(ProxyHeader));
+            if (ret < 0) {
+                printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+                       __LINE__, header.get_proc_id());
+                goto end;
+            }
+            // printf("proc_id = %d\n", proc_id);
+            int proc_id = header.get_proc_id();
+            if (process_header(header) < 0) {
+                goto end;
+            }
+
+            int len = 0;
+            ret = receiver->getBytes((char *)&len, sizeof(int));
+            if (ret < 0) {
+                printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+                       __LINE__, proc_id);
+                goto end;
+            }
+            XDRMemory *xdrmemory =
+                reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
+            xdrmemory->Resize(len);
+            ret = receiver->getBytes(xdrmemory->Data(), len);
+            if (ret < 0) {
+                printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
+                       __FILE__, __LINE__, proc_id, len);
+                goto end;
+            }
+            set_start(svc_apis, proc_id, NETWORK_TIME, &start_0);
+            time_end(svc_apis, proc_id, NETWORK_TIME);
+            payload += len + sizeof(int) + sizeof(ProxyHeader);
+
+            if (dispatch(proc_id, xdrs_arg, xdrs_res) < 0) {
+                goto end;
+            }
+        }
+
         ProxyHeader header;
-        auto ret = receiver->getBytes((char *)&header, sizeof(ProxyHeader));
+        ret = receiver->getBytes((char *)&header, sizeof(ProxyHeader));
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
                    __LINE__, header.get_proc_id());

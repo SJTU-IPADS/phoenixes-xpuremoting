@@ -6,6 +6,9 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <unordered_set>
+#include <cassert>
+#include "async_batch_caller.h"
 #include <rpc/xdr.h>
 #include <unistd.h>
 
@@ -104,10 +107,40 @@ void clnt_shm_destroy(CLIENT *clnt)
 std::mutex mut;
 extern int local_device;
 
+bool is_async_api(int proc_id) {
+    static std::unordered_set<int> async_apis{475, 317, 402, 5008, /*5041,*/ 5044, 5048, /*5301,*/ 5309, 5304, 5310, 5302, /*5010,*/ 5014, 5018, 5308, 5319, 3008, 3010, 3004};
+    return (async_apis.find(proc_id) != async_apis.end());
+}
+
+void log_api(int proc_id) {
+    std::ofstream file("api.log", std::ios::app);
+    if (!file) {
+        std::cerr << "error in open file" << std::endl;
+        return;
+    }
+    if (is_async_api(proc_id)) {
+        file << proc_id << " async" << std::endl;
+    } else {
+        file << proc_id << " sync" << std::endl;
+    }
+    file.close();
+}
+
+void log_sync_api(int proc_id) {
+    // std::ofstream file("api.log", std::ios::app);
+    // if (!file) {
+    //     std::cerr << "error in open file" << std::endl;
+    //     return;
+    // }
+    // file << "sync api: " << proc_id << " with batch size " << batch.Size() << std::endl;
+    // file.close();
+}
+
 static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
                                     void *resultsp, struct timeval timeout)
 {
+    static AsyncBatch batch;
     time_start(clnt_apis, proc, TOTAL_TIME);
     int payload = 0;
 
@@ -117,9 +150,66 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
 
     std::lock_guard<std::mutex> lk(mut);
 
+    if (is_async_api(proc)) {
+        time_start(clnt_apis, proc, SERIALIZATION_TIME);
+        XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
+        xdrmemory->Clear();
+        (*xargs)(xdrs_arg, argsp);
+        AsyncCall call(proc, local_device, xdrmemory->GetBuffer());
+        batch.Push(call);
+        time_end(clnt_apis, proc, SERIALIZATION_TIME);
+        *(int*) resultsp = 0; // as CUDA_SUCCESS
+        return RPC_SUCCESS;
+    }
+
+    // write request count first
+    int request_count = batch.Size() + 1;
+    assert(request_count >= 1);
+    time_start(clnt_apis, proc, NETWORK_TIME);
+    auto ret = sender->putBytes((char*)&request_count, sizeof(request_count));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+               __LINE__, proc);
+        exit(-1);
+    }
+    payload += sizeof(request_count);
+    // printf("write request count %d\n", request_count);
+    time_end(clnt_apis, proc, NETWORK_TIME);
+
+    // execute the former async apis
+    for (int i = 0; i < request_count-1; i++) {
+        auto& call = batch.Front();
+        time_start(clnt_apis, call.proc_id, NETWORK_TIME);
+        ProxyHeader header(call.proc_id, call.device_num);
+        ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
+        if (ret < 0) {
+            printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+                   __LINE__, call.proc_id);
+            exit(-1);
+        }
+        // printf("write proc id %d, device num: %d\n", call.proc_id, call.device_num);
+        int len = call.payload.size();
+        ret = sender->putBytes((char *)&len, sizeof(int));
+        if (ret < 0) {
+            printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+                   __LINE__, call.proc_id);
+            exit(-1);
+        }
+        ret = sender->putBytes((char *)call.payload.data(), len);
+        if (ret < 0) {
+            printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+                   __LINE__, call.proc_id);
+            exit(-1);
+        }
+        sender->FlushOut();
+        time_end(clnt_apis, call.proc_id, NETWORK_TIME);
+        payload += len + sizeof(int);
+        batch.Pop();
+    }
+
     time_start(clnt_apis, proc, NETWORK_TIME);
     ProxyHeader header(proc, local_device);
-    auto ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
+    ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
     if (ret < 0) {
         printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
                __LINE__, proc);
