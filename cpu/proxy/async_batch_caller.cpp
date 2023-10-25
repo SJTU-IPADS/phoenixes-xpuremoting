@@ -1,13 +1,10 @@
 #include "async_batch_caller.h"
 #include <cassert>
 #include <iostream>
-
-AsyncBatch batch;
+#include <unordered_set>
 
 int AsyncBatch::Size() {
-    int size = queue.size();
-    assert(size >= 0);
-    return size;
+    return queue.size();
 }
 
 AsyncCall& AsyncBatch::Front() {
@@ -25,10 +22,3 @@ void AsyncBatch::Clear() {
 void AsyncBatch::Push(AsyncCall& call) {
     queue.push_back(call);
 }
-
-// AsyncBatch::AsyncBatch() {
-//     std::cout << "in " << __func__ << std::endl;
-//     assert(0);
-//     int size = queue.size();
-//     assert(size >= 0);
-// }

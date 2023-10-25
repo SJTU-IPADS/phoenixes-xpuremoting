@@ -20,7 +20,6 @@ class AsyncBatch {
         void Pop();
         void Clear();
         void Push(AsyncCall& call);
-        // AsyncBatch();
     private:
         std::deque<AsyncCall> queue = {};
 };

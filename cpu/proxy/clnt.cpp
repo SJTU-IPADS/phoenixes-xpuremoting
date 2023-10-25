@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <vector>
 #include <unordered_set>
 #include <cassert>
 #include "async_batch_caller.h"
@@ -112,6 +113,66 @@ bool is_async_api(int proc_id) {
     return (async_apis.find(proc_id) != async_apis.end());
 }
 
+void call_async_api(rpcproc_t proc, xdrproc_t xargs,
+                    void *argsp, xdrproc_t xresults,
+                    void *resultsp, struct timeval timeout, AsyncBatch& batch) {
+    time_start(clnt_apis, proc, SERIALIZATION_TIME);
+    XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
+    xdrmemory->Clear();
+    (*xargs)(xdrs_arg, argsp);
+    AsyncCall call(proc, local_device, xdrmemory->GetBuffer());
+    batch.Push(call);
+    time_end(clnt_apis, proc, SERIALIZATION_TIME);
+    *(int*) resultsp = 0; // as CUDA_SUCCESS
+    return;
+}
+
+void send_request(int proc_id, int device_num, char* payload, int len) {
+    ProxyHeader header(proc_id, device_num);
+    time_start(clnt_apis, proc_id, NETWORK_TIME);
+    auto ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+               __LINE__, proc_id);
+        exit(-1);
+    }
+    ret = sender->putBytes((char *)&len, sizeof(int));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+               __LINE__, proc_id);
+        exit(-1);
+    }
+    ret = sender->putBytes((char *)payload, len);
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+               __LINE__, proc_id);
+        exit(-1);
+    }
+    sender->FlushOut();
+    time_end(clnt_apis, proc_id, NETWORK_TIME);
+}
+
+int receive_response(int proc_id) {
+    int len;
+    time_start(clnt_apis, proc_id, NETWORK_TIME);
+    auto ret = receiver->getBytes((char *)&len, sizeof(int));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
+               __LINE__, proc_id);
+        exit(-1);
+    }
+    auto xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
+    xdrmemory->Resize(len);
+    ret = receiver->getBytes(xdrmemory->Data(), len);
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %lu, len: %d\n", __func__,
+               __FILE__, __LINE__, proc_id, len);
+        exit(-1);
+    }
+    time_end(clnt_apis, proc_id, NETWORK_TIME);
+    return len;
+}
+
 static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
                                     void *resultsp, struct timeval timeout)
@@ -127,14 +188,7 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     std::lock_guard<std::mutex> lk(mut);
 
     if (is_async_api(proc)) {
-        time_start(clnt_apis, proc, SERIALIZATION_TIME);
-        XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
-        xdrmemory->Clear();
-        (*xargs)(xdrs_arg, argsp);
-        AsyncCall call(proc, local_device, xdrmemory->GetBuffer());
-        batch.Push(call);
-        time_end(clnt_apis, proc, SERIALIZATION_TIME);
-        *(int*) resultsp = 0; // as CUDA_SUCCESS
+        call_async_api(proc, xargs, argsp, xresults, resultsp, timeout, batch);
         return RPC_SUCCESS;
     }
 
@@ -155,44 +209,10 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     // execute the former async apis
     for (int i = 0; i < request_count-1; i++) {
         auto& call = batch.Front();
-        time_start(clnt_apis, call.proc_id, NETWORK_TIME);
-        ProxyHeader header(call.proc_id, call.device_num);
-        ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
-                   __LINE__, call.proc_id);
-            exit(-1);
-        }
-        // printf("write proc id %d, device num: %d\n", call.proc_id, call.device_num);
-        int len = call.payload.size();
-        ret = sender->putBytes((char *)&len, sizeof(int));
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
-                   __LINE__, call.proc_id);
-            exit(-1);
-        }
-        ret = sender->putBytes((char *)call.payload.data(), len);
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
-                   __LINE__, call.proc_id);
-            exit(-1);
-        }
-        sender->FlushOut();
-        time_end(clnt_apis, call.proc_id, NETWORK_TIME);
-        payload += len + sizeof(int);
+        send_request(call.proc_id, call.device_num, (char*) call.payload.data(), call.payload.size());
+        payload += call.payload.size() + sizeof(int) + sizeof(ProxyHeader);
         batch.Pop();
     }
-
-    time_start(clnt_apis, proc, NETWORK_TIME);
-    ProxyHeader header(proc, local_device);
-    ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
-               __LINE__, proc);
-        exit(-1);
-    }
-    time_end(clnt_apis, proc, NETWORK_TIME);
-    payload += sizeof(ProxyHeader);
 
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
     XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
@@ -200,41 +220,10 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
     (*xargs)(xdrs_arg, argsp);
     time_end(clnt_apis, proc, SERIALIZATION_TIME);
 
-    time_start(clnt_apis, proc, NETWORK_TIME);
-    int len = xdrmemory->Size();
-    // max_len = std::max(max_len, len);
-    ret = sender->putBytes((char *)&len, sizeof(int));
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
-               __LINE__, proc);
-        exit(-1);
-    }
-    ret = sender->putBytes(xdrmemory->Data(), len);
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %lu, len: %d\n", __func__,
-               __FILE__, __LINE__, proc, len);
-        exit(-1);
-    }
-    sender->FlushOut();
-    time_end(clnt_apis, proc, NETWORK_TIME);
-    payload += len + sizeof(int);
+    send_request(proc, local_device, xdrmemory->Data(), xdrmemory->Size());
+    payload += xdrmemory->Size() + sizeof(int) + sizeof(ProxyHeader);
 
-    time_start(clnt_apis, proc, NETWORK_TIME);
-    ret = receiver->getBytes((char *)&len, sizeof(int));
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %lu\n", __func__, __FILE__,
-               __LINE__, proc);
-        exit(-1);
-    }
-    xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
-    xdrmemory->Resize(len);
-    ret = receiver->getBytes(xdrmemory->Data(), len);
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %lu, len: %d\n", __func__,
-               __FILE__, __LINE__, proc, len);
-        exit(-1);
-    }
-    time_end(clnt_apis, proc, NETWORK_TIME);
+    auto len = receive_response(proc);
     payload += len + sizeof(int);
 
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
