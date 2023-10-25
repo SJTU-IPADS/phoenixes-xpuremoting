@@ -112,30 +112,6 @@ bool is_async_api(int proc_id) {
     return (async_apis.find(proc_id) != async_apis.end());
 }
 
-void log_api(int proc_id) {
-    std::ofstream file("api.log", std::ios::app);
-    if (!file) {
-        std::cerr << "error in open file" << std::endl;
-        return;
-    }
-    if (is_async_api(proc_id)) {
-        file << proc_id << " async" << std::endl;
-    } else {
-        file << proc_id << " sync" << std::endl;
-    }
-    file.close();
-}
-
-void log_sync_api(int proc_id) {
-    // std::ofstream file("api.log", std::ios::app);
-    // if (!file) {
-    //     std::cerr << "error in open file" << std::endl;
-    //     return;
-    // }
-    // file << "sync api: " << proc_id << " with batch size " << batch.Size() << std::endl;
-    // file.close();
-}
-
 static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
                                     void *resultsp, struct timeval timeout)

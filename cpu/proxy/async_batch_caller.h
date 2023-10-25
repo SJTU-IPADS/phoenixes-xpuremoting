@@ -25,6 +25,4 @@ class AsyncBatch {
         std::deque<AsyncCall> queue = {};
 };
 
-// extern AsyncBatch batch;
-
 #endif
