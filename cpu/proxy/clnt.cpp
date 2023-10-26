@@ -203,7 +203,6 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
         exit(-1);
     }
     payload += sizeof(request_count);
-    // printf("write request count %d\n", request_count);
     time_end(clnt_apis, proc, NETWORK_TIME);
 
     // execute the former async apis
@@ -214,6 +213,7 @@ static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
         batch.Pop();
     }
 
+    // execute the last request
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
     XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
     xdrmemory->Clear();
