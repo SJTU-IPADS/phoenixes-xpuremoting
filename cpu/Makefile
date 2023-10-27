@@ -32,7 +32,8 @@ SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_memory.cpp		\
 					$(PROXY_PREFIX)/measurement.cpp		\
 					$(PROXY_PREFIX)/proxy_header.cpp 	\
 					$(PROXY_PREFIX)/shm_buffer.cpp		\
-					$(PROXY_PREFIX)/tcpip_buffer.cpp
+					$(PROXY_PREFIX)/tcpip_buffer.cpp	\
+					$(PROXY_PREFIX)/rdma_buffer.cpp
 
 SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
 				$(PROXY_PREFIX)/xdr_memory.cpp		\
@@ -40,7 +41,8 @@ SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
 				$(PROXY_PREFIX)/measurement.cpp		\
 				$(PROXY_PREFIX)/proxy_header.cpp 	\
 				$(PROXY_PREFIX)/shm_buffer.cpp		\
-				$(PROXY_PREFIX)/tcpip_buffer.cpp
+				$(PROXY_PREFIX)/tcpip_buffer.cpp	\
+				$(PROXY_PREFIX)/rdma_buffer.cpp
 endif
 
 
@@ -114,15 +116,12 @@ CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) #-O2
 # TODO: use extern in header files instead of direct definition e.g. in cpu-common.h to remove -fcommon flag
 CC_FLAGS += -fcommon
 CC_FLAGS += -D$(VERSION)
-LD_FLAGS = $(LIB_FLAGS) -ltirpc -ldl -lcrypto -lelf -lrt
+CC_FLAGS += -DNO_DCT
+LD_FLAGS = $(LIB_FLAGS) -ltirpc -ldl -lcrypto -lelf -lrt -lpthread -libverbs
 
 ifdef WITH_DEBUG
 # use ASAN_OPTIONS=protect_shadow_gap=0  LSAN_OPTIONS=fast_unwind_on_malloc=0 when running
 CC_FLAGS += -g -ggdb #-static-libasan -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fsanitize-address-use-after-scope
-endif
-
-ifdef WITH_IB
-LD_FLAGS += -libverbs
 endif
 
 ifdef LOG
@@ -137,7 +136,7 @@ ifdef WITH_IB
 CC_FLAGS += -DWITH_IB=$(WITH_IB)
 endif
 
-SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lpthread -lnvidia-ml -lcudnn
+SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lnvidia-ml -lcudnn
 SERVER_BIN_LD_FLAGS = $(SERVER_LD_FLAGS) -Wl,--unresolved-symbols=ignore-in-object-files
 CLIENT_LD_FLAGS = $(LD_FLAGS)
 

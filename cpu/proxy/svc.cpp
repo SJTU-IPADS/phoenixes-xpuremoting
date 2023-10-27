@@ -6,7 +6,7 @@
 
 extern int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res);
 
-DeviceBuffer *sender, *receiver;
+DeviceBuffer *sender = NULL, *receiver = NULL;
 
 static void createDeviceBuffer()
 {
@@ -25,11 +25,24 @@ static void createDeviceBuffer()
     address_receiver.sin_port = htons(TCPIP_PORT_CTOS);
     receiver = new TcpipBuffer(BufferHost, (struct sockaddr *)&address_receiver,
                                (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
+    std::cout << "create tcpip buffer" << std::endl;
 #endif // WITH_TCPIP
 #ifdef WITH_SHARED_MEMORY
     sender = new ShmBuffer(BufferHost, SHM_NAME_STOC, SHM_BUFFER_SIZE);
     receiver = new ShmBuffer(BufferHost, SHM_NAME_CTOS, SHM_BUFFER_SIZE);
+    std::cout << "create shm buffer" << std::endl;
 #endif // WITH_SHARED_MEMORY
+#ifdef WITH_RDMA
+    receiver = new RDMABuffer(BufferHost, RDMA_CONNECTION_PORT_CTOS, "",
+                              RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS,
+                              RDMA_MEM_NAME_CTOS, "", RDMA_BUFFER_SIZE);
+    sender =
+        new RDMABuffer(BufferGuest, 0,
+                       "localhost:" + std::to_string(RDMA_CONNECTION_PORT_STOC),
+                       RDMA_NIC_IDX_STOC, RDMA_NIC_NAME_STOC,
+                       RDMA_MEM_NAME_STOC, "client-qp", RDMA_BUFFER_SIZE);
+    std::cout << "create rdma buffer" << std::endl;
+#endif // WITH_RDMA
 }
 
 static void destroyDeviceBuffer()
@@ -46,6 +59,12 @@ static void destroyDeviceBuffer()
     delete shm_sender;
     delete shm_receiver;
 #endif // WITH_SHARED_MEMORY
+#ifdef WITH_RDMA
+    RDMABuffer *rdma_sender = dynamic_cast<RDMABuffer *>(sender),
+               *rdma_receiver = dynamic_cast<RDMABuffer *>(receiver);
+    delete rdma_sender;
+    delete rdma_receiver;
+#endif // WITH_RDMA
     sender = receiver = NULL;
 }
 
@@ -77,7 +96,6 @@ void svc_run()
     createDeviceBuffer();
     xdrs_arg = new_xdrmemory(XDR_DECODE);
     xdrs_res = new_xdrmemory(XDR_ENCODE);
-    printf("Shm_svc_run\n");
 
     while (1) {
         struct timeval start_0;
