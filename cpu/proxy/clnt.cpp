@@ -1,8 +1,7 @@
 #include "clnt.h"
 #include "measurement.h"
 #include "proxy_header.h"
-#include "shm_buffer.h"
-#include "tcpip_buffer.h"
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -13,14 +12,14 @@
 #include <rpc/xdr.h>
 #include <unistd.h>
 
-static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
+static enum clnt_stat clnt_device_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
                                     void *resultsp, struct timeval timeout);
 
-static const struct clnt_ops clnt_shm_ops = { clnt_shm_call, NULL, NULL,
+static const struct clnt_ops clnt_device_ops = { clnt_device_call, NULL, NULL,
                                               NULL,          NULL, NULL };
 
-DeviceBuffer *sender, *receiver;
+DeviceBuffer *sender = NULL, *receiver = NULL;
 
 static void createDeviceBuffer()
 {
@@ -40,11 +39,24 @@ static void createDeviceBuffer()
     inet_pton(AF_INET, "127.0.0.1", &address_sender.sin_addr);
     sender = new TcpipBuffer(BufferGuest, (struct sockaddr *)&address_sender,
                              (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
+    // std::cout << "create tcpip buffer" << std::endl;
 #endif // WITH_TCPIP
 #ifdef WITH_SHARED_MEMORY
     receiver = new ShmBuffer(BufferGuest, SHM_NAME_STOC, SHM_BUFFER_SIZE);
     sender = new ShmBuffer(BufferGuest, SHM_NAME_CTOS, SHM_BUFFER_SIZE);
+    // std::cout << "create shm buffer" << std::endl;
 #endif // WITH_SHARED_MEMORY
+#ifdef WITH_RDMA
+    sender =
+        new RDMABuffer(BufferGuest, 0,
+                       "localhost:" + std::to_string(RDMA_CONNECTION_PORT_CTOS),
+                       RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS,
+                       RDMA_MEM_NAME_CTOS, "client-qp", RDMA_BUFFER_SIZE);
+    receiver = new RDMABuffer(BufferHost, RDMA_CONNECTION_PORT_STOC, "",
+                              RDMA_NIC_IDX_STOC, RDMA_NIC_NAME_STOC,
+                              RDMA_MEM_NAME_STOC, "", RDMA_BUFFER_SIZE);
+    // std::cout << "create rdma buffer" << std::endl;
+#endif // WITH_RDMA
 }
 
 static void destroyDeviceBuffer()
@@ -61,13 +73,19 @@ static void destroyDeviceBuffer()
     delete shm_sender;
     delete shm_receiver;
 #endif // WITH_SHARED_MEMORY
+#ifdef WITH_RDMA
+    RDMABuffer *rdma_sender = dynamic_cast<RDMABuffer *>(sender),
+               *rdma_receiver = dynamic_cast<RDMABuffer *>(receiver);
+    delete rdma_sender;
+    delete rdma_receiver;
+#endif // WITH_RDMA
     sender = receiver = NULL;
 }
 
 int is_client = 0;
 XDR *xdrs_arg, *xdrs_res;
 
-CLIENT *clnt_shm_create()
+CLIENT *clnt_device_create()
 {
     if (access("client_exist.txt", F_OK) == -1) {
         is_client = 1;
@@ -80,9 +98,8 @@ CLIENT *clnt_shm_create()
     } else {
         is_client = 0;
     }
-    printf("clnt_shm_create\n");
     CLIENT *client = (CLIENT *)malloc(sizeof(CLIENT));
-    client->cl_ops = &clnt_shm_ops;
+    client->cl_ops = &clnt_device_ops;
     client->cl_auth = NULL;
     client->cl_private = NULL;
     return client;
@@ -92,7 +109,7 @@ CLIENT *clnt_shm_create()
 
 detailed_info clnt_apis[API_COUNT];
 
-void clnt_shm_destroy(CLIENT *clnt)
+void clnt_device_destroy(CLIENT *clnt)
 {
     free(clnt);
     if (is_client) {
@@ -173,7 +190,7 @@ int receive_response(int proc_id) {
     return len;
 }
 
-static enum clnt_stat clnt_shm_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
+static enum clnt_stat clnt_device_call(CLIENT *h, rpcproc_t proc, xdrproc_t xargs,
                                     void *argsp, xdrproc_t xresults,
                                     void *resultsp, struct timeval timeout)
 {

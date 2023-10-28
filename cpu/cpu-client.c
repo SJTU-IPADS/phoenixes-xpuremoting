@@ -82,7 +82,7 @@ extern void cpu_runtime_print_api_call_cnt(void);
 static void rpc_connect(void)
 {
 #ifndef NO_OPTIMIZATION
-    clnt = clnt_shm_create();
+    clnt = clnt_device_create();
     return;
 #endif // WITH_OPTIMIZATION
 
@@ -265,7 +265,7 @@ void __attribute__((destructor)) deinit_rpc(void)
 
     if (clnt != NULL) {
 #ifndef NO_OPTIMIZATION
-        clnt_shm_destroy(clnt);
+        clnt_device_destroy(clnt);
 #else
         clnt_destroy(clnt);
 #endif // WITH_OPTIMIZATION
