@@ -3,6 +3,10 @@
 
 #include <vector>
 #include <deque>
+#include <rpc/xdr.h>
+#include "measurement.h"
+#include "device_buffer.h"
+#include <rpc/types.h>
 
 class AsyncCall {
     public:
@@ -15,13 +19,20 @@ class AsyncCall {
 
 class AsyncBatch {
     public:
-        int Size();
+        void Call(rpcproc_t proc, xdrproc_t xargs, void *argsp, xdrproc_t xresults, void *resultsp, struct timeval timeout, int& payload_size, XDR *xdrs_arg, XDR *xdrs_res, detailed_info* clnt_apis, int local_device, DeviceBuffer *sender, DeviceBuffer *receiver);
+        AsyncBatch() {}
+        AsyncBatch(int max_batch_size) : max_batch_size(max_batch_size) {}
+    private:
+        std::deque<AsyncCall> queue = {};
         AsyncCall& Front();
         void Pop();
         void Clear();
         void Push(AsyncCall& call);
-    private:
-        std::deque<AsyncCall> queue = {};
+        int Size();
+        int max_batch_size = 16;
+        void call_async_api(rpcproc_t proc, xdrproc_t xargs,
+            void *argsp, xdrproc_t xresults,
+            void *resultsp, struct timeval timeout, XDR *xdrs_arg, detailed_info* clnt_apis, int local_device);
 };
 
 #endif
