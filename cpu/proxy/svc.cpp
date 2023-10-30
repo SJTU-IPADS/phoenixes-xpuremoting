@@ -163,6 +163,7 @@ void svc_run()
         // printf("request count: %d\n", request_count);
 
         for (int i = 0; i < request_count-1; i++) {
+            int payload = 0;
             auto [proc_id, len] = receive_request();
             if (proc_id < 0) {
                 goto end;
@@ -174,6 +175,9 @@ void svc_run()
             if (dispatch(proc_id, xdrs_arg, xdrs_res) < 0) {
                 goto end;
             }
+
+            add_cnt(svc_apis, proc_id);
+            add_payload_size(svc_apis, proc_id, payload);
         }
 
         auto [proc_id, len] = receive_request();
