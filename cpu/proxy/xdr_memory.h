@@ -20,7 +20,6 @@ public:
     void Resize(int size);
     char *Data();
     void Clear();
-    std::vector<char>& GetBuffer();
 
     // inner XDR ops
     bool_t Getlong(long *lp);
