@@ -1,7 +1,7 @@
 #ifndef DEVICE_BUFFER_H
 #define DEVICE_BUFFER_H
 
-#define BUFFER_IO_TIMEOUT 30 // seconds
+#define BUFFER_IO_TIMEOUT 10 // seconds
 
 enum BufferPrivilege {
     BufferHost = 0,

@@ -27,10 +27,6 @@ void XDRMemory::Clear()
     position = 0;
 }
 
-std::vector<char>& XDRMemory::GetBuffer() {
-    return buffer;
-}
-
 bool_t XDRMemory::Getlong(long *lp)
 {
     if (position + sizeof(long) <= buffer.size()) {

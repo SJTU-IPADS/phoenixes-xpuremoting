@@ -32,8 +32,7 @@ SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_memory.cpp		\
 					$(PROXY_PREFIX)/measurement.cpp		\
 					$(PROXY_PREFIX)/proxy_header.cpp 	\
 					$(PROXY_PREFIX)/shm_buffer.cpp		\
-					$(PROXY_PREFIX)/tcpip_buffer.cpp    \
-					$(PROXY_PREFIX)/async_batch_caller.cpp \
+					$(PROXY_PREFIX)/tcpip_buffer.cpp	\
 					$(PROXY_PREFIX)/rdma_buffer.cpp
 
 SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
