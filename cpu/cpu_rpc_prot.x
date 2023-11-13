@@ -267,7 +267,7 @@ program RPC_CD_PROG {
         int          CUDA_STREAM_DESTROY(ptr)                                   = 258;
         /*ptr_result CUDA_STREAM_END_CAPTURE(ptr)                               = 259;*/
         /* ?         CUDA_STREAM_GET_ATTRIBUTE(ptr, int)                        = 260;*/
-        /* ?         CUDA_STREAM_GET_CAPTURE_INFO(ptr)                          = 261;*/
+        int3_result  CUDA_STREAM_GET_CAPTURE_INFO(ptr)                          = 261;
         int_result   CUDA_STREAM_GET_FLAGS(ptr)                                 = 262;
         int_result   CUDA_STREAM_GET_PRIORITY(ptr)                              = 263;
         int_result   CUDA_STREAM_IS_CAPTURING(ptr)                              = 264;
@@ -423,7 +423,8 @@ program RPC_CD_PROG {
         dint_result  rpc_cuDevicePrimaryCtxGetState(int)                       = 1022;
         mem_result   rpc_cuDeviceGetProperties(int)                            = 1023;
         dint_result  rpc_cuDeviceComputeCapability(int)                        = 1024;
-        int_result   rpc_cuDeviceGetP2PAttribute(int, ptr, ptr)                = 1025; 
+        int_result   rpc_cuDeviceGetP2PAttribute(int, ptr, ptr)                = 1025;
+        ptr_result   rpc_cuModuleLoadData(mem_data mem)                        = 1026;
 
         /* HIDDEN DRIVER API */
 /*        ptr_result   rpc_hidden_get_device_ctx(int)                            = 1101;
@@ -461,6 +462,8 @@ program RPC_CD_PROG {
         int          rpc_cublasSetStream(ptr handle, ptr streamId) = 3008;
         int          rpc_cublasSetWorkspace(ptr handle, ptr workspace, size_t workspaceSizeInBytes) = 3009;
         int          rpc_cublasSetMathMode(ptr handle, int mode) = 3010;
+        int          rpc_cublasSgemmStridedBatched(ptr, int, int, int, int, int, float, ptr, int,
+                         dint, ptr, int, dint, float, ptr, int, dint, int)                  = 3011;
 
         /* NVML */
         int_result   rpc_nvmlDeviceGetCount_v2(void)                           = 4000;

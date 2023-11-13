@@ -601,6 +601,22 @@ bool_t cuda_stream_destroy_1_svc(ptr stream, int *result, struct svc_req *rqstp)
 //        /* ?         CUDA_STREAM_GET_CAPTURE_INFO(ptr)                  = 261;*/
 
 
+bool_t cuda_stream_get_capture_info_1_svc(ptr stream, int3_result *result, struct svc_req *rqstp)
+{
+    LOGE(LOG_DEBUG, "cudaStreamGetCaptureInfo");
+    int proc = 261;
+    cpu_time_start(vanillas, proc);
+    unsigned long long id;
+    result->err = cudaStreamGetCaptureInfo(
+      resource_mg_get(&rm_streams, (void*)stream),
+      (enum cudaStreamCaptureStatus*)&result->int3_result_u.data[0],
+        &id);
+    result->int3_result_u.data[1] = (int)(id >> 32);
+    result->int3_result_u.data[2] = (int)(id & 0xFFFFFFFF);
+    cpu_time_end(vanillas, proc);
+    return 1;
+}
+
 bool_t cuda_stream_get_flags_1_svc(ptr hStream, int_result *result, struct svc_req *rqstp)
 {
     LOGE(LOG_DEBUG, "cudaStreamGetFlags");
@@ -738,6 +754,8 @@ bool_t cuda_event_query_1_svc(ptr event, int *result, struct svc_req *rqstp)
     RECORD_RESULT(integer, *result);
     return 1;
 }
+
+
 
 bool_t cuda_event_record_1_svc(ptr event, ptr stream, int *result, struct svc_req *rqstp)
 {

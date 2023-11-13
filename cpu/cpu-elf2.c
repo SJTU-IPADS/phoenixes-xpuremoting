@@ -895,8 +895,6 @@ int elf2_parameter_info(void* memory, size_t memsize)
         return -1;
     }
 
-    hexdump(memory, 0x10);
-
 #define ELF_DUMP_TO_FILE 1
 
 #ifdef ELF_DUMP_TO_FILE

@@ -1,3 +1,4 @@
+#include <rpc/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
@@ -22,6 +23,15 @@
 extern cpu_measurement_info vanillas[CPU_API_COUNT];
 
 
+static unsigned long long Hash(const void* ptr, size_t size)
+{
+    static unsigned p = 19260817;
+    unsigned long long hash = 0;
+    for (size_t i=0; i < size; ++i) {
+        hash = hash * p + ((char*)ptr)[i];
+    }
+    return hash;
+}
 
 int cublas_init(int bypass, resource_mg *memory)
 {
@@ -305,6 +315,58 @@ bool_t rpc_cublassetmathmode_1_svc(ptr handle, int mode, int *result, struct svc
     *result = cublasSetMathMode(
         resource_mg_get(&rm_cublas, (void*)handle),
         (cublasMath_t)mode);
+    cpu_time_end(vanillas, proc);
+    GSCHED_RELEASE;
+    RECORD_RESULT(integer, *result);
+    return 1;
+}
+
+bool_t rpc_cublassgemmstridedbatched_1_svc(ptr handle, int transa, int transb, int m, int n, int k, float alpha,
+            ptr A, int lda, dint sA,
+            ptr B, int ldb, dint sB,
+            float beta,
+            ptr C, int ldc, dint sC,
+            int batchCount,
+            int *result, struct svc_req *rqstp)
+{
+    RECORD_API(rpc_cublassgemmstridedbatched_1_argument);
+    RECORD_ARG(1, handle);
+    RECORD_ARG(2, transa);
+    RECORD_ARG(3, transb);
+    RECORD_ARG(4, m);
+    RECORD_ARG(5, n);
+    RECORD_ARG(6, k);
+    RECORD_ARG(7, alpha);
+    RECORD_ARG(8, A);
+    RECORD_ARG(9, lda);
+    RECORD_ARG(10, sA);
+    RECORD_ARG(11, B);
+    RECORD_ARG(12, ldb);
+    RECORD_ARG(13, sB);
+    RECORD_ARG(14, beta);
+    RECORD_ARG(15, C);
+    RECORD_ARG(16, ldc);
+    RECORD_ARG(17, sC);
+    RECORD_ARG(18, batchCount);
+    LOGE(LOG_DEBUG, "%s", __func__);
+    /*
+        strideA is split into sA.i1 and sA.i2
+    */
+    long long int strideA = ((long long int)sA.i1 << 32) | sA.i2,
+        strideB = ((long long int)sB.i1 << 32) | sB.i2,
+        strideC = ((long long int)sC.i1 << 32) | sC.i2;
+    GSCHED_RETAIN;
+    int proc = 3011;
+    cpu_time_start(vanillas, proc);
+    *result = cublasSgemmStridedBatched(resource_mg_get(&rm_cublas, (void*)handle),
+                    (cublasOperation_t) transa,
+                    (cublasOperation_t) transb,
+                    m, n, k, &alpha,
+                    resource_mg_get(&rm_memory, (void*)A), lda, strideA,
+                    resource_mg_get(&rm_memory, (void*)B), ldb, strideB, &beta,
+                    resource_mg_get(&rm_memory, (void*)C), ldc, strideC,
+                    batchCount
+    );
     cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
