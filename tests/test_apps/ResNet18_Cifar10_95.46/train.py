@@ -111,7 +111,7 @@ for epoch in tqdm(range(1, n_epochs+1)):
     # 如果验证集损失函数减少，就保存模型。
     if valid_loss <= valid_loss_min:
         print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,valid_loss))
-        # torch.save(model.state_dict(), 'checkpoint/resnet18_cifar10.pt')
+        torch.save(model.state_dict(), 'checkpoint/resnet18_cifar10.pt')
         valid_loss_min = valid_loss
         counter = 0
     else:

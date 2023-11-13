@@ -620,3 +620,50 @@ cublasStatus_t cublasSetMathMode(cublasHandle_t handle, cublasMath_t mode)
     cpu_time_end(totals, proc);
     return result;
 }
+
+cublasStatus_t cublasSgemmStridedBatched(cublasHandle_t handle,
+                                  cublasOperation_t transa,
+                                  cublasOperation_t transb,
+                                  int m, int n, int k,
+                                  const float           *alpha,
+                                  const float           *A, int lda,
+                                  long long int          strideA,
+                                  const float           *B, int ldb,
+                                  long long int          strideB,
+                                  const float           *beta,
+                                  float                 *C, int ldc,
+                                  long long int          strideC,
+                                  int batchCount)
+{
+    int proc = 3011;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int result;
+    enum clnt_stat retval_1;
+    dint sA, sB, sC;
+    sA.i1 = (int)(strideA >> 32), sA.i2 = (int)(strideA & 0xffffffff);
+    sB.i1 = (int)(strideB >> 32), sB.i2 = (int)(strideB & 0xffffffff);
+    sC.i1 = (int)(strideC >> 32), sC.i2 = (int)(strideC & 0xffffffff);
+    retval_1 = rpc_cublassgemmstridedbatched_1(
+        (ptr)handle,
+        (int)transa,
+        (int)transb,
+        m, n, k,
+        *alpha,
+        (ptr)A, lda,
+        sA,
+        (ptr)B, ldb,
+        sB,
+        *beta,
+        (ptr)C, ldc,
+        sC,
+        batchCount,
+        &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    cpu_time_end(totals, proc);
+    return result;
+}

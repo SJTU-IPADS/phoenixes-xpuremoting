@@ -597,7 +597,57 @@ DEF_FN(cudaError_t, cudaStreamEndCapture, cudaStream_t, stream, cudaGraph_t*, pG
 #if CUDART_VERSION >= 11000
 DEF_FN(cudaError_t, cudaStreamGetAttribute, cudaStream_t, hStream, enum cudaStreamAttrID, attr, union cudaStreamAttrValue*, value_out )
 #endif
-DEF_FN(cudaError_t, cudaStreamGetCaptureInfo, cudaStream_t, stream, cudaStreamCaptureStatus**, pCaptureStatus, unsigned long, long*, pId)
+
+#undef cudaStreamGetCaptureInfo
+cudaError_t cudaStreamGetCaptureInfo(cudaStream_t stream, enum cudaStreamCaptureStatus *captureStatus_out, unsigned long long *id_out)
+{
+    int proc = 261;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int3_result result;
+    enum clnt_stat retval_1;
+    if (captureStatus_out == NULL || id_out == NULL) {
+        return cudaErrorInvalidValue;
+    }
+    retval_1 = cuda_stream_get_capture_info_1((ptr)stream, &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    if (result.err == 0) {
+        // result = {captureStatus_out, id_out_1, id_out_2}
+        *captureStatus_out = (enum cudaStreamCaptureStatus)result.int3_result_u.data[0];
+        *id_out = ((unsigned long long)result.int3_result_u.data[1] << 32) | (unsigned long long)result.int3_result_u.data[2];
+    }
+    cpu_time_end(totals, proc);
+    return result.err;
+}
+
+cudaError_t cudaStreamGetCaptureInfo_v10010(cudaStream_t stream, enum cudaStreamCaptureStatus *captureStatus_out, unsigned long long *id_out)
+{
+    int proc = 261;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int3_result result;
+    enum clnt_stat retval_1;
+    if (captureStatus_out == NULL || id_out == NULL) {
+        return cudaErrorInvalidValue;
+    }
+    retval_1 = cuda_stream_get_capture_info_1((ptr)stream, &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    if (result.err == 0) {
+        // result = {captureStatus_out, id_out_1, id_out_2}
+        *captureStatus_out = (enum cudaStreamCaptureStatus)result.int3_result_u.data[0];
+        *id_out = ((unsigned long long)result.int3_result_u.data[1] << 32) | (unsigned long long)result.int3_result_u.data[2];
+    }
+    cpu_time_end(totals, proc);
+    return result.err;
+}
 
 cudaError_t cudaStreamGetFlags(cudaStream_t hStream, unsigned int* flags)
 {
@@ -634,6 +684,29 @@ cudaError_t cudaStreamGetPriority(cudaStream_t hStream, int* priority)
 }
 
 cudaError_t cudaStreamIsCapturing(cudaStream_t stream, enum cudaStreamCaptureStatus* pCaptureStatus)
+{
+    int proc = 264;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int_result result;
+    enum clnt_stat retval_1;
+    if (pCaptureStatus == NULL) {
+        return cudaErrorInvalidValue;
+    }
+    retval_1 = cuda_stream_is_capturing_1((ptr)stream, &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
+    if (result.err == 0) {
+        *pCaptureStatus = (enum cudaStreamCaptureStatus)result.int_result_u.data;
+    }
+    cpu_time_end(totals, proc);
+    return result.err;
+}
+
+cudaError_t cudaStreamIsCapturing_v10000(cudaStream_t stream, enum cudaStreamCaptureStatus* pCaptureStatus)
 {
     int proc = 264;
     cpu_time_start(totals, proc);
@@ -1582,6 +1655,16 @@ void* ib_thread(void* arg)
     return NULL;
 }
 #endif //WITH_IB
+
+static unsigned long long Hash(const void* ptr, size_t size)
+{
+    static unsigned p = 19260817;
+    unsigned long long hash = 0;
+    for (size_t i=0; i < size; ++i) {
+        hash = hash * p + ((char*)ptr)[i];
+    }
+    return hash;
+}
 
 extern char server[256];
 #define MT_MEMCPY_MEM_PER_THREAD (128*1024*1024)
