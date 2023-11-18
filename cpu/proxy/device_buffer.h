@@ -34,4 +34,8 @@ protected:
     BufferPrivilege privilege_;
 };
 
+extern int issuing_mode;
+#define SYNC_ISSUING 0
+#define ASYNC_ISSUING 1
+
 #endif // DEVICE_BUFFER_H

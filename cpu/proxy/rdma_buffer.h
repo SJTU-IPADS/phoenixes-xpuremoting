@@ -18,6 +18,8 @@ using namespace rdmaio::qp;
 #define RDMA_NIC_IDX_CTOS 0
 #define RDMA_NIC_NAME_CTOS 74
 #define RDMA_MEM_NAME_CTOS 74
+#define RDMA_MAX_PENDING_NUM 16
+#define RDMA_UNSIGNALED_BUFFER_NUM (RDMA_MAX_PENDING_NUM*2)
 
 // RDMA Buffer, based on rlibv2
 class RDMABuffer final : public DeviceBuffer
@@ -44,6 +46,9 @@ private:
     Arc<rdmaio::qp::RC> qp_;
     std::string qp_name_;
     unsigned long qp_key_;
+    int pending_num_;
+    int unsignaled_buf_idx_;
+    int unsignaled_buf_len_;
 
     // local ring buffer
     char *buf_;
@@ -57,8 +62,10 @@ private:
     void GuestInit(std::string addr, uint64_t nic_idx, uint64_t nic_name,
                    uint64_t mem_name, std::string qp_name);
     void GuestDestroy();
+    void UpdateBufPtr();
     int RemoteRead(void *addr, u64 remote_addr, int length);
-    int RemoteWrite(void *addr, u64 remote_addr, int length);
+    int PollComp();
+    int RemoteWrite(void *addr, u64 remote_addr, int length, int call_end);
     int WriteCapacity(int read_head);
     int ReadCapacity(int read_tail);
 };
