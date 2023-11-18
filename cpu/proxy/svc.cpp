@@ -1,6 +1,7 @@
 #include "svc.h"
 #include "measurement.h"
 #include "proxy_header.h"
+#include "async_batch_caller.h"
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
@@ -81,7 +82,7 @@ int process_header(ProxyHeader &header)
         current_device = local_device;
         int result = cudaSetDevice(current_device);
         if (result != cudaSuccess) {
-            printf("cudaSetDevice failed, error code: %d\n", result);
+            printf("cudaSetDevice failed, error code: %d, current device: %d, proc id: %d\n", result, current_device, header.get_proc_id());
             return -1;
         }
         time_end(svc_apis, cudaSetDevice_API, TOTAL_TIME);
@@ -90,6 +91,56 @@ int process_header(ProxyHeader &header)
 }
 
 XDR *xdrs_arg, *xdrs_res;
+
+std::pair<int, int> receive_request() {
+    ProxyHeader header;
+    auto ret = receiver->getBytes((char *)&header, sizeof(ProxyHeader));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+               __LINE__, header.get_proc_id());
+        return {-1, -1};
+    }
+    int proc_id = header.get_proc_id();
+    if (process_header(header) < 0) {
+        return {-1, -1};
+    }
+
+    int len = 0;
+    ret = receiver->getBytes((char *)&len, sizeof(int));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
+               __LINE__, proc_id);
+        return {-1, -1};
+    }
+    XDRMemory *xdrmemory =
+        reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
+    xdrmemory->Resize(len);
+    ret = receiver->getBytes(xdrmemory->Data(), len);
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
+               __FILE__, __LINE__, proc_id, len);
+        return {-1, -1};
+    }
+    return {proc_id, len};
+}
+
+int send_response(XDRMemory* xdrmemory, int proc_id) {
+    auto len = xdrmemory->Size();
+    auto ret = sender->putBytes((char *)&len, sizeof(int));
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
+               __FILE__, __LINE__, proc_id, len);
+        return -1;
+    }
+    ret = sender->putBytes(xdrmemory->Data(), len);
+    if (ret < 0) {
+        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
+               __FILE__, __LINE__, proc_id, len);
+        return -1;
+    }
+    sender->FlushOut();
+    return 0;
+}
 
 void svc_run()
 {
@@ -100,37 +151,14 @@ void svc_run()
     while (1) {
         struct timeval start_0;
         gettimeofday(&start_0, NULL);
-        int payload = 0;
+        int payload = 0, ret = 0;
+        XDRMemory* xdrmemory = nullptr;
 
-        ProxyHeader header;
-        auto ret = receiver->getBytes((char *)&header, sizeof(ProxyHeader));
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
-                   __LINE__, header.get_proc_id());
-            goto end;
-        }
-        // printf("proc_id = %d\n", proc_id);
-        int proc_id = header.get_proc_id();
-        if (process_header(header) < 0) {
+        auto [proc_id, len] = receive_request();
+        if (proc_id < 0) {
             goto end;
         }
 
-        int len = 0;
-        ret = receiver->getBytes((char *)&len, sizeof(int));
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
-                   __LINE__, proc_id);
-            goto end;
-        }
-        XDRMemory *xdrmemory =
-            reinterpret_cast<XDRMemory *>(xdrs_arg->x_private);
-        xdrmemory->Resize(len);
-        ret = receiver->getBytes(xdrmemory->Data(), len);
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
-                   __FILE__, __LINE__, proc_id, len);
-            goto end;
-        }
         set_start(svc_apis, proc_id, NETWORK_TIME, &start_0);
         time_end(svc_apis, proc_id, NETWORK_TIME);
         payload += len + sizeof(int) + sizeof(ProxyHeader);
@@ -139,25 +167,25 @@ void svc_run()
             goto end;
         }
 
+        if (AsyncBatch::is_async_api(proc_id)) {
+            // do not need to send reply for an async api
+            goto loop_end;
+        }
+
         time_start(svc_apis, proc_id, NETWORK_TIME);
         xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
         len = xdrmemory->Size();
-        ret = sender->putBytes((char *)&len, sizeof(int));
+        ret = send_response(xdrmemory, proc_id);
         if (ret < 0) {
             printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
-                   __FILE__, __LINE__, proc_id, len);
+                __FILE__, __LINE__, proc_id, len);
             goto end;
         }
-        ret = sender->putBytes(xdrmemory->Data(), len);
-        if (ret < 0) {
-            printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
-                   __FILE__, __LINE__, proc_id, len);
-            goto end;
-        }
-        sender->FlushOut();
+
         time_end(svc_apis, proc_id, NETWORK_TIME);
         payload += len + sizeof(int);
 
+    loop_end:
         set_start(svc_apis, proc_id, TOTAL_TIME, &start_0);
         time_end(svc_apis, proc_id, TOTAL_TIME);
         add_cnt(svc_apis, proc_id);

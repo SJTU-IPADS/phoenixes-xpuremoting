@@ -1,4 +1,5 @@
 #include "rdma_buffer.h"
+#include "device_buffer.h"
 #include "rib/core/rctrl.hh"
 #include "rib/core/utils/logging.hh"
 #include <chrono>
@@ -32,6 +33,12 @@ RDMABuffer::~RDMABuffer()
     }
 }
 
+void RDMABuffer::UpdateBufPtr()
+{
+    buf_ = (char *)(mem_->raw_ptr) + unsignaled_buf_len_ * unsignaled_buf_idx_;
+    buf_head_ = (int *)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
+}
+
 // the capacity to write once
 int RDMABuffer::WriteCapacity(int read_head)
 {
@@ -54,7 +61,10 @@ int RDMABuffer::putBytes(const char *src, int length)
     while (len > 0) {
         read_head = *buf_head_;
         if ((*buf_tail_ + 1) % buf_size_ == read_head) {
+            int last_issuing_mode = issuing_mode;
+            issuing_mode = SYNC_ISSUING;
             int ret = FlushOut();
+            issuing_mode = last_issuing_mode;
             if (ret < 0) {
                 return -1;
             }
@@ -72,8 +82,25 @@ int RDMABuffer::putBytes(const char *src, int length)
     return length - len;
 }
 
+int RDMABuffer::PollComp(){
+    if (pending_num_ == 0)
+        return 0;
+    auto res_p = qp_->wait_one_comp(BUFFER_IO_TIMEOUT * 1000000);
+    RDMA_ASSERT(res_p == IOCode::Ok);
+    if (res_p != IOCode::Ok) {
+        if (res_p == IOCode::Timeout)
+            std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":"
+                    << __LINE__ << std::endl;
+        return -1;
+    }
+    pending_num_ = 0;
+    return 0;
+}
+
 int RDMABuffer::RemoteRead(void *addr, u64 remote_addr, int length)
 {
+    if (length == 0)
+        return 0;
     auto res_s = qp_->send_normal({ .op = IBV_WR_RDMA_READ,
                                     .flags = IBV_SEND_SIGNALED,
                                     .len = (rdmaio::u32)(length),
@@ -83,21 +110,23 @@ int RDMABuffer::RemoteRead(void *addr, u64 remote_addr, int length)
                                     .remote_addr = remote_addr,
                                     .imm_data = 0 });
     RDMA_ASSERT(res_s == IOCode::Ok);
-    auto res_p = qp_->wait_one_comp(BUFFER_IO_TIMEOUT * 1000000);
-    RDMA_ASSERT(res_p == IOCode::Ok);
-    if (res_p != IOCode::Ok) {
-        if (res_p == IOCode::Timeout)
-            std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":"
-                      << __LINE__ << std::endl;
+    pending_num_++;
+    if (PollComp() < 0) {
         return -1;
     }
     return 0;
 }
 
-int RDMABuffer::RemoteWrite(void *addr, u64 remote_addr, int length)
+int RDMABuffer::RemoteWrite(void *addr, u64 remote_addr, int length, int call_end)
 {
+    if (length == 0)
+        return 0;
+    int flags = (pending_num_ == 0 ? IBV_SEND_SIGNALED : 0);
+    if (issuing_mode == SYNC_ISSUING) {
+        flags = (call_end == 1 ? IBV_SEND_SIGNALED : 0);
+    }
     auto res_s = qp_->send_normal({ .op = IBV_WR_RDMA_WRITE,
-                                    .flags = IBV_SEND_SIGNALED,
+                                    .flags = flags,
                                     .len = (rdmaio::u32)(length),
                                     .wr_id = 0 },
                                   { .local_addr =
@@ -105,12 +134,8 @@ int RDMABuffer::RemoteWrite(void *addr, u64 remote_addr, int length)
                                     .remote_addr = remote_addr,
                                     .imm_data = 0 });
     RDMA_ASSERT(res_s == IOCode::Ok);
-    auto res_p = qp_->wait_one_comp(BUFFER_IO_TIMEOUT * 1000000);
-    RDMA_ASSERT(res_p == IOCode::Ok);
-    if (res_p != IOCode::Ok) {
-        if (res_p == IOCode::Timeout)
-            std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":"
-                      << __LINE__ << std::endl;
+    pending_num_++;
+    if (pending_num_ == RDMA_MAX_PENDING_NUM && PollComp() < 0) {
         return -1;
     }
     return 0;
@@ -124,20 +149,38 @@ int RDMABuffer::FlushOut()
 #endif
     auto start = std::chrono::system_clock::now();
 
+    // clear the pending 
+    if(issuing_mode == SYNC_ISSUING && PollComp() < 0){
+        return -1;
+    }
+
+    int last_unsignaled_buf_idx = unsignaled_buf_idx_;
     if (last_tail_ > *buf_tail_) {
-        if (RemoteWrite(buf_ + last_tail_, last_tail_, buf_size_ - last_tail_) <
+        if (RemoteWrite(buf_ + last_tail_, last_tail_, buf_size_ - last_tail_, 0) <
             0)
             return -1;
         last_tail_ = 0;
     }
     if (last_tail_ < *buf_tail_) {
         if (RemoteWrite(buf_ + last_tail_, last_tail_,
-                        *buf_tail_ - last_tail_) < 0)
+                        *buf_tail_ - last_tail_, 0) < 0)
             return -1;
         last_tail_ = *buf_tail_;
     }
-    if (RemoteWrite(buf_tail_, buf_size_ + sizeof(int), sizeof(int)) < 0)
+    if (RemoteWrite(buf_tail_, buf_size_ + sizeof(int), sizeof(int), 1) < 0)
         return -1;
+    unsignaled_buf_idx_ = (unsignaled_buf_idx_ + 1) % RDMA_UNSIGNALED_BUFFER_NUM;
+
+    if(issuing_mode == SYNC_ISSUING) {
+        if (PollComp() < 0) {
+            return -1;
+        }
+        unsignaled_buf_idx_ = last_unsignaled_buf_idx;
+    }
+
+    int tmp_head = *buf_head_, tmp_tail = *buf_tail_;
+    UpdateBufPtr();
+    *buf_head_ = tmp_head, *buf_tail_ = tmp_tail;
 
     while ((*buf_tail_ + 1) % buf_size_ == *buf_head_) {
         auto end = std::chrono::system_clock::now();
@@ -149,7 +192,7 @@ int RDMABuffer::FlushOut()
             return -1;
         }
 
-        if (RemoteRead(buf_head_, buf_size_, sizeof(int)) < 0)
+        if (PollComp() < 0 || RemoteRead(buf_head_, buf_size_, sizeof(int)) < 0)
             return -1;
     }
 #ifdef PRINT_LOG
@@ -270,7 +313,9 @@ void RDMABuffer::GuestInit(std::string addr, uint64_t nic_idx,
     qp_key_ = std::get<1>(qp_res.desc);
     RDMA_LOG(4) << "client fetch QP authentical key: " << qp_key_;
 
-    mem_ = Arc<RMem>(new RMem(buf_size_ + sizeof(int) * 2));
+    // two int for head and tail
+    unsignaled_buf_len_ = buf_size_ + sizeof(int) * 2;
+    mem_ = Arc<RMem>(new RMem(unsignaled_buf_len_ * RDMA_UNSIGNALED_BUFFER_NUM));
     mr_ = RegHandler::create(mem_, nic_).value();
 
     auto fetch_res = cm_->fetch_remote_mr(mem_name);
@@ -280,8 +325,10 @@ void RDMABuffer::GuestInit(std::string addr, uint64_t nic_idx,
     qp_->bind_remote_mr(remote_attr);
     qp_->bind_local_mr(mr_->get_reg_attr().value());
 
-    buf_ = (char *)(mem_->raw_ptr);
-    buf_head_ = (int *)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
+    pending_num_ = 0;
+    unsignaled_buf_idx_ = 0;
+
+    UpdateBufPtr();
     *buf_head_ = *buf_tail_ = last_tail_ = 0;
 }
 
