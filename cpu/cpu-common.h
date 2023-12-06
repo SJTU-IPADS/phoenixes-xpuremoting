@@ -11,6 +11,14 @@
     #define LOG_LEVEL LOG_ERROR
 #endif //LOG_LEVEL
 
+#define CHECK_CU(cmd) do {                      \
+  CUresult ret = (cmd); \
+  if(ret != 0) { \
+    LOGE(LOG_ERROR, "error in %s: %d", #cmd, ret); \
+    return 0; \
+  } \
+} while(0)
+
 typedef struct kernel_info {
     char *name;
     size_t param_size;

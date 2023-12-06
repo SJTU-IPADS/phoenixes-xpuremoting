@@ -579,7 +579,13 @@ cublasStatus_t cublasSgemmEx(cublasHandle_t handle,
     return result;
 }
 
+#undef cublasSetStream
 cublasStatus_t cublasSetStream(cublasHandle_t handle, cudaStream_t streamId)
+{
+    cublasSetStream_v2(handle, streamId);
+}
+
+cublasStatus_t cublasSetStream_v2(cublasHandle_t handle, cudaStream_t streamId)
 {
     int proc = 3008;
     cpu_time_start(totals, proc);

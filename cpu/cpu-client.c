@@ -250,6 +250,7 @@ void __attribute__((destructor)) deinit_rpc(void)
     enum clnt_stat retval_1;
     int result;
     if (initialized) {
+
         retval_1 = rpc_deinit_1(&result, clnt);
         if (retval_1 != RPC_SUCCESS) {
             LOGE(LOG_ERROR, "call failed.");

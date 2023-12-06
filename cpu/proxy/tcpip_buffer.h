@@ -9,7 +9,7 @@
 
 #define TCPIP_BUFFER_SIZE 10485752
 #define TCPIP_PORT_STOC 8080
-#define TCPIP_PORT_CTOS 8081
+#define TCPIP_PORT_CTOS 8180
 
 // TCP/IP Buffer, based on socket
 class TcpipBuffer final : public DeviceBuffer {

@@ -846,17 +846,17 @@ static int check_elf(Elf *elf)
         EI_ABIVERSION, id);
 
     if (elf_getshdrnum(elf, &sections_num) != 0) {
-        LOGE(LOG_ERROR, "elf_getphdrnum failed");
-        goto cleanup;
-    }
-
-    if (elf_getphdrnum(elf, &program_header_num) != 0) {
         LOGE(LOG_ERROR, "elf_getshdrnum failed");
         goto cleanup;
     }
 
+    if (elf_getphdrnum(elf, &program_header_num) != 0) {
+        LOGE(LOG_ERROR, "elf_getphdrnum failed");
+        goto cleanup;
+    }
+
     if (elf_getshdrstrndx(elf, &section_str_num) != 0) {
-        LOGE(LOG_ERROR, "elf_getshstrndx Wfailed");
+        LOGE(LOG_ERROR, "elf_getshdrstrndx failed");
         goto cleanup;
     }
 
@@ -908,10 +908,10 @@ int elf2_parameter_info(void* memory, size_t memsize)
         goto cleanup;
     }
 
-    if (check_elf(elf) != 0) {
-        LOGE(LOG_ERROR, "check_elf failed");
-        goto cleanup;
-    }
+    // if (check_elf(elf) != 0) {
+    //     LOGE(LOG_ERROR, "check_elf failed");
+    //     goto cleanup;
+    // }
 
     if (get_symtab(elf, &symbol_table_data, &symnum, &symtab_shdr) != 0) {
         LOGE(LOG_ERROR, "could not get symbol table");
