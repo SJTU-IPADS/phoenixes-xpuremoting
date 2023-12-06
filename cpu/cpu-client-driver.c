@@ -36,7 +36,7 @@ CUresult cuDeviceTotalMem(size_t* bytes, CUdevice dev)
 	enum clnt_stat retval;
     u64_result result;
     retval = rpc_cudevicetotalmem_1(dev, &result, clnt);
-    printf("[rpc] %s = %d, result %u\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %u\n", __FUNCTION__, result.err,
                                         result.u64_result_u.u64);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -68,7 +68,7 @@ CUresult cuMemAlloc(CUdeviceptr* dptr, size_t bytesize)
     ptr_result result;
     retval = rpc_cumemalloc_1(bytesize, &result, clnt);
     //printf("pre %s(%p->%p, %lu) = %d\n", __FUNCTION__, dptr, *dptr, bytesize, ret);
-    printf("[rpc] %s(%lu) = %d, result %p\n", __FUNCTION__, bytesize, result.err, result.ptr_result_u.ptr);
+    LOGE(LOG_DEBUG, "[rpc] %s(%lu) = %d, result %p\n", __FUNCTION__, bytesize, result.err, result.ptr_result_u.ptr);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -146,7 +146,7 @@ CUresult cuInit(unsigned int Flags)
 	enum clnt_stat retval;
     int result;
     retval = rpc_cuinit_1(Flags, &result, clnt);
-    printf("[rpc] %s = %d\n", __FUNCTION__, result);
+    LOGE(LOG_DEBUG, "[rpc] %s = %d\n", __FUNCTION__, result);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -160,7 +160,7 @@ CUresult cuDeviceGet(CUdevice* device, int ordinal)
 	enum clnt_stat retval;
     int_result result;
     retval = rpc_cudeviceget_1(ordinal, &result, clnt);
-    printf("[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
                                         result.int_result_u.data);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -176,7 +176,7 @@ CUresult cuDeviceGetCount(int* count)
 	enum clnt_stat retval;
     int_result result;
     retval = rpc_cudevicegetcount_1(&result, clnt);
-    printf("[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
                                         result.int_result_u.data);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -201,7 +201,7 @@ CUresult cuDeviceGetName(char* name, int len, CUdevice dev)
 		fprintf(stderr, "[rpc] %s str is NULL.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
     }
-    printf("[rpc] %s = %d, result \"%s\"\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result \"%s\"\n", __FUNCTION__, result.err,
                                         result.str_result_u.str);
     strncpy(name, result.str_result_u.str, len);
     free(result.str_result_u.str);
@@ -218,7 +218,7 @@ CUresult cuDeviceGetUuid(CUuuid* uuid, CUdevice dev)
 	enum clnt_stat retval;
     str_result result;
     retval = rpc_cudevicegetuuid_1(dev, &result, clnt);
-    printf("[rpc] %s = %d, result (uuid)\n", __FUNCTION__, result.err);
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result (uuid)\n", __FUNCTION__, result.err);
 
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -235,7 +235,7 @@ CUresult cuDeviceGetAttribute(int* pi, CUdevice_attribute attrib, CUdevice dev)
 	enum clnt_stat retval;
     int_result result;
     retval = rpc_cudevicegetattribute_1(attrib, dev, &result, clnt);
-    printf("[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
                                         result.int_result_u.data);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -311,7 +311,7 @@ CUresult cuDriverGetVersion(int* driverVersion)
 	enum clnt_stat retval;
     int_result result;
     retval = rpc_cudrivergetversion_1(&result, clnt);
-    printf("[rpc] %s = %d, result %d\n", __FUNCTION__, result.err, result.int_result_u.data);
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %d\n", __FUNCTION__, result.err, result.int_result_u.data);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -327,7 +327,7 @@ CUresult cuDevicePrimaryCtxRetain(CUcontext *pctx, CUdevice dev)
 	enum clnt_stat retval;
     ptr_result result;
     retval = rpc_cudeviceprimaryctxretain_1(dev, &result, clnt);
-    printf("[rpc] %s = %d, result %p\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %p\n", __FUNCTION__, result.err,
                                         result.ptr_result_u.ptr);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -372,7 +372,7 @@ CUresult cuCtxSetCurrent(CUcontext ctx)
 	enum clnt_stat retval;
     int result;
     retval = rpc_cuctxsetcurrent_1((uint64_t)ctx, &result, clnt);
-    printf("[rpc] %s = %d, result %d\n", __FUNCTION__, result);
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %d\n", __FUNCTION__, result);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -385,7 +385,7 @@ CUresult cuCtxGetCurrent(CUcontext *pctx)
 	enum clnt_stat retval;
     ptr_result result;
     retval = rpc_cuctxgetcurrent_1(&result, clnt);
-    printf("[rpc] %s(%p) = %d, result %p\n", __FUNCTION__, pctx, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s(%p) = %d, result %p\n", __FUNCTION__, pctx, result.err,
                                         result.ptr_result_u.ptr);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -402,7 +402,7 @@ CUresult cuCtxGetDevice(CUdevice *device)
 	enum clnt_stat retval;
     int_result result;
     retval = rpc_cuctxgetdevice_1(&result, clnt);
-    printf("[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
+    LOGE(LOG_DEBUG, "[rpc] %s = %d, result %d\n", __FUNCTION__, result.err,
                                         result.int_result_u.data);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
@@ -434,7 +434,7 @@ CUresult cuModuleLoad(CUmodule* module, const char* fname)
     }
 
     retval = rpc_cumoduleload_1((char*)fname, &result, clnt);
-    printf("[rpc] %s(%s) = %d, result %p\n", __FUNCTION__, fname, result.err, (void*)result.ptr_result_u.ptr);
+    LOGE(LOG_DEBUG, "[rpc] %s(%s) = %d, result %p\n", __FUNCTION__, fname, result.err, (void*)result.ptr_result_u.ptr);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -478,7 +478,7 @@ CUresult cuModuleLoadData(CUmodule* module, const void* image)
     }
 
     retval = rpc_cumoduleloaddata_1(mem, &result, clnt);
-    printf("[rpc] %s(%p) = %d, result %p\n", __FUNCTION__, image, result.err, (void*)result.ptr_result_u.ptr);
+    LOGE(LOG_DEBUG, "[rpc] %s(%p) = %d, result %p\n", __FUNCTION__, image, result.err, (void*)result.ptr_result_u.ptr);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -511,7 +511,7 @@ CUresult cuModuleGetFunction(CUfunction* hfun, CUmodule hmod, const char* name)
     ptr_result result;
     kernel_info_t *info;
     retval = rpc_cumodulegetfunction_1((uint64_t)hmod, (char*)name, &result, clnt);
-    printf("[rpc] %s(%p, %s) = %d, result %p\n", __FUNCTION__, hmod, name, result.err, result.ptr_result_u.ptr);
+    LOGE(LOG_DEBUG, "[rpc] %s(%p, %s) = %d, result %p\n", __FUNCTION__, hmod, name, result.err, result.ptr_result_u.ptr);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;
@@ -522,6 +522,7 @@ CUresult cuModuleGetFunction(CUfunction* hfun, CUmodule hmod, const char* name)
         return CUDA_ERROR_UNKNOWN;
     }
     info->host_fun = *hfun;
+    add_kernel((void *) *hfun, info);
     LOGE(LOG_DEBUG, "add host_fun %p to %s", info->host_fun, info->name);
     return result.err;
 }
@@ -555,7 +556,7 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void* srcHost, size_t ByteCou
     src.mem_data_len = ByteCount;
     src.mem_data_val = (void*)srcHost;
     retval = rpc_cumemcpyhtod_1((uint64_t)dstDevice, src, &result, clnt);
-    printf("[rpc] %s = %d\n", __FUNCTION__, result);
+    LOGE(LOG_DEBUG, "[rpc] %s = %d\n", __FUNCTION__, result);
 	if (retval != RPC_SUCCESS) {
 		fprintf(stderr, "[rpc] %s failed.", __FUNCTION__);
         return CUDA_ERROR_UNKNOWN;

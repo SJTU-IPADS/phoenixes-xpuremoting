@@ -25,6 +25,8 @@ PROXY_PREFIX = ./proxy
 # VERSION = NO_OPTIMIZATION / WITH_TCPIP / WITH_SHARED_MEMORY / WITH_RDMA
 VERSION ?= WITH_SHARED_MEMORY
 
+ALL = $(SERVER) $(CLIENT)
+
 ifeq ($(VERSION), NO_OPTIMIZATION)
 else
 SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_memory.cpp		\
@@ -96,14 +98,13 @@ SRC_CLIENT = $(RPC_XDR)                 \
 
 # 			 cpu-client-driver-hidden.c \
 
-OBJ_PROXY_CLIENT = $(SRC_PROXY_CLIENT:%.cpp=%.o)
-OBJ_PROXY_SERVER = $(SRC_PROXY_SERVER:%.cpp=%.o)
-
 ifdef WITH_IB
 SRC_SERVER += cpu-ib.c
 SRC_CLIENT += cpu-ib.c
 endif
 
+OBJ_PROXY_CLIENT = $(SRC_PROXY_CLIENT:%.cpp=%.o)
+OBJ_PROXY_SERVER = $(SRC_PROXY_SERVER:%.cpp=%.o)
 OBJ_SERVER = $(SRC_SERVER:%.c=%.o)
 OBJ_CLIENT = $(SRC_CLIENT:%.c=%.o)
 
@@ -140,6 +141,7 @@ ifdef WITH_IB
 CC_FLAGS += -DWITH_IB=$(WITH_IB)
 endif
 
+
 SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lnvidia-ml -lcudnn
 SERVER_BIN_LD_FLAGS = $(SERVER_LD_FLAGS) -Wl,--unresolved-symbols=ignore-in-object-files
 CLIENT_LD_FLAGS = $(LD_FLAGS)
@@ -147,7 +149,7 @@ CLIENT_LD_FLAGS = $(LD_FLAGS)
 # Targets
 .PHONY: all clean
 
-all : $(SERVER) $(CLIENT)
+all : $(ALL)
 
 $(CLIENT) : $(OBJ_CLIENT) $(OBJ_PROXY_CLIENT)
 	$(LD) $(CC_FLAGS) -shared -o $@ $^ $(CLIENT_LD_FLAGS)

@@ -27,8 +27,8 @@
 #include "cpu-measurement.h"
 
 extern cpu_measurement_info totals[CPU_API_COUNT];
-#ifndef NO_OPTIMIZATION
-int local_device = -1;
+#if !defined NO_OPTIMIZATION
+extern thread_local int local_device;
 #endif // WITH_OPTIMIZATION
 
 #ifdef WITH_IB
@@ -292,7 +292,7 @@ cudaError_t cudaGetDevice(int* device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
-#ifndef NO_OPTIMIZATION
+#if !defined NO_OPTIMIZATION
     if (local_device != -1) {
         *device = local_device;
         cpu_time_end(totals, proc);
@@ -412,7 +412,7 @@ cudaError_t cudaSetDevice(int device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
-#ifndef NO_OPTIMIZATION
+#if !defined NO_OPTIMIZATION
     if (local_device != device) {
         local_device = device;
     }
@@ -706,29 +706,6 @@ cudaError_t cudaStreamIsCapturing(cudaStream_t stream, enum cudaStreamCaptureSta
     return result.err;
 }
 
-cudaError_t cudaStreamIsCapturing_v10000(cudaStream_t stream, enum cudaStreamCaptureStatus* pCaptureStatus)
-{
-    int proc = 264;
-    cpu_time_start(totals, proc);
-#ifdef WITH_API_CNT
-    api_call_cnt++;
-#endif //WITH_API_CNT
-    int_result result;
-    enum clnt_stat retval_1;
-    if (pCaptureStatus == NULL) {
-        return cudaErrorInvalidValue;
-    }
-    retval_1 = cuda_stream_is_capturing_1((ptr)stream, &result, clnt);
-    if (retval_1 != RPC_SUCCESS) {
-        clnt_perror (clnt, "call failed");
-    }
-    if (result.err == 0) {
-        *pCaptureStatus = (enum cudaStreamCaptureStatus)result.int_result_u.data;
-    }
-    cpu_time_end(totals, proc);
-    return result.err;
-}
-
 cudaError_t cudaStreamQuery(cudaStream_t stream)
 {
 #ifdef WITH_API_CNT
@@ -921,14 +898,18 @@ cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes* attr, const void* f
     api_call_cnt++;
 #endif //WITH_API_CNT
     mem_result result;
+    memset(&result, 0, sizeof(mem_result));
     enum clnt_stat retval_1;
     retval_1 = cuda_func_get_attributes_1((ptr)func, &result, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
     if (result.err == 0) {
-        memcpy(attr, result.mem_result_u.data.mem_data_val,
-                     result.mem_result_u.data.mem_data_len);
+        memcpy(attr, result.mem_result_u.data.mem_data_val, sizeof(struct cudaFuncAttributes));
+    } else{
+        printf("============= cudaFuncGetAttributes failed. ====================\n",
+                "error: %s\n", cudaGetErrorString(result.err));
+        exit(1);
     }
     return result.err;
 }

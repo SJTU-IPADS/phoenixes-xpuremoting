@@ -42,10 +42,13 @@
     record->data = malloc(SIZE); \
     memcpy(record->data, PTR, SIZE);
 #else
+#define RECORD_VOID_API
 #define RECORD_API(ARG_TYPE) 
 #define RECORD_RESULT(TYPE, RES)
-#define RECORD_ARG(NUM, ARG)
 #define RECORD_SINGLE_ARG(ARG)
+#define RECORD_ARG(NUM, ARG)
+#define RECORD_NARG(ARG)
+#define RECORD_DATA(SIZE, PTR)
 #endif //WITH_RECORDER
 
 #include <stdio.h>

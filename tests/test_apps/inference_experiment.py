@@ -45,14 +45,14 @@ def compile():
 
 import time
 
-def run_inference(inference_case, iter_num, result_dir):
+def run_inference(inference_case, version, iter_num, result_dir):
     # "./startinference.sh inference_case iter_num"
     inference_file = inference_case + '/inference.py'
     result_client_file = '%s/%d_iter_client.txt' % (result_dir, iter_num)
     result_server_file = '%s/%d_iter_server.txt' % (result_dir, iter_num)
     
     server_pid = start_server(result_server_file)
-    print('running inference %s with %d iterations, server pid: %d' % (inference_case, iter_num, server_pid))
+    print('running inference %s (%s) with %d iterations, server pid: %d' % (inference_case, version, iter_num, server_pid))
     
     run_command = 'bash startinference.sh %s %d > %s' % (inference_file, iter_num, result_client_file)
     time.sleep(3)
@@ -63,8 +63,7 @@ def run_inference(inference_case, iter_num, result_dir):
 
 if __name__ == '__main__':
     compile()
-    iter_nums = [1000]
+    iter_num = int(sys.argv[1])
     result_dir = INFERENCE + '/results/' + VERSION
     os.makedirs(result_dir, exist_ok=True)
-    for iter_num in iter_nums:
-        run_inference(INFERENCE, iter_num, result_dir)
+    run_inference(INFERENCE, VERSION, iter_num, result_dir)

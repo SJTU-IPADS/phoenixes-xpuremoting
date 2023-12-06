@@ -126,6 +126,7 @@ XDR *new_xdrmemory(enum xdr_op op)
     xdrs->x_private = reinterpret_cast<char *>(xdrmemory);
     xdrs->x_public = xdrs->x_base = NULL;
     xdrs->x_handy = 0;
+    return xdrs;
 }
 
 void destroy_xdrmemory(XDR **xdrs)

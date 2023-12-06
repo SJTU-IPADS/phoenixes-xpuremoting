@@ -39,7 +39,7 @@
 extern cpu_measurement_info vanillas[CPU_API_COUNT];
 
 #ifndef NO_OPTIMIZATION
-int current_device = -1;
+extern thread_local int current_device;
 #endif // WITH_OPTIMIZATION
 
 typedef struct host_alloc_info {
@@ -91,7 +91,8 @@ int server_runtime_init(int restore)
         ret &= cublas_init(0, &rm_memory);
         ret &= server_runtime_restore("ckp");
     }
-    
+
+#ifdef NO_OPTIMIZATION
     // Make sure runtime API is initialized
     // If we don't do this and use the driver API, it might be unintialized
     cudaError_t cres;
@@ -100,6 +101,7 @@ int server_runtime_init(int restore)
         ret = 1;
     }
     cudaDeviceSynchronize();
+#endif // NO_OPTIMIZATION
 
     return ret;
 }
@@ -806,14 +808,30 @@ bool_t cuda_event_synchronize_1_svc(ptr event, int *result, struct svc_req *rqst
 bool_t cuda_func_get_attributes_1_svc(ptr func, mem_result *result, struct svc_req *rqstp)
 {
     LOGE(LOG_DEBUG, "cudaFuncGetAttributes");
-    result->mem_result_u.data.mem_data_val =
-        malloc(sizeof(struct cudaFuncAttributes));
+    result->mem_result_u.data.mem_data_val = malloc(sizeof(struct cudaFuncAttributes));
     result->mem_result_u.data.mem_data_len = sizeof(struct cudaFuncAttributes);
-    result->err = cudaFuncGetAttributes(
-      (struct cudaFuncAttributes*) result->mem_result_u.data.mem_data_val,
-      (void*)func);
-    /* func is a pointer to program memory. It will be static across executions,
-     * so we do not need a resource manager */
+    struct cudaFuncAttributes* attr = malloc(sizeof(struct cudaFuncAttributes));
+    CUfunction handle = (CUfunction)resource_mg_get(&rm_functions, (void*)func);
+#define GET_FUNC_ATTR(member, name)					\
+    do {								\
+      int tmp;								\
+      CHECK_CU(cuFuncGetAttribute(&tmp, CU_FUNC_ATTRIBUTE_##name, handle)); \
+      attr->member = tmp;						\
+    } while(0)
+    GET_FUNC_ATTR(maxThreadsPerBlock, MAX_THREADS_PER_BLOCK);
+    GET_FUNC_ATTR(sharedSizeBytes, SHARED_SIZE_BYTES);
+    GET_FUNC_ATTR(constSizeBytes, CONST_SIZE_BYTES);
+    GET_FUNC_ATTR(localSizeBytes, LOCAL_SIZE_BYTES);
+    GET_FUNC_ATTR(numRegs, NUM_REGS);
+    GET_FUNC_ATTR(ptxVersion, PTX_VERSION);
+    GET_FUNC_ATTR(binaryVersion, BINARY_VERSION);
+    GET_FUNC_ATTR(cacheModeCA, CACHE_MODE_CA);
+    GET_FUNC_ATTR(maxDynamicSharedSizeBytes, MAX_DYNAMIC_SHARED_SIZE_BYTES);
+    GET_FUNC_ATTR(preferredShmemCarveout, PREFERRED_SHARED_MEMORY_CARVEOUT);
+#undef GET_FUNC_ATTR
+    memcpy(result->mem_result_u.data.mem_data_val, attr, sizeof(struct cudaFuncAttributes));
+    free(attr);
+    result->err = 0;
     return 1;
 }
 
@@ -975,8 +993,9 @@ bool_t cuda_occupancy_max_active_bpm_1_svc(ptr func, int blockSize, size_t dynam
 bool_t cuda_occupancy_max_active_bpm_with_flags_1_svc(ptr func, int blockSize, size_t dynamicSMemSize, int flags, int_result *result, struct svc_req *rqstp)
 {
     LOGE(LOG_DEBUG, "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags");
-    result->err = cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(
-        &result->int_result_u.data, (void*)func, blockSize, dynamicSMemSize, flags);
+    CUfunction handle = (CUfunction)resource_mg_get(&rm_functions, (void*)func);
+    cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(&result->int_result_u.data, handle, blockSize, dynamicSMemSize, flags);
+    result->err = 0;
     return 1;
 }
 
