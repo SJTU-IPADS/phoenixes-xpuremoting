@@ -25,10 +25,12 @@
 #include "oob.h"
 #include "mt-memcpy.h"
 #include "cpu-measurement.h"
+#include "proxy/api_trace.h"
 
 extern cpu_measurement_info totals[CPU_API_COUNT];
 #if !defined NO_OPTIMIZATION
 extern thread_local int local_device;
+extern thread_local int retrieve_error;
 #endif // WITH_OPTIMIZATION
 
 #ifdef WITH_IB
@@ -295,6 +297,7 @@ cudaError_t cudaGetDevice(int* device)
 #if !defined NO_OPTIMIZATION
     if (local_device != -1) {
         *device = local_device;
+        TRACE_PROFILE(proc);
         cpu_time_end(totals, proc);
         return 0;
     }
@@ -500,6 +503,12 @@ cudaError_t cudaGetLastError(void)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
+#if !defined NO_OPTIMIZATION
+    TRACE_PROFILE(proc);
+    retrieve_error = 1;
+    cpu_time_end(totals, proc);
+    return 0;
+#else
     int result;
     enum clnt_stat retval_1;
     retval_1 = cuda_get_last_error_1(&result, clnt);
@@ -508,20 +517,30 @@ cudaError_t cudaGetLastError(void)
     }
     cpu_time_end(totals, proc);
     return result;
+#endif // WITH_OPTIMIZATION
 }
 
 cudaError_t cudaPeekAtLastError(void)
 {
+    int proc = 143;
+    cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
+#if !defined NO_OPTIMIZATION
+    TRACE_PROFILE(proc);
+    cpu_time_end(totals, proc);
+    return 0;
+#else
     int result;
     enum clnt_stat retval_1;
     retval_1 = cuda_peek_at_last_error_1(&result, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+    cpu_time_end(totals, proc);
     return result;
+#endif // WITH_OPTIMIZATION
 }
 
 DEF_FN(cudaError_t, cudaStreamAddCallback, cudaStream_t, stream, cudaStreamCallback_t, callback, void*, userData, unsigned int,  flags)

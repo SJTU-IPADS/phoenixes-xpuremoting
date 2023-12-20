@@ -5,12 +5,6 @@
 cpu_measurement_info totals[CPU_API_COUNT];
 cpu_measurement_info vanillas[CPU_API_COUNT];
 
-static long long time_diff(const struct timeval *t1, const struct timeval *t2)
-{
-    return 1ll * 1000000 * (t2->tv_sec - t1->tv_sec) +
-           (t2->tv_usec - t1->tv_usec);
-}
-
 static int measurement_info_cmp_time(const void *a, const void *b)
 {
     return ((const cpu_measurement_info *)a)->time <
@@ -21,14 +15,13 @@ void cpu_time_start(cpu_measurement_info *infos, int id){
 #ifdef CPU_MEASUREMRNT_SWITCH
     infos[id].id = id;
     infos[id].cnt++;
-    gettimeofday(&infos[id].start, NULL);
+    infos[id].start = rdtscp();
 #endif
 }
 
 void cpu_time_end(cpu_measurement_info *infos, int id){
 #ifdef CPU_MEASUREMRNT_SWITCH
-    gettimeofday(&infos[id].end, NULL);
-    infos[id].time += time_diff(&infos[id].start, &infos[id].end);
+    infos[id].time += cycles_2_ns(rdtscp() - infos[id].start);
 #endif
 }
 
@@ -46,3 +39,9 @@ void cpu_print_measurement_info(const char *str, cpu_measurement_info *infos,
     }
 #endif
 }
+
+#ifdef NO_OPTIMIZATION
+extern "C" {
+void startTrace() {}
+}
+#endif

@@ -1,8 +1,9 @@
 #include "clnt.h"
+#include "../log.h"
+#include "api_trace.h"
 #include "async_batch_caller.h"
 #include "measurement.h"
 #include "proxy_header.h"
-#include "../log.h"
 #include <cassert>
 #include <cstdio>
 #include <fstream>
@@ -11,7 +12,6 @@
 #include <rpc/xdr.h>
 #include <thread>
 #include <unistd.h>
-#include <unordered_set>
 #include <vector>
 
 static enum clnt_stat clnt_device_call(CLIENT *h, rpcproc_t proc,
@@ -62,23 +62,29 @@ static void createBuffer()
         buffers[i].sender = new RDMABuffer(
             BufferGuest, 0,
             "localhost:" + std::to_string(RDMA_CONNECTION_PORT_CTOS + i),
-            RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS + i,
-            RDMA_MEM_NAME_CTOS + i, "client-qp", RDMA_BUFFER_SIZE);
+            RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS + i, RDMA_MEM_NAME_CTOS + i,
+            "client-qp", RDMA_BUFFER_SIZE);
         buffers[i].receiver =
             new RDMABuffer(BufferHost, RDMA_CONNECTION_PORT_STOC + i, "",
                            RDMA_NIC_IDX_STOC, RDMA_NIC_NAME_STOC + i,
                            RDMA_MEM_NAME_STOC + i, "", RDMA_BUFFER_SIZE);
 #endif // WITH_RDMA
-        buffers[i].xdrs_arg = new_xdrmemory(XDR_ENCODE);
-        buffers[i].xdrs_res = new_xdrmemory(XDR_DECODE);
+        buffers[i].xdrs_arg = new_xdrdevice(XDR_ENCODE);
+        auto xdrdevice =
+            reinterpret_cast<XDRDevice *>(buffers[i].xdrs_arg->x_private);
+        xdrdevice->SetBuffer(buffers[i].sender);
+        buffers[i].xdrs_res = new_xdrdevice(XDR_DECODE);
+        xdrdevice =
+            reinterpret_cast<XDRDevice *>(buffers[i].xdrs_res->x_private);
+        xdrdevice->SetBuffer(buffers[i].receiver);
     }
 }
 
 static void destroyBuffer()
 {
     for (int i = 0; i < BUFFER_POOL_CAPACITY; i++) {
-        destroy_xdrmemory(&buffers[i].xdrs_res);
-        destroy_xdrmemory(&buffers[i].xdrs_arg);
+        destroy_xdrdevice(&buffers[i].xdrs_res);
+        destroy_xdrdevice(&buffers[i].xdrs_arg);
         buffers[i].xdrs_arg = buffers[i].xdrs_res = nullptr;
 #ifdef WITH_TCPIP
         TcpipBuffer *tcpip_sender =
@@ -119,6 +125,7 @@ CLIENT *clnt_device_create()
         createBuffer();
         batchs = new AsyncBatch[BUFFER_POOL_CAPACITY];
         // muts = new std::mutex[BUFFER_POOL_CAPACITY];
+        init_api_traces();
     } else {
         is_client = 0;
     }
@@ -151,10 +158,12 @@ void clnt_device_destroy(CLIENT *clnt)
         //     log_file << "thread id: " << id << std::endl;
         // }
         // log_file.close();
+        deinit_api_traces();
     }
 }
 
 thread_local int local_device = -1;
+thread_local int retrieve_error = 0;
 
 std::mutex buffer_num_mut;
 int buffer_num = 0;
@@ -165,6 +174,7 @@ static enum clnt_stat clnt_device_call(CLIENT *h, rpcproc_t proc,
                                        xdrproc_t xresults, void *resultsp,
                                        struct timeval timeout)
 {
+    TRACE_PROFILE(proc);
     // std::stringstream ss;
     // ss << std::this_thread::get_id();
     // uint64_t id = std::stoull(ss.str()) / 1000;
@@ -173,7 +183,7 @@ static enum clnt_stat clnt_device_call(CLIENT *h, rpcproc_t proc,
     thread_local static int buffer_idx = -1;
     if (buffer_idx == -1) {
         std::lock_guard<std::mutex> lk(buffer_num_mut);
-        buffer_idx = buffer_num++;
+        buffer_idx = (buffer_num++ % BUFFER_POOL_CAPACITY);
     }
     time_start(clnt_apis, proc, TOTAL_TIME);
     int payload = 0;
@@ -187,7 +197,8 @@ static enum clnt_stat clnt_device_call(CLIENT *h, rpcproc_t proc,
     batchs[buffer_idx].Call(proc, xargs, argsp, xresults, resultsp, timeout,
                             payload, buffers[buffer_idx].xdrs_arg,
                             buffers[buffer_idx].xdrs_res, clnt_apis,
-                            local_device, buffers[buffer_idx].sender,
+                            local_device, retrieve_error,
+                            buffers[buffer_idx].sender,
                             buffers[buffer_idx].receiver);
 
     time_end(clnt_apis, proc, TOTAL_TIME);

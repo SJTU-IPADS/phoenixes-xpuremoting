@@ -1,6 +1,5 @@
 #include "shm_buffer.h"
 #include <algorithm>
-#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -9,7 +8,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-ShmBuffer::ShmBuffer(BufferPrivilege privilege, const char* shm_name, int buf_size)
+ShmBuffer::ShmBuffer(BufferPrivilege privilege, const char *shm_name,
+                     int buf_size)
     : DeviceBuffer(privilege)
 {
     shm_name_ = new char(strlen(shm_name) + 1);
@@ -35,15 +35,9 @@ ShmBuffer::~ShmBuffer()
     delete[] shm_name_;
 }
 
-const char* ShmBuffer::getShmName()
-{
-    return shm_name_;
-}
+const char *ShmBuffer::getShmName() { return shm_name_; }
 
-int ShmBuffer::getShmLen()
-{
-    return shm_len_;
-}
+int ShmBuffer::getShmLen() { return shm_len_; }
 
 // the capacity to write once
 int ShmBuffer::WriteCapacity(int read_head)
@@ -56,10 +50,11 @@ int ShmBuffer::WriteCapacity(int read_head)
         return read_head - *buf_tail_ - 1;
 }
 
-int ShmBuffer::putBytes(const char* src, int length)
+int ShmBuffer::putBytes(const char *src, int length)
 {
     int current, len = length, read_head;
-    // std::cout << "putBytes, length:" << length << ", head: " << *buf_head_ << ", tail: " << *buf_tail_ << std::endl;
+    // std::cout << "putBytes, length:" << length << ", head: " << *buf_head_ <<
+    // ", tail: " << *buf_tail_ << std::endl;
     while (len > 0) {
         read_head = *buf_head_;
         if ((*buf_tail_ + 1) % buf_size_ == read_head) {
@@ -80,20 +75,8 @@ int ShmBuffer::putBytes(const char* src, int length)
 
 int ShmBuffer::FlushOut()
 {
-    int count = 0;
-    auto start = std::chrono::system_clock::now();
-    while ((*buf_tail_ + 1) % buf_size_ == *buf_head_) {
-        count++;
-        if (count == 1000000) {
-            count = 0;
-            auto end = std::chrono::system_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-            if (duration.count() > BUFFER_IO_TIMEOUT) {
-                std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
-                return -1;
-            }
-        }
-    }
+    while ((*buf_tail_ + 1) % buf_size_ == *buf_head_)
+        ;
     return 0;
 }
 
@@ -106,10 +89,11 @@ int ShmBuffer::ReadCapacity(int read_tail)
         return buf_size_ - *buf_head_;
 }
 
-int ShmBuffer::getBytes(char* dst, int length)
+int ShmBuffer::getBytes(char *dst, int length)
 {
     int current, len = length, read_tail;
-    // std::cout << "getBytes, head: " << *buf_head_ << ", tail: " << *buf_tail_ << std::endl;
+    // std::cout << "getBytes, head: " << *buf_head_ << ", tail: " << *buf_tail_
+    // << std::endl;
     while (len > 0) {
         read_tail = *buf_tail_;
         if (*buf_head_ == read_tail) {
@@ -130,20 +114,8 @@ int ShmBuffer::getBytes(char* dst, int length)
 
 int ShmBuffer::FillIn()
 {
-    int count = 0;
-    auto start = std::chrono::system_clock::now();
-    while (*buf_head_ == *buf_tail_) {
-        count++;
-        if (count == 1000000) {
-            count = 0;
-            auto end = std::chrono::system_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-            if (duration.count() > BUFFER_IO_TIMEOUT) {
-                std::cerr << "timeout in " << __func__ << " in " << __FILE__ << ":" << __LINE__ << std::endl;
-                return -1;
-            }
-        }
-    }
+    while (*buf_head_ == *buf_tail_)
+        ;
     return 0;
 }
 
@@ -175,8 +147,8 @@ void ShmBuffer::HostInit()
         exit(1);
     }
 
-    buf_ = (char*)shm_ptr_;
-    buf_head_ = (int*)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
+    buf_ = (char *)shm_ptr_;
+    buf_head_ = (int *)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
     *buf_head_ = *buf_tail_ = 0;
 }
 
@@ -202,6 +174,6 @@ void ShmBuffer::GuestInit()
         exit(1);
     }
 
-    buf_ = (char*)shm_ptr_;
-    buf_head_ = (int*)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
+    buf_ = (char *)shm_ptr_;
+    buf_head_ = (int *)(buf_ + buf_size_), buf_tail_ = buf_head_ + 1;
 }

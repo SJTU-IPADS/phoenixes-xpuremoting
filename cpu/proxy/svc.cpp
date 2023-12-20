@@ -2,6 +2,7 @@
 #include "async_batch_caller.h"
 #include "measurement.h"
 #include "proxy_header.h"
+#include <cstdint>
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <thread>
@@ -55,16 +56,22 @@ static void createBuffer()
             "client-qp", RDMA_BUFFER_SIZE);
         std::cout << "create rdma buffer" << std::endl;
 #endif // WITH_RDMA
-        buffers[i].xdrs_arg = new_xdrmemory(XDR_DECODE);
-        buffers[i].xdrs_res = new_xdrmemory(XDR_ENCODE);
+        buffers[i].xdrs_arg = new_xdrdevice(XDR_DECODE);
+        auto xdrdevice =
+            reinterpret_cast<XDRDevice *>(buffers[i].xdrs_arg->x_private);
+        xdrdevice->SetBuffer(buffers[i].receiver);
+        buffers[i].xdrs_res = new_xdrdevice(XDR_ENCODE);
+        xdrdevice =
+            reinterpret_cast<XDRDevice *>(buffers[i].xdrs_res->x_private);
+        xdrdevice->SetBuffer(buffers[i].sender);
     }
 }
 
 static void destroyBuffer()
 {
     for (int i = 0; i < BUFFER_POOL_CAPACITY; i++) {
-        destroy_xdrmemory(&buffers[i].xdrs_res);
-        destroy_xdrmemory(&buffers[i].xdrs_arg);
+        destroy_xdrdevice(&buffers[i].xdrs_res);
+        destroy_xdrdevice(&buffers[i].xdrs_arg);
         buffers[i].xdrs_arg = buffers[i].xdrs_res = nullptr;
 #ifdef WITH_TCPIP
         TcpipBuffer *tcpip_sender =
@@ -98,6 +105,7 @@ thread_local int current_device = -1;
 int process_header(ProxyHeader &header)
 {
 #define cudaSetDevice_API 126
+#define cudaGetLastError_API 142
     int local_device = header.get_device_id();
     if (current_device != local_device && local_device >= 0) {
         add_cnt(svc_apis, cudaSetDevice_API);
@@ -113,10 +121,23 @@ int process_header(ProxyHeader &header)
         }
         time_end(svc_apis, cudaSetDevice_API, TOTAL_TIME);
     }
+    int retrieve_flag = header.get_retrieve_flag();
+    if (retrieve_flag == 1) {
+        add_cnt(svc_apis, cudaGetLastError_API);
+        time_start(svc_apis, cudaGetLastError_API, TOTAL_TIME);
+        int result = cudaGetLastError();
+        if (result != cudaSuccess) {
+            printf("cudaGetLastError failed, error code: %d, "
+                   "proc id: %d\n",
+                   result, header.get_proc_id());
+            return -1;
+        }
+        time_end(svc_apis, cudaGetLastError_API, TOTAL_TIME);
+    }
     return 0;
 }
 
-std::pair<int, int> receive_request(int buffer_idx)
+int receive_request(int buffer_idx)
 {
     ProxyHeader header;
     auto ret = buffers[buffer_idx].receiver->getBytes((char *)&header,
@@ -124,49 +145,14 @@ std::pair<int, int> receive_request(int buffer_idx)
     if (ret < 0) {
         printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
                __LINE__, header.get_proc_id());
-        return { -1, -1 };
+        return -1;
     }
     int proc_id = header.get_proc_id();
     if (process_header(header) < 0) {
-        return { -1, -1 };
-    }
-
-    int len = 0;
-    ret = buffers[buffer_idx].receiver->getBytes((char *)&len, sizeof(int));
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
-               __LINE__, proc_id);
-        return { -1, -1 };
-    }
-    XDRMemory *xdrmemory =
-        reinterpret_cast<XDRMemory *>(buffers[buffer_idx].xdrs_arg->x_private);
-    xdrmemory->Resize(len);
-    ret = buffers[buffer_idx].receiver->getBytes(xdrmemory->Data(), len);
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
-               __FILE__, __LINE__, proc_id, len);
-        return { -1, -1 };
-    }
-    return { proc_id, len };
-}
-
-int send_response(XDRMemory *xdrmemory, int proc_id, int buffer_idx)
-{
-    auto len = xdrmemory->Size();
-    auto ret = buffers[buffer_idx].sender->putBytes((char *)&len, sizeof(int));
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
-               __FILE__, __LINE__, proc_id, len);
         return -1;
     }
-    ret = buffers[buffer_idx].sender->putBytes(xdrmemory->Data(), len);
-    if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n", __func__,
-               __FILE__, __LINE__, proc_id, len);
-        return -1;
-    }
-    buffers[buffer_idx].sender->FlushOut();
-    return 0;
+
+    return proc_id;
 }
 
 void svc_run()
@@ -177,54 +163,57 @@ void svc_run()
         current_device = 0;
         // Make sure runtime API is initialized
         // If we don't do this and use the driver API, it might be unintialized
-        cudaError_t cres;
-        if ((cres = cudaSetDevice(current_device)) != cudaSuccess) {
-            printf("cudaSetDevice failed, error code: %d\n", cres);
-            goto end;
-        }
+        // cudaError_t cres;
+        // if ((cres = cudaSetDevice(current_device)) != cudaSuccess) {
+        //     printf("cudaSetDevice failed, error code: %d\n", cres);
+        //     goto end;
+        // }
+
+        // seems only need to call cudaDeviceSynchronize once
         cudaDeviceSynchronize();
 
         while (1) {
-            struct timeval start_0;
-            gettimeofday(&start_0, NULL);
-            int payload = 0, ret = 0;
-            XDRMemory *xdrmemory = nullptr;
+            uint64_t start_0 = rdtscp();
+            int payload = 0;
 
-            auto [proc_id, len] = receive_request(buffer_idx);
+            int proc_id = receive_request(buffer_idx);
             if (proc_id < 0) {
                 goto end;
             }
 
-            set_start(svc_apis, proc_id, NETWORK_TIME, &start_0);
-            time_end(svc_apis, proc_id, NETWORK_TIME);
-            payload += len + sizeof(int) + sizeof(ProxyHeader);
+            int async = AsyncBatch::is_async_api(proc_id);
 
+            set_start(svc_apis, proc_id, NETWORK_TIME, start_0);
+            payload += sizeof(ProxyHeader);
+            time_end(svc_apis, proc_id, NETWORK_TIME);
+
+            auto xdrdevice_arg = reinterpret_cast<XDRDevice *>(
+                     buffers[buffer_idx].xdrs_arg->x_private),
+                 xdrdevice_res = reinterpret_cast<XDRDevice *>(
+                     buffers[buffer_idx].xdrs_res->x_private);
+            xdrdevice_arg->Setpos(0);
+            xdrdevice_res->Setpos(0);
+            if (async == 1) {
+                xdrdevice_res->SetMask(1);
+            }
             if (dispatch(proc_id, buffers[buffer_idx].xdrs_arg,
                          buffers[buffer_idx].xdrs_res) < 0) {
                 goto end;
             }
+            payload += xdrdevice_arg->Getpos() + xdrdevice_res->Getpos();
 
-            if (AsyncBatch::is_async_api(proc_id)) {
+            if (async == 1) {
+                xdrdevice_res->SetMask(0);
                 // do not need to send reply for an async api
                 goto loop_end;
             }
 
             time_start(svc_apis, proc_id, NETWORK_TIME);
-            xdrmemory = reinterpret_cast<XDRMemory *>(
-                buffers[buffer_idx].xdrs_res->x_private);
-            len = xdrmemory->Size();
-            ret = send_response(xdrmemory, proc_id, buffer_idx);
-            if (ret < 0) {
-                printf("timeout in %s in %s:%d, proc_id: %d, len: %d\n",
-                       __func__, __FILE__, __LINE__, proc_id, len);
-                goto end;
-            }
-
+            buffers[buffer_idx].sender->FlushOut();
             time_end(svc_apis, proc_id, NETWORK_TIME);
-            payload += len + sizeof(int);
 
         loop_end:
-            set_start(svc_apis, proc_id, TOTAL_TIME, &start_0);
+            set_start(svc_apis, proc_id, TOTAL_TIME, start_0);
             time_end(svc_apis, proc_id, TOTAL_TIME);
             add_cnt(svc_apis, proc_id);
             add_payload_size(svc_apis, proc_id, payload);

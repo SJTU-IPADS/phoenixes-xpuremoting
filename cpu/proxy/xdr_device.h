@@ -1,26 +1,25 @@
-#ifndef XDR_MEMORY_H
-#define XDR_MEMORY_H
+#ifndef XDR_DEVICE_H
+#define XDR_DEVICE_H
 
+#include "device_buffer.h"
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <sys/types.h>
-#include <vector>
 
 typedef int bool_t;
 typedef unsigned int u_int;
 typedef signed int int32_t;
 
-class XDRMemory
+class XDRDevice
 {
 public:
-    XDRMemory();
-    ~XDRMemory();
+    XDRDevice(DeviceBuffer *buffer = nullptr);
+    ~XDRDevice();
 
-    int Size();
-    void Resize(int size);
-    char *Data();
-    void Clear();
-    std::vector<char>& GetBuffer();
+    void SetBuffer(DeviceBuffer *buffer);
+    DeviceBuffer *GetBuffer();
+    void SetMask(int m);
+    int GetMask();
 
     // inner XDR ops
     bool_t Getlong(long *lp);
@@ -32,11 +31,12 @@ public:
     int32_t *Inline(u_int len);
 
 private:
-    std::vector<char> buffer;
+    DeviceBuffer *buffer_;
     u_int position;
+    int mask;
 };
 
-XDR *new_xdrmemory(enum xdr_op op);
-void destroy_xdrmemory(XDR **xdrs);
+XDR *new_xdrdevice(enum xdr_op op);
+void destroy_xdrdevice(XDR **xdrs);
 
-#endif // XDR_MEMORY_H
+#endif // XDR_DEVICE_H

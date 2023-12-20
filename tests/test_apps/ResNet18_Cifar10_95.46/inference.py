@@ -5,6 +5,13 @@ from utils.ResNet import ResNet18
 import numpy as np
 import time
 import sys
+import ctypes
+import os
+
+# load remoting bottom library
+path = os.getenv('REMOTING_BOTTOM_LIBRARY')
+cpp_lib = ctypes.CDLL(path)
+start_trace = cpp_lib.startTrace
 
 if(len(sys.argv) != 2):
     print('Usage: python3 inference.py num_iter')
@@ -37,6 +44,8 @@ for i in range(20):
     # compare predictions to true label(将预测与真实标签进行比较)
     correct_tensor = pred.eq(target.data.view_as(pred))
     correct = np.squeeze(correct_tensor.data.cpu().numpy())
+
+start_trace()
 
 T1 = time.time()
 

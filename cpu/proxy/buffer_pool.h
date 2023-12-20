@@ -2,7 +2,7 @@
 #define BUFFER_POOL_H
 
 #include "device_buffer.h"
-#include "xdr_memory.h"
+#include "xdr_device.h"
 
 #define BUFFER_POOL_CAPACITY 1
 
