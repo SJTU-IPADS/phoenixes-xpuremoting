@@ -85,7 +85,7 @@ char *_get_next_token(char *, int);
 #ifndef MEASUREMENT_DETAILED
 #define MEASUREMENT_DETAILED
 
-#define MEASUREMENT_DETAILED_SWITCH
+// #define MEASUREMENT_DETAILED_SWITCH
 
 #include <sys/time.h>
 #include <time.h>

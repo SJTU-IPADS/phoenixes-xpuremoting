@@ -5,7 +5,7 @@
 #include "rdma_buffer.h"
 #include "shm_buffer.h"
 #include "tcpip_buffer.h"
-#include "xdr_memory.h"
+#include "xdr_device.h"
 #include <rpc/rpc.h>
 
 extern "C" {

@@ -1,6 +1,13 @@
 from diffusers import StableDiffusionPipeline
 import time
 import sys
+import ctypes
+import os
+
+# load remoting bottom library
+path = os.getenv('REMOTING_BOTTOM_LIBRARY')
+cpp_lib = ctypes.CDLL(path)
+start_trace = cpp_lib.startTrace
 
 if(len(sys.argv) != 2):
     print('Usage: python3 inference.py num_iter')
@@ -19,6 +26,8 @@ prompt = "a photograph of an astronaut riding a horse"
 for i in range(20):
     out_images = image_pipe(prompt).images
 
+start_trace()
+
 T1 = time.time()
 
 for i in range(num_iter):
@@ -26,4 +35,4 @@ for i in range(num_iter):
 
 T2 = time.time()
 print('time used: ', T2-T1)
-out_images[0].save("astronaut_rides_horse.png")
+# out_images[0].save("astronaut_rides_horse.png")

@@ -1,6 +1,5 @@
 #include "../cpu_rpc_prot.h"
 #include "measurement.h"
-#include "xdr_memory.h"
 #include <iostream>
 #include <memory.h>
 #include <netinet/in.h>
@@ -3112,8 +3111,6 @@ int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res)
     rqstp->rq_proc = proc_id;
 
     retval = (bool_t)(*local)((char *)&argument, (void *)&result, rqstp);
-    XDRMemory *xdrmemory = reinterpret_cast<XDRMemory *>(xdrs_res->x_private);
-    xdrmemory->Clear();
     if (retval > 0) {
         time_start(svc_apis, proc_id, SERIALIZATION_TIME);
         (*_xdr_result)(xdrs_res, (caddr_t)&result);

@@ -29,7 +29,7 @@ ALL = $(SERVER) $(CLIENT)
 
 ifeq ($(VERSION), NO_OPTIMIZATION)
 else
-SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_memory.cpp		\
+SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_device.cpp		\
 					$(PROXY_PREFIX)/clnt.cpp			\
 					$(PROXY_PREFIX)/measurement.cpp		\
 					$(PROXY_PREFIX)/proxy_header.cpp 	\
@@ -37,10 +37,11 @@ SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_memory.cpp		\
 					$(PROXY_PREFIX)/shm_buffer.cpp		\
 					$(PROXY_PREFIX)/tcpip_buffer.cpp    \
 					$(PROXY_PREFIX)/async_batch_caller.cpp \
-					$(PROXY_PREFIX)/rdma_buffer.cpp
+					$(PROXY_PREFIX)/rdma_buffer.cpp		\
+					$(PROXY_PREFIX)/api_trace.cpp
 
 SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
-				$(PROXY_PREFIX)/xdr_memory.cpp		\
+				$(PROXY_PREFIX)/xdr_device.cpp		\
 				$(PROXY_PREFIX)/svc.cpp				\
 				$(PROXY_PREFIX)/measurement.cpp		\
 				$(PROXY_PREFIX)/proxy_header.cpp 	\

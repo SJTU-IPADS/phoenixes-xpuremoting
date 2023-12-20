@@ -3,12 +3,6 @@
 #include <cstring>
 #include <iostream>
 
-static long long time_diff(const struct timeval *t1, const struct timeval *t2)
-{
-    return 1ll * 1000000 * (t2->tv_sec - t1->tv_sec) +
-           (t2->tv_usec - t1->tv_usec);
-}
-
 static int detailed_info_cmp_time(const void *a, const void *b)
 {
     return ((const detailed_info *)a)->cnt < ((const detailed_info *)b)->cnt;
@@ -22,33 +16,24 @@ void add_cnt(detailed_info *infos, int id)
 #endif
 }
 
-void set_start(detailed_info *infos, int id, int type, struct timeval *start)
+void set_start(detailed_info *infos, int id, int type, uint64_t start)
 {
 #ifdef MEASUREMENT_DETAILED_SWITCH
-    infos[id].start[type] = *start;
-#endif
-}
-
-void set_end(detailed_info *infos, int id, int type, struct timeval *end)
-{
-#ifdef MEASUREMENT_DETAILED_SWITCH
-    infos[id].end[type] = *end;
+    infos[id].start[type] = start;
 #endif
 }
 
 void time_start(detailed_info *infos, int id, int type)
 {
 #ifdef MEASUREMENT_DETAILED_SWITCH
-    gettimeofday(&infos[id].start[type], NULL);
+    infos[id].start[type] = rdtscp();
 #endif
 }
 
 void time_end(detailed_info *infos, int id, int type)
 {
 #ifdef MEASUREMENT_DETAILED_SWITCH
-    gettimeofday(&infos[id].end[type], NULL);
-    infos[id].time[type] +=
-        time_diff(&infos[id].start[type], &infos[id].end[type]);
+    infos[id].time[type] += cycles_2_ns(rdtscp() - infos[id].start[type]);
 #endif
 }
 
