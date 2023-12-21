@@ -20,15 +20,14 @@ TraceProfile::TraceProfile(const std::string &name) {
         return;
     }
     api_name = name;
-    call_start = std::chrono::steady_clock::now();
+    call_start = rdtscp();
 }
 
 TraceProfile::~TraceProfile() {
     if (!on_trace) {
         return;
     }
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - call_start);
-    api_records->emplace_back(api_name, duration.count());
+    api_records->emplace_back(api_name, cycles_2_ns(rdtscp() - call_start));
 }
 
 void __attribute__((constructor)) trace_init(void) {
