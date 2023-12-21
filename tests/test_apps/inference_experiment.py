@@ -48,18 +48,28 @@ import time
 def run_inference(inference_case, version, iter_num, result_dir):
     # "./startinference.sh inference_case iter_num"
     inference_file = inference_case + '/inference.py'
-    result_client_file = '%s/%d_iter_client.txt' % (result_dir, iter_num)
-    result_server_file = '%s/%d_iter_server.txt' % (result_dir, iter_num)
     
-    server_pid = start_server(result_server_file)
-    print('running inference %s (%s) with %d iterations, server pid: %d' % (inference_case, version, iter_num, server_pid))
-    
-    run_command = 'bash startinference.sh %s %d > %s' % (inference_file, iter_num, result_client_file)
-    time.sleep(3)
-    run_result = os.system(run_command)
+    if version == 'WITH_VANILLA':
+        result_file = '%s/%d_iter.txt' % (result_dir, iter_num)
+        
+        print('running inference %s (%s) with %d iterations' % (inference_case, version, iter_num))
+        
+        run_command = 'bash runvanilla.sh %s %d > %s' % (inference_file, iter_num, result_file)
+        run_result = os.system(run_command)
+    else:
+        result_client_file = '%s/%d_iter_client.txt' % (result_dir, iter_num)
+        result_server_file = '%s/%d_iter_server.txt' % (result_dir, iter_num)
+        
+        server_pid = start_server(result_server_file)
+        print('running inference %s (%s) with %d iterations, server pid: %d' % (inference_case, version, iter_num, server_pid))
+        
+        run_command = 'bash startinference.sh %s %d > %s' % (inference_file, iter_num, result_client_file)
+        time.sleep(3)
+        run_result = os.system(run_command)
+        kill_server(server_pid)
+
     if run_result != 0:
         print('fail to run')
-    kill_server(server_pid)
 
 if __name__ == '__main__':
     compile()
