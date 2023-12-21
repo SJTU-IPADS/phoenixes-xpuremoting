@@ -1,10 +1,23 @@
 #ifndef TRACE_H
 #define TRACE_H
 
-#include <chrono>
 #include <map>
 #include <string>
 #include <vector>
+#include <cstdint>
+
+__inline__ uint64_t rdtscp(void)
+{
+    uint32_t lo, hi;
+    __asm__ __volatile__("rdtscp" : "=a"(lo), "=d"(hi));
+    return ((uint64_t)lo) | (((uint64_t)hi) << 32);
+}
+
+__inline__ uint64_t cycles_2_ns(uint64_t cycles)
+{
+    static uint64_t hz = 2200000000;
+    return cycles * (1000000000.0 / hz);
+}
 
 // #define HOOK_TRACE_SWITCH
 
@@ -15,9 +28,9 @@ void startTrace();
 class APIRecord {
 public:
     std::string api_name;
-    long interval;
+    uint64_t interval;
 
-    APIRecord(const std::string &name, const long itv) : api_name(name), interval(itv) {}
+    APIRecord(const std::string &name, const uint64_t itv) : api_name(name), interval(itv) {}
 };
 
 extern std::map<std::string, int> *api_dict;
@@ -30,7 +43,7 @@ public:
 
 private:
     std::string api_name;
-    std::chrono::steady_clock::time_point call_start;
+    uint64_t call_start;
 
     TraceProfile(const TraceProfile &) = delete;
     void operator=(const TraceProfile &) = delete;
