@@ -1,16 +1,20 @@
 #MIT License...
 
-.PHONY: all cuda-gdb libtirpc gpu cpu tests clean install install-cpu bin/tests microbench
+.PHONY: all cuda-gdb libtirpc gpu cpu tests clean install install-cpu bin/tests microbench vanilla
 
 all: gpu cpu install
 
 clean:
-	@echo -e "\033[31m----> Cleaning up gpu\033[0m"
-	$(MAKE) -C gpu clean
+	# @echo -e "\033[31m----> Cleaning up gpu\033[0m"
+	# $(MAKE) -C gpu clean
 	@echo -e "\033[31m----> Cleaning up cpu\033[0m"
 	$(MAKE) -C cpu clean
-	@echo -e "\033[31m----> Cleaning up test kernels\033[0m"
-	$(MAKE) -C tests clean
+	@echo -e "\033[31m----> Cleaning up vanilla\033[0m"
+	$(MAKE) -C vanilla clean
+	@echo -e "\033[31m----> Cleaning up submodules\033[0m"
+	$(MAKE) -C submodules clean
+	# @echo -e "\033[31m----> Cleaning up test kernels\033[0m"
+	# $(MAKE) -C tests clean
 
 cuda-gdb:
 	@echo -e "\033[36m----> Building submodules\033[0m"
@@ -25,7 +29,11 @@ gpu: cuda-gdb
 	@echo -e "\033[36m----> Building gpu\033[0m"
 	$(MAKE) -C gpu
 
-cpu: libtirpc
+vanilla:
+	@echo -e "\033[36m----> Building vanilla\033[0m"
+	$(MAKE) -C vanilla
+
+cpu: libtirpc vanilla
 	@echo -e "\033[36m----> Building cpu\033[0m"
 	$(MAKE) -C cpu
 
