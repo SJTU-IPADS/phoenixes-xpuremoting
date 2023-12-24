@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 CC = nvcc -ccbin g++
-CFLAGS = -cudart shared -lcudnn
+CFLAGS = -cudart shared -lcudnn -O2
 SRC = $(wildcard *.cu)
 OBJ = $(patsubst %.cu, %.out, $(SRC))
 
