@@ -290,17 +290,19 @@ cudaError_t cudaDeviceSynchronize(void)
 cudaError_t cudaGetDevice(int* device)
 {
     int proc = 117;
+    TRACE_PROFILE(proc);
     cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
 #if !defined NO_OPTIMIZATION
-    if (local_device != -1) {
-        *device = local_device;
-        TRACE_PROFILE(proc);
-        cpu_time_end(totals, proc);
-        return 0;
-    }
+    #ifndef NO_CACHE_OPTIMIZATION
+        if (local_device != -1) {
+            *device = local_device;
+            cpu_time_end(totals, proc);
+            return 0;
+        }
+    #endif
     int_result result;
     enum clnt_stat retval_1;
     retval_1 = cuda_get_device_1(&result, clnt);
@@ -308,8 +310,10 @@ cudaError_t cudaGetDevice(int* device)
         clnt_perror (clnt, "call failed");
     }
     if (result.err == 0) {
-        local_device = result.int_result_u.data;
-        *device = local_device;
+        #ifndef NO_CACHE_OPTIMIZATION
+            local_device = result.int_result_u.data;
+        #endif
+        *device = result.int_result_u.data;
     }
     cpu_time_end(totals, proc);
     return result.err;
@@ -416,11 +420,21 @@ cudaError_t cudaSetDevice(int device)
     api_call_cnt++;
 #endif //WITH_API_CNT
 #if !defined NO_OPTIMIZATION
-    if (local_device != device) {
-        local_device = device;
+    #ifndef NO_CACHE_OPTIMIZATION
+        if (local_device != device) {
+            local_device = device;
+        }
+        cpu_time_end(totals, proc);
+        return 0;
+    #endif // NO_CACHE_OPTIMIZATION
+    int result;
+    enum clnt_stat retval_1;
+    retval_1 = cuda_set_device_1(device, &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
     }
     cpu_time_end(totals, proc);
-    return 0;
+    return result;
 #else
     int result;
     enum clnt_stat retval_1;
@@ -499,15 +513,25 @@ const char* cudaGetErrorString(cudaError_t error)
 cudaError_t cudaGetLastError(void)
 {
     int proc = 142;
+    TRACE_PROFILE(proc);
     cpu_time_start(totals, proc);
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
 #if !defined NO_OPTIMIZATION
-    TRACE_PROFILE(proc);
-    retrieve_error = 1;
+    #ifndef NO_CACHE_OPTIMIZATION
+        retrieve_error = 1;
+        cpu_time_end(totals, proc);
+        return 0;
+    #endif
+    int result;
+    enum clnt_stat retval_1;
+    retval_1 = cuda_get_last_error_1(&result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
     cpu_time_end(totals, proc);
-    return 0;
+    return result;
 #else
     int result;
     enum clnt_stat retval_1;

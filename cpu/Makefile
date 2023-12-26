@@ -142,6 +142,9 @@ ifdef WITH_IB
 CC_FLAGS += -DWITH_IB=$(WITH_IB)
 endif
 
+ifdef NO_CACHE_OPTIMIZATION
+CC_FLAGS += -DNO_CACHE_OPTIMIZATION
+endif
 
 SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lnvidia-ml -lcudnn
 SERVER_BIN_LD_FLAGS = $(SERVER_LD_FLAGS) -Wl,--unresolved-symbols=ignore-in-object-files

@@ -106,6 +106,7 @@ int process_header(ProxyHeader &header)
 {
 #define cudaSetDevice_API 126
 #define cudaGetLastError_API 142
+#ifndef NO_CACHE_OPTIMIZATION
     int local_device = header.get_device_id();
     if (current_device != local_device && local_device >= 0) {
         add_cnt(svc_apis, cudaSetDevice_API);
@@ -134,6 +135,7 @@ int process_header(ProxyHeader &header)
         }
         time_end(svc_apis, cudaGetLastError_API, TOTAL_TIME);
     }
+#endif // NO_CACHE_OPTIMIZATION
     return 0;
 }
 
@@ -155,8 +157,18 @@ int receive_request(int buffer_idx)
     return proc_id;
 }
 
+void print_config() {
+    // cache optimization
+    #ifdef NO_CACHE_OPTIMIZATION
+        printf("Cache Optimization: Disabled!\n");
+    #else
+        printf("Cache Optimization: Enabled!\n");
+    #endif
+}
+
 void svc_run()
 {
+    print_config();
     createBuffer();
 
     auto thread_serving = [&](int buffer_idx) {
