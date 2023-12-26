@@ -63,5 +63,6 @@ void print_detailed_info(detailed_info *infos, int length, const char *str)
         infos[i].payload_size = 0;
         memset(infos[i].time, 0, sizeof(infos[i].time));
     }
+    fflush(stdout);
 #endif
 }
