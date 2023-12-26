@@ -2,6 +2,8 @@
 #define _RESOURCE_MG_H_
 
 #include "list.h"
+#include <unordered_map>
+#include <vector>
 
 typedef struct resource_mg_map_elem_t {
     void* client_address;
@@ -13,12 +15,14 @@ typedef struct resource_mg_t {
      * are stored here. This is a sorted list, enabling binary searching.
      * It contains elements of type resource_mg_map_elem
      */
-    list map_res;
+    std::unordered_map<void*, void*> resources_mapping;
+    // list map_res;
     /* During this run created resources where we use actual addresses on
      * the client side. This is an unordered list. We never have to search
      * this though. It containts elements of type void*.
      */
-    list new_res;
+    std::vector<void*> new_resources;
+    // list new_res;
     int bypass;
 } resource_mg;
 
