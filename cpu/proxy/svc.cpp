@@ -201,9 +201,9 @@ void svc_run()
 
             int async = AsyncBatch::is_async_api(proc_id);
 
-            set_start(svc_apis, proc_id, NETWORK_TIME, start_0);
+            set_start(svc_apis, proc_id, NETWORK_RECEIVE_TIME, start_0);
             payload += sizeof(ProxyHeader);
-            time_end(svc_apis, proc_id, NETWORK_TIME);
+            time_end(svc_apis, proc_id, NETWORK_RECEIVE_TIME);
 
             auto xdrdevice_arg = reinterpret_cast<XDRDevice *>(
                      buffers[buffer_idx].xdrs_arg->x_private),
@@ -226,9 +226,9 @@ void svc_run()
                 goto loop_end;
             }
 
-            time_start(svc_apis, proc_id, NETWORK_TIME);
+            time_start(svc_apis, proc_id, NETWORK_SEND_TIME);
             buffers[buffer_idx].sender->FlushOut();
-            time_end(svc_apis, proc_id, NETWORK_TIME);
+            time_end(svc_apis, proc_id, NETWORK_SEND_TIME);
 
         loop_end:
             set_start(svc_apis, proc_id, TOTAL_TIME, start_0);
