@@ -35,7 +35,7 @@ void AsyncBatch::Call(rpcproc_t proc, xdrproc_t xargs, void *argsp,
         issuing_mode = SYNC_ISSUING;
     }
 
-    time_start(clnt_apis, proc, NETWORK_TIME);
+    time_start(clnt_apis, proc, NETWORK_SEND_TIME);
     ProxyHeader header(proc, local_device, retrieve_error);
     retrieve_error = 0;
     auto ret = sender->putBytes((char *)&header, sizeof(ProxyHeader));
@@ -44,7 +44,7 @@ void AsyncBatch::Call(rpcproc_t proc, xdrproc_t xargs, void *argsp,
                __LINE__, proc);
         exit(-1);
     }
-    time_end(clnt_apis, proc, NETWORK_TIME);
+    time_end(clnt_apis, proc, NETWORK_SEND_TIME);
 
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
     auto xdrdevice_arg = reinterpret_cast<XDRDevice *>(xdrs_arg->x_private);
@@ -53,14 +53,18 @@ void AsyncBatch::Call(rpcproc_t proc, xdrproc_t xargs, void *argsp,
     payload_size += sizeof(ProxyHeader) + xdrdevice_arg->Getpos();
     time_end(clnt_apis, proc, SERIALIZATION_TIME);
 
-    time_start(clnt_apis, proc, NETWORK_TIME);
+    time_start(clnt_apis, proc, NETWORK_SEND_TIME);
     sender->FlushOut();
-    time_end(clnt_apis, proc, NETWORK_TIME);
+    time_end(clnt_apis, proc, NETWORK_SEND_TIME);
 
     if (async == 1) {
         *(int *)resultsp = 0; // as CUDA_SUCCESS
         return;
     }
+
+    time_start(clnt_apis, proc, NETWORK_RECEIVE_TIME);
+    receiver->FillIn();
+    time_end(clnt_apis, proc, NETWORK_RECEIVE_TIME);
 
     time_start(clnt_apis, proc, SERIALIZATION_TIME);
     auto xdrdevice_res = reinterpret_cast<XDRDevice *>(xdrs_res->x_private);

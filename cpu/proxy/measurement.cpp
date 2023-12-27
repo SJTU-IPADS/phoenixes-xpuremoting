@@ -53,12 +53,13 @@ void print_detailed_info(detailed_info *infos, int length, const char *str)
         if (infos[i].cnt == 0)
             break;
         printf("api %d: count %d, payload_size %lf, total_time %lf, "
-               "serialization_time %lf, network_time %lf\n",
+               "serialization_time %lf, network_send_time %lf, network_receive_time %lf\n",
                infos[i].id, infos[i].cnt,
                1.0 * infos[i].payload_size / infos[i].cnt,
                1.0 * infos[i].time[TOTAL_TIME] / infos[i].cnt,
                1.0 * infos[i].time[SERIALIZATION_TIME] / infos[i].cnt,
-               1.0 * infos[i].time[NETWORK_TIME] / infos[i].cnt);
+               1.0 * infos[i].time[NETWORK_SEND_TIME] / infos[i].cnt,
+               1.0 * infos[i].time[NETWORK_RECEIVE_TIME] / infos[i].cnt);
         infos[i].cnt = 0;
         infos[i].payload_size = 0;
         memset(infos[i].time, 0, sizeof(infos[i].time));

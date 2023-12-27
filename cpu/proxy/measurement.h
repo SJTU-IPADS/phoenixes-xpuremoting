@@ -5,18 +5,19 @@
 
 #include "rdtscp.h"
 
-#define TIMETYPE 3
 enum {
     TOTAL_TIME = 0,
     SERIALIZATION_TIME,
-    NETWORK_TIME
+    NETWORK_SEND_TIME,
+    NETWORK_RECEIVE_TIME,
+    TIME_TYPE_COUNT
 };
 
 typedef struct _detailed_info {
     int id;
     int cnt;
-    uint64_t time[TIMETYPE];
-    uint64_t start[TIMETYPE];
+    uint64_t time[TIME_TYPE_COUNT];
+    uint64_t start[TIME_TYPE_COUNT];
     uint64_t payload_size;
 } detailed_info;
 
