@@ -11,6 +11,10 @@
 
 extern cpu_measurement_info totals[CPU_API_COUNT];
 
+#ifndef NO_HANDLER_OPTIMIZATION
+extern uint64_t handler_idx;
+#endif
+
 #ifdef WITH_API_CNT
 extern int api_call_cnt;
 #endif //WITH_API_CNT
@@ -204,6 +208,32 @@ cudnnStatus_t cudnnGetStream(cudnnHandle_t handle, cudaStream_t * streamId)
     return result.err;
 }
 
+#ifndef NO_HANDLER_OPTIMIZATION
+cudnnStatus_t cudnnCreateTensorDescriptor(cudnnTensorDescriptor_t * tensorDesc)
+{
+    int proc = 5010;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int result;
+    enum clnt_stat retval_1;
+    if (tensorDesc == NULL) {
+        LOGE(LOG_ERROR, "%s failed (value is NULL)", __FUNCTION__);
+        return CUDNN_STATUS_BAD_PARAM;
+    }
+    *tensorDesc = (cudnnTensorDescriptor_t)++handler_idx;
+    retval_1 = rpc_cudnncreatetensordescriptor_1((ptr)(*tensorDesc), &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        LOGE(LOG_ERROR, "%s failed (%d)", __FUNCTION__, retval_1);
+    }
+    if (result != CUDNN_STATUS_SUCCESS) {
+        LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
+    }
+    cpu_time_end(totals, proc);
+    return result;
+}
+#else
 cudnnStatus_t cudnnCreateTensorDescriptor(cudnnTensorDescriptor_t * tensorDesc)
 {
     int proc = 5010;
@@ -229,6 +259,7 @@ cudnnStatus_t cudnnCreateTensorDescriptor(cudnnTensorDescriptor_t * tensorDesc)
     cpu_time_end(totals, proc);
     return result.err;
 }
+#endif
 
 cudnnStatus_t cudnnSetTensor4dDescriptor(cudnnTensorDescriptor_t tensorDesc, cudnnTensorFormat_t format, cudnnDataType_t dataType, int n, int c, int h, int w) 
 {
@@ -544,6 +575,32 @@ DEF_FN(cudnnStatus_t, cudnnReduceTensor, cudnnHandle_t, handle, const cudnnReduc
 DEF_FN(cudnnStatus_t, cudnnSetTensor, cudnnHandle_t, handle, const cudnnTensorDescriptor_t, yDesc, void *, y, const void *, valuePtr)
 DEF_FN(cudnnStatus_t, cudnnScaleTensor, cudnnHandle_t, handle, const cudnnTensorDescriptor_t, yDesc, void *, y, const void *, alpha)
 
+#ifndef NO_HANDLER_OPTIMIZATION
+cudnnStatus_t cudnnCreateFilterDescriptor(cudnnFilterDescriptor_t * filterDesc)
+{
+    int proc = 5041;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int result;
+    enum clnt_stat retval_1;
+    if (filterDesc == NULL) {
+        LOGE(LOG_ERROR, "%s failed (value is NULL)", __FUNCTION__);
+        return CUDNN_STATUS_BAD_PARAM;
+    }
+    *filterDesc = (cudnnFilterDescriptor_t)++handler_idx;
+    retval_1 = rpc_cudnncreatefilterdescriptor_1((ptr)(*filterDesc), &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        LOGE(LOG_ERROR, "%s failed (%d)", __FUNCTION__, retval_1);
+    }
+    if (result != CUDNN_STATUS_SUCCESS) {
+        LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
+    }
+    cpu_time_end(totals, proc);
+    return result;
+}
+#else
 cudnnStatus_t cudnnCreateFilterDescriptor(cudnnFilterDescriptor_t * filterDesc)
 {
     int proc = 5041;
@@ -569,6 +626,7 @@ cudnnStatus_t cudnnCreateFilterDescriptor(cudnnFilterDescriptor_t * filterDesc)
     cpu_time_end(totals, proc);
     return result.err;
 }
+#endif
 
 cudnnStatus_t cudnnSetFilter4dDescriptor(cudnnFilterDescriptor_t filterDesc, cudnnDataType_t dataType, cudnnTensorFormat_t format, int k, int c, int h, int w) 
 {
@@ -1429,6 +1487,32 @@ DEF_FN(cudnnStatus_t, cudnnOpsInferVersionCheck)
 
 /***************** cudnn_cnn_infer *******************/
 
+#ifndef NO_HANDLER_OPTIMIZATION
+cudnnStatus_t cudnnCreateConvolutionDescriptor(cudnnConvolutionDescriptor_t* convDesc)
+{
+    int proc = 5301;
+    cpu_time_start(totals, proc);
+#ifdef WITH_API_CNT
+    api_call_cnt++;
+#endif //WITH_API_CNT
+    int result;
+    enum clnt_stat retval_1;
+    if (convDesc == NULL) {
+        LOGE(LOG_ERROR, "%s failed (value is NULL)", __FUNCTION__);
+        return CUDNN_STATUS_BAD_PARAM;
+    }
+    *convDesc = (cudnnConvolutionDescriptor_t)++handler_idx;
+    retval_1 = rpc_cudnncreateconvolutiondescriptor_1((ptr)(*convDesc), &result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        LOGE(LOG_ERROR, "%s failed (%d)", __FUNCTION__, retval_1);
+    }
+    if (result != CUDNN_STATUS_SUCCESS) {
+        LOGE(LOG_ERROR, "%s failed (result is %d)", __FUNCTION__, result);
+    }
+    cpu_time_end(totals, proc);
+    return result;
+}
+#else
 cudnnStatus_t cudnnCreateConvolutionDescriptor(cudnnConvolutionDescriptor_t* convDesc)
 {
     int proc = 5301;
@@ -1454,6 +1538,7 @@ cudnnStatus_t cudnnCreateConvolutionDescriptor(cudnnConvolutionDescriptor_t* con
     cpu_time_end(totals, proc);
     return result.err;
 }
+#endif
     
 cudnnStatus_t cudnnDestroyConvolutionDescriptor(cudnnConvolutionDescriptor_t convDesc)
 {
