@@ -164,6 +164,12 @@ void print_config() {
     #else
         printf("Cache Optimization: Enabled!\n");
     #endif
+    // async optimization
+    #ifdef NO_ASYNC_OPTIMIZATION
+        printf("Async Optimization: Disabled!\n");
+    #else
+        printf("Async Optimization: Enabled!\n");
+    #endif
 }
 
 void svc_run()

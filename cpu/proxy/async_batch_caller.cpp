@@ -7,12 +7,16 @@
 
 static bool _is_async_api(int proc_id)
 {
-    static std::unordered_set<int> async_apis{
-        475,  317,  402,  5008,           /*5041,*/ 5044, 5048, /*5301,*/ 5309,
-        5304, 5310, 5302, /*5010,*/ 5014, 5018,           5308, 5319,
-        3008, 3010, 3004
-    };
-    return (async_apis.find(proc_id) != async_apis.end());
+    #ifdef NO_ASYNC_OPTIMIZATION
+        return false;
+    #else
+        static std::unordered_set<int> async_apis{
+            475,  317,  402,  5008,           /*5041,*/ 5044, 5048, /*5301,*/ 5309,
+            5304, 5310, 5302, /*5010,*/ 5014, 5018,           5308, 5319,
+            3008, 3010, 3004
+        };
+        return (async_apis.find(proc_id) != async_apis.end());
+    #endif
 }
 
 bool AsyncBatch::is_async_api(int proc_id) { return _is_async_api(proc_id); }
