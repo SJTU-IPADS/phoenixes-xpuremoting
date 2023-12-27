@@ -552,9 +552,19 @@ cudaError_t cudaPeekAtLastError(void)
     api_call_cnt++;
 #endif //WITH_API_CNT
 #if !defined NO_OPTIMIZATION
-    TRACE_PROFILE(proc);
+    #ifndef NO_CACHE_OPTIMIZATION
+        TRACE_PROFILE(proc);
+        cpu_time_end(totals, proc);
+        return 0;
+    #endif
+    int result;
+    enum clnt_stat retval_1;
+    retval_1 = cuda_peek_at_last_error_1(&result, clnt);
+    if (retval_1 != RPC_SUCCESS) {
+        clnt_perror (clnt, "call failed");
+    }
     cpu_time_end(totals, proc);
-    return 0;
+    return result;
 #else
     int result;
     enum clnt_stat retval_1;
