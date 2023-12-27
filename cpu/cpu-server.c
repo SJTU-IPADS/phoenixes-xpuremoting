@@ -32,11 +32,18 @@
 #ifndef NO_OPTIMIZATION
 #include "proxy/measurement.h"
 #endif //WITH_OPTIMIZATION
+#ifndef NO_HANDLER_OPTIMIZATION
+#include "proxy/handler_mapper.h"
+#endif
+
 
 extern cpu_measurement_info vanillas[CPU_API_COUNT];
 #ifndef NO_OPTIMIZATION
 extern detailed_info svc_apis[API_COUNT];
 #endif //WITH_OPTIMIZATION
+#ifndef NO_HANDLER_OPTIMIZATION
+HandlerMapper handler_mapper;
+#endif
 
 INIT_SOCKTYPE
 

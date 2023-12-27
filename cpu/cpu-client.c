@@ -23,6 +23,10 @@
 #include "cpu-measurement.h"
 #include "proxy/clnt.h"
 
+#ifndef NO_HANDLER_OPTIMIZATION
+uint64_t handler_idx = 0;
+#endif
+
 extern cpu_measurement_info totals[CPU_API_COUNT];
 
 #ifdef WITH_IB

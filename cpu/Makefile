@@ -20,6 +20,7 @@ RPC_XDR = cpu_rpc_prot_xdr.c
 RPC_DEF = cpu_rpc_prot.x
 RPC_H = $(RPC_DEF:%.x=%.h)
 
+PROXY_DISPATCH = ./proxy/dispatch.cpp
 
 PROXY_PREFIX = ./proxy
 # VERSION = NO_OPTIMIZATION / WITH_TCPIP / WITH_SHARED_MEMORY / WITH_RDMA
@@ -28,6 +29,9 @@ VERSION ?= WITH_SHARED_MEMORY
 ALL = $(SERVER) $(CLIENT)
 
 ifeq ($(VERSION), NO_OPTIMIZATION)
+NO_CACHE_OPTIMIZATION = 1
+NO_ASYNC_OPTIMIZATION = 1
+NO_HANDLER_OPTIMIZATION = 1
 else
 SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_device.cpp		\
 					$(PROXY_PREFIX)/clnt.cpp			\
@@ -40,7 +44,7 @@ SRC_PROXY_CLIENT = $(PROXY_PREFIX)/xdr_device.cpp		\
 					$(PROXY_PREFIX)/rdma_buffer.cpp		\
 					$(PROXY_PREFIX)/api_trace.cpp
 
-SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
+SRC_PROXY_SERVER = $(PROXY_DISPATCH)				\
 				$(PROXY_PREFIX)/xdr_device.cpp		\
 				$(PROXY_PREFIX)/svc.cpp				\
 				$(PROXY_PREFIX)/measurement.cpp		\
@@ -49,7 +53,8 @@ SRC_PROXY_SERVER = $(PROXY_PREFIX)/dispatch.cpp		\
 				$(PROXY_PREFIX)/shm_buffer.cpp		\
 				$(PROXY_PREFIX)/tcpip_buffer.cpp	\
 				$(PROXY_PREFIX)/async_batch_caller.cpp \
-				$(PROXY_PREFIX)/rdma_buffer.cpp
+				$(PROXY_PREFIX)/rdma_buffer.cpp	  	\
+				$(PROXY_PREFIX)/handler_mapper.cpp
 endif
 
 
@@ -150,6 +155,15 @@ ifdef NO_ASYNC_OPTIMIZATION
 CC_FLAGS += -DNO_ASYNC_OPTIMIZATION
 endif
 
+ifdef NO_HANDLER_OPTIMIZATION
+CC_FLAGS += -DNO_HANDLER_OPTIMIZATION
+RPC_DEF_SRC = cpu_rpc_prot_no_handler_optim.x
+PROXY_DISPATCH_SRC = ./proxy/dispatch_no_handler_optim.cpp
+else
+RPC_DEF_SRC = cpu_rpc_prot_with_handler_optim.x
+PROXY_DISPATCH_SRC = ./proxy/dispatch_with_handler_optim.cpp
+endif
+
 SERVER_LD_FLAGS = $(LD_FLAGS) -lcudart -lcusolver -lcuda -lcublas -lnvidia-ml -lcudnn
 SERVER_BIN_LD_FLAGS = $(SERVER_LD_FLAGS) -Wl,--unresolved-symbols=ignore-in-object-files
 CLIENT_LD_FLAGS = $(LD_FLAGS)
@@ -167,6 +181,12 @@ $(SERVER_LIB) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY_SERVER)
 
 $(SERVER) : $(OBJ_SERVER) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY_SERVER)
 	$(LD) $(CC_FLAGS) -o $@ $^ $(SERVER_BIN_LD_FLAGS)
+
+$(RPC_DEF) : $(RPC_DEF_SRC)
+	cp $< $@
+
+$(PROXY_DISPATCH) : $(PROXY_DISPATCH_SRC)
+	cp $< $@
 
 $(RPC_H) : $(RPC_DEF)
 	rm -f $@ && $(RPCGEN) $(RPCGEN_FLAGS) -h -o $@ $<
@@ -190,5 +210,5 @@ $(RPC_XDR) : $(RPC_DEF)
 	$(CC) $(CC_FLAGS) -c -fpic -o $@ $< $(LD_FLAGS)
 
 clean:
-	 rm -f $(RPC_H) $(RPC_CLIENT) $(RPC_SERVER) $(RPC_SERVER_MOD) $(RPC_XDR) \
+	 rm -f $(RPC_DEF) $(RPC_H) $(RPC_CLIENT) $(RPC_SERVER) $(RPC_SERVER_MOD) $(RPC_XDR) $(PROXY_DISPATCH)\
 	 $(OBJ_CLIENT) $(OBJ_SERVER) $(SERVER) $(SERVER_LIB) $(CLIENT) $(SRC_SERVER_EXE:%.c=%.o) $(OBJ_PROXY_CLIENT) $(OBJ_PROXY_SERVER)

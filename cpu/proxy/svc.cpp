@@ -170,6 +170,12 @@ void print_config() {
     #else
         printf("Async Optimization: Enabled!\n");
     #endif
+    // handler optimization
+    #ifdef NO_HANDLER_OPTIMIZATION
+        printf("Handler Optimization: Disabled!\n");
+    #else
+        printf("Handler Optimization: Enabled!\n");
+    #endif
 }
 
 void svc_run()
