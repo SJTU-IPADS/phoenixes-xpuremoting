@@ -16,11 +16,11 @@ set (CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set (CMAKE_C_FLAGS "-std=c11")
 set (CMAKE_C_FLAGS_DEBUG "$ENV{CFLAGS} -O0 -g2 -ggdb -DHOOK_BUILD_DEBUG")
-set (CMAKE_C_FLAGS_RELEASE "$ENV{CFLAGS} -O3")
+set (CMAKE_C_FLAGS_RELEASE "$ENV{CFLAGS} -O0")
 
 set (CMAKE_CXX_FLAGS "-std=c++11")
 set (CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g2 -ggdb -DHOOK_BUILD_DEBUG")
-set (CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
+set (CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O0")
 
 set (CMAKE_SHARED_LINKER_FLAGS "-s -Wl,--exclude-libs,ALL")
 set (CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed")
@@ -80,7 +80,7 @@ if (HOOK_WITH_SAMPLE)
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_${CMAKE_CUDA_ARCHITECTURES} -g -lineinfo -O0")
     else ()
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_${CMAKE_CUDA_ARCHITECTURES},code=sm_${CMAKE_CUDA_ARCHITECTURES} --use_fast_math -O3")
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_${CMAKE_CUDA_ARCHITECTURES},code=sm_${CMAKE_CUDA_ARCHITECTURES} --use_fast_math -O0")
     endif ()
 
     set (SYS_CUDART_PATH "/usr/local/cuda")

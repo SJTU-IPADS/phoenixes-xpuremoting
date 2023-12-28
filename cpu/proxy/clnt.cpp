@@ -6,6 +6,7 @@
 #include "proxy_header.h"
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -29,13 +30,17 @@ AsyncBatch *batchs;
 
 static void createBuffer()
 {
+    const char *ENV_REMOTE_ADDRESS = std::getenv("XPU_REMOTE_ADDRESS");
+    if (ENV_REMOTE_ADDRESS == nullptr || strcmp(ENV_REMOTE_ADDRESS, "") == 0) {
+        ENV_REMOTE_ADDRESS = "localhost";
+    }
     for (int i = 0; i < BUFFER_POOL_CAPACITY; i++) {
 #ifdef WITH_TCPIP
         struct sockaddr_in address_receiver;
         int addrlen = sizeof(address_receiver);
         address_receiver.sin_family = AF_INET;
         address_receiver.sin_port = htons(TCPIP_PORT_STOC + i);
-        inet_pton(AF_INET, "127.0.0.1", &address_receiver.sin_addr);
+        inet_pton(AF_INET, ENV_REMOTE_ADDRESS, &address_receiver.sin_addr);
         buffers[i].receiver =
             new TcpipBuffer(BufferGuest, (struct sockaddr *)&address_receiver,
                             (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
@@ -43,7 +48,7 @@ static void createBuffer()
         addrlen = sizeof(address_sender);
         address_sender.sin_family = AF_INET;
         address_sender.sin_port = htons(TCPIP_PORT_CTOS + i);
-        inet_pton(AF_INET, "127.0.0.1", &address_sender.sin_addr);
+        inet_pton(AF_INET, ENV_REMOTE_ADDRESS, &address_sender.sin_addr);
         buffers[i].sender =
             new TcpipBuffer(BufferGuest, (struct sockaddr *)&address_sender,
                             (socklen_t *)&addrlen, TCPIP_BUFFER_SIZE);
@@ -59,11 +64,13 @@ static void createBuffer()
             new ShmBuffer(BufferGuest, ss.str().c_str(), SHM_BUFFER_SIZE);
 #endif // WITH_SHARED_MEMORY
 #ifdef WITH_RDMA
-        buffers[i].sender = new RDMABuffer(
-            BufferGuest, 0,
-            "localhost:" + std::to_string(RDMA_CONNECTION_PORT_CTOS + i),
-            RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS + i, RDMA_MEM_NAME_CTOS + i,
-            "client-qp", RDMA_BUFFER_SIZE);
+        buffers[i].sender =
+            new RDMABuffer(BufferGuest, 0,
+                           ENV_REMOTE_ADDRESS + std::string(":") +
+                               std::to_string(RDMA_CONNECTION_PORT_CTOS + i),
+                           RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS + i,
+                           RDMA_MEM_NAME_CTOS + i, "client-qp",
+                           RDMA_BUFFER_SIZE);
         buffers[i].receiver =
             new RDMABuffer(BufferHost, RDMA_CONNECTION_PORT_STOC + i, "",
                            RDMA_NIC_IDX_STOC, RDMA_NIC_NAME_STOC + i,

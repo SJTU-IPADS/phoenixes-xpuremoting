@@ -1,5 +1,6 @@
 #!/bin/bash
 
+VERSION=WITH_NATIVE INFERENCE=$1 python3 inference_experiment.py $2 $3
 VERSION=WITH_VANILLA INFERENCE=$1 python3 inference_experiment.py $2 $3
 VERSION=WITH_SHARED_MEMORY INFERENCE=$1 python3 inference_experiment.py $2 $3
 VERSION=WITH_RDMA INFERENCE=$1 python3 inference_experiment.py $2 $3

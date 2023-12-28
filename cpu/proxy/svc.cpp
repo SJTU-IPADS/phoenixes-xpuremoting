@@ -3,6 +3,8 @@
 #include "measurement.h"
 #include "proxy_header.h"
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <thread>
@@ -13,6 +15,11 @@ BufferPool buffers[BUFFER_POOL_CAPACITY];
 
 static void createBuffer()
 {
+    const char *ENV_REMOTE_ADDRESS = std::getenv("XPU_REMOTE_ADDRESS");
+    if (ENV_REMOTE_ADDRESS == nullptr || strcmp(ENV_REMOTE_ADDRESS, "") == 0) {
+        ENV_REMOTE_ADDRESS = "localhost";
+    }
+    printf("xpu remote address: %s\n", ENV_REMOTE_ADDRESS);
     for (int i = 0; i < BUFFER_POOL_CAPACITY; i++) {
 #ifdef WITH_TCPIP
         struct sockaddr_in address_sender;
@@ -49,11 +56,13 @@ static void createBuffer()
             new RDMABuffer(BufferHost, RDMA_CONNECTION_PORT_CTOS + i, "",
                            RDMA_NIC_IDX_CTOS, RDMA_NIC_NAME_CTOS + i,
                            RDMA_MEM_NAME_CTOS + i, "", RDMA_BUFFER_SIZE);
-        buffers[i].sender = new RDMABuffer(
-            BufferGuest, 0,
-            "localhost:" + std::to_string(RDMA_CONNECTION_PORT_STOC + i),
-            RDMA_NIC_IDX_STOC, RDMA_NIC_NAME_STOC + i, RDMA_MEM_NAME_STOC + i,
-            "client-qp", RDMA_BUFFER_SIZE);
+        buffers[i].sender =
+            new RDMABuffer(BufferGuest, 0,
+                           ENV_REMOTE_ADDRESS + std::string(":") +
+                               std::to_string(RDMA_CONNECTION_PORT_STOC + i),
+                           RDMA_NIC_IDX_STOC, RDMA_NIC_NAME_STOC + i,
+                           RDMA_MEM_NAME_STOC + i, "client-qp",
+                           RDMA_BUFFER_SIZE);
         std::cout << "create rdma buffer" << std::endl;
 #endif // WITH_RDMA
         buffers[i].xdrs_arg = new_xdrdevice(XDR_DECODE);
@@ -157,25 +166,26 @@ int receive_request(int buffer_idx)
     return proc_id;
 }
 
-void print_config() {
-    // cache optimization
-    #ifdef NO_CACHE_OPTIMIZATION
-        printf("Cache Optimization: Disabled!\n");
-    #else
-        printf("Cache Optimization: Enabled!\n");
-    #endif
-    // async optimization
-    #ifdef NO_ASYNC_OPTIMIZATION
-        printf("Async Optimization: Disabled!\n");
-    #else
-        printf("Async Optimization: Enabled!\n");
-    #endif
-    // handler optimization
-    #ifdef NO_HANDLER_OPTIMIZATION
-        printf("Handler Optimization: Disabled!\n");
-    #else
-        printf("Handler Optimization: Enabled!\n");
-    #endif
+void print_config()
+{
+// cache optimization
+#ifdef NO_CACHE_OPTIMIZATION
+    printf("Cache Optimization: Disabled!\n");
+#else
+    printf("Cache Optimization: Enabled!\n");
+#endif
+// async optimization
+#ifdef NO_ASYNC_OPTIMIZATION
+    printf("Async Optimization: Disabled!\n");
+#else
+    printf("Async Optimization: Enabled!\n");
+#endif
+// handler optimization
+#ifdef NO_HANDLER_OPTIMIZATION
+    printf("Handler Optimization: Disabled!\n");
+#else
+    printf("Handler Optimization: Enabled!\n");
+#endif
 }
 
 void svc_run()

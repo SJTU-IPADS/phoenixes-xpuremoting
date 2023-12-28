@@ -7,8 +7,9 @@ import os
 
 # load remoting bottom library
 path = os.getenv('REMOTING_BOTTOM_LIBRARY')
-cpp_lib = ctypes.CDLL(path)
-start_trace = cpp_lib.startTrace
+if path is not None:
+    cpp_lib = ctypes.CDLL(path)
+    start_trace = cpp_lib.startTrace
 
 if(len(sys.argv) != 3):
     print('Usage: python3 inference.py num_iter batch_size')
@@ -34,7 +35,8 @@ torch.cuda.empty_cache()
 for i in range(2):
     images = pipe(prompt=[prompt] * batch_size, num_inference_steps=50).images
 
-start_trace()
+if path is not None:
+    start_trace()
 
 T1 = time.time()
 
