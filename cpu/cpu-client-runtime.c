@@ -27,6 +27,10 @@
 #include "cpu-measurement.h"
 #include "proxy/api_trace.h"
 
+#ifndef NO_OPTIMIZATION
+#include "proxy/measurement.h"
+#endif
+
 extern cpu_measurement_info totals[CPU_API_COUNT];
 #if !defined NO_OPTIMIZATION
 extern thread_local int local_device;
@@ -1099,6 +1103,11 @@ cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
+#ifndef NO_OPTIMIZATION
+    extern detailed_info clnt_apis[];
+    time_start(clnt_apis, proc, TOTAL_TIME);
+    time_start(clnt_apis, proc, SERIALIZATION_TIME);
+#endif
     int result;
     enum clnt_stat retval_1;
     size_t i;
@@ -1126,11 +1135,23 @@ cudaError_t cudaLaunchKernel(const void* func, dim3 gridDim, dim3 blockDim, void
                args[j],
                size);
     }
+#ifndef NO_OPTIMIZATION
+    time_end(clnt_apis, proc, SERIALIZATION_TIME);
+    time_end(clnt_apis, proc, TOTAL_TIME);
+#endif
     retval_1 = cuda_launch_kernel_1((uint64_t)func, rpc_gridDim, rpc_blockDim, rpc_args, sharedMem, (uint64_t)stream, &result, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
     }
+#ifndef NO_OPTIMIZATION
+    time_start(clnt_apis, proc, TOTAL_TIME);
+    time_start(clnt_apis, proc, SERIALIZATION_TIME);
+#endif
     free(rpc_args.mem_data_val);
+#ifndef NO_OPTIMIZATION
+    time_end(clnt_apis, proc, SERIALIZATION_TIME);
+    time_end(clnt_apis, proc, TOTAL_TIME);
+#endif
     cpu_time_end(totals, proc);
     return result;
 }
