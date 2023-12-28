@@ -56,6 +56,13 @@ def run_inference(inference_case, version, iter_num, batch_size, result_dir):
         
         run_command = 'bash runvanilla.sh %s %d %d > %s' % (inference_file, iter_num, batch_size, result_file)
         run_result = os.system(run_command)
+    elif version == 'WITH_NATIVE':
+        result_file = '%s/%d_iter_%d_batch.txt' % (result_dir, iter_num, batch_size)
+        
+        print('running inference %s (%s) where iterations=%d, batch_size=%d' % (inference_case, version, iter_num, batch_size))
+        
+        run_command = 'bash runnative.sh %s %d %d > %s' % (inference_file, iter_num, batch_size, result_file)
+        run_result = os.system(run_command)
     else:
         result_client_file = '%s/%d_iter_%d_batch_client.txt' % (result_dir, iter_num, batch_size)
         result_server_file = '%s/%d_iter_%d_batch_server.txt' % (result_dir, iter_num, batch_size)

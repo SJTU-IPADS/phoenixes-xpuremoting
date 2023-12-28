@@ -123,7 +123,7 @@ INC_FLAGS += -I$(PROXY_PREFIX)
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
 LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs
-CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) #-O2
+CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) -O0
 # TODO: use extern in header files instead of direct definition e.g. in cpu-common.h to remove -fcommon flag
 CC_FLAGS += -fcommon
 CC_FLAGS += -D$(VERSION)

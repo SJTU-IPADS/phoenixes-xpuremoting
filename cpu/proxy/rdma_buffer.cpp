@@ -249,7 +249,7 @@ int RDMABuffer::FillIn()
 void RDMABuffer::HostInit(usize port, uint64_t nic_idx, uint64_t nic_name,
                           uint64_t mem_name)
 {
-    ctrl_ = std::make_unique<RCtrl>(port);
+    ctrl_ = std::make_unique<RCtrl>(port, "0.0.0.0");
 
     nic_ = RNic::create(RNicInfo::query_dev_names().at(nic_idx)).value();
     RDMA_ASSERT(ctrl_->opened_nics.reg(nic_name, nic_));

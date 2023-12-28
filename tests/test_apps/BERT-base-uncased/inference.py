@@ -7,8 +7,9 @@ import os
 
 # load remoting bottom library
 path = os.getenv('REMOTING_BOTTOM_LIBRARY')
-cpp_lib = ctypes.CDLL(path)
-start_trace = cpp_lib.startTrace
+if path is not None:
+    cpp_lib = ctypes.CDLL(path)
+    start_trace = cpp_lib.startTrace
 
 if(len(sys.argv) != 3):
     print('Usage: python3 inference.py num_iter batch_size')
@@ -33,7 +34,8 @@ for i in range(2):
     unmasked_tokens = tokenizer.decode(most_likely_token_ids).split(' ')
     unmasked_sentences = [masked_sentences[i].replace('[MASK]', token) for i, token in enumerate(unmasked_tokens)]
 
-start_trace()
+if path is not None:
+    start_trace()
 
 T1 = time.time()
 
