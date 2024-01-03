@@ -1,10 +1,22 @@
 #include <iostream>
 #include <chrono>
+#include <cstdlib>
+
+int getMemorySize() {
+    char* envVar = std::getenv("MEMORY_SIZE");
+    if (envVar != nullptr) {
+        int memorySize = std::stoi(envVar);
+        return memorySize;
+    }
+    return 1024;
+}
 
 int main() {
-    int n = 16*1024*1024;
+    int n = getMemorySize();
     char *h_data = (char*)malloc(n);
     char *d_data;
+
+    std::cout << "test with memory size: " << n << std::endl;
 
     cudaStream_t stream;
 
@@ -29,7 +41,8 @@ int main() {
     // Start the timer
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < numIterations; ++i) {
-        cudaMemcpy(d_data, h_data, n, cudaMemcpyHostToDevice);
+        cudaMemcpyAsync(d_data, h_data, n, cudaMemcpyHostToDevice, stream);
+        // cudaMemcpy(d_data, h_data, n, cudaMemcpyHostToDevice);
     }
     // Stop the timer
     auto end = std::chrono::high_resolution_clock::now();

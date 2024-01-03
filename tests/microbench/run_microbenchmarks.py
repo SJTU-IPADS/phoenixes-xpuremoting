@@ -16,7 +16,8 @@ files = [
     'cuda_app/cudaLaunchKernel.out',
     'cuda_app/cudaStreamSynchronize.out',
     'cuda_app/cudnnBatchNormalizationForwardInference.out',
-    'cuda_app/cudnnConvolutionForward.out'
+    'cuda_app/cudnnConvolutionForward.out',
+    'cuda_app/cudnnCreateTensorDescriptor.out'
 ]
 
 available_versions = ['WITH_VANILLA', 'NO_OPTIMIZATION', 'WITH_TCPIP', 'WITH_RDMA', 'WITH_SHARED_MEMORY']
