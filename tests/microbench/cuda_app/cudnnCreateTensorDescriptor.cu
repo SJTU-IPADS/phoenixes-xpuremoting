@@ -30,7 +30,7 @@ int main() {
     cudnnTensorDescriptor_t desc;
 
     // remove initial overhead
-    for (int i = 0; i < numIterations; ++i) {
+    for (int i = 0; i < 10; ++i) {
         // Synchronize the default stream
         CUDNN_CALL(cudnnCreateTensorDescriptor(&desc));
     }

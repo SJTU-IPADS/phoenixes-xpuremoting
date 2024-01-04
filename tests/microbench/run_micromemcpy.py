@@ -19,6 +19,7 @@ files = [
 ]
 
 memory_sizes = [
+    64 * KB,
     128 * KB,
     256 * KB,
     512 * KB,
@@ -27,8 +28,7 @@ memory_sizes = [
     4 * MB,
     8 * MB,
     16 * MB,
-    32 * MB,
-    64 * MB
+    32 * MB
 ]
 
 available_versions = ['WITH_VANILLA', 'NO_OPTIMIZATION', 'WITH_TCPIP', 'WITH_RDMA', 'WITH_SHARED_MEMORY']
