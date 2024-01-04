@@ -14,7 +14,7 @@ __global__ void addKernel(int *c, const int *a, const int *b, int size)
 int main(int argc, char **argv)
 {
     const int size = 1000000;
-    const int iterations = 10000000;
+    const int iterations = 1000000;
     int a[size] = { 0 };
     int *dev_a = nullptr;
 

@@ -3,7 +3,7 @@
 
 #include "device_buffer.h"
 
-#define SHM_BUFFER_SIZE 10485752
+#define SHM_BUFFER_SIZE (512*1024*1024)
 #define SHM_NAME_STOC "/stoc"
 #define SHM_NAME_CTOS "/ctos"
 
