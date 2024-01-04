@@ -5,8 +5,18 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <sys/mman.h>
 
 // #define PRINT_LOG
+
+void* alloc_huge_page(size_t s) {
+    return mmap(nullptr, s, PROT_READ | PROT_WRITE,
+        MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE | MAP_HUGETLB, -1, 0);
+}
+
+void dealloc_huge_page(void* p) {
+    // TODO: we do not know mmap size in this function
+}
 
 RDMABuffer::RDMABuffer(BufferPrivilege privilege, usize port, std::string addr,
                        uint64_t nic_idx, uint64_t nic_name, uint64_t mem_name,
@@ -255,7 +265,7 @@ void RDMABuffer::HostInit(usize port, uint64_t nic_idx, uint64_t nic_name,
     RDMA_ASSERT(ctrl_->opened_nics.reg(nic_name, nic_));
 
     // two int for head and tail
-    mem_ = Arc<RMem>(new RMem(buf_size_ + sizeof(int) * 2));
+    mem_ = Arc<RMem>(new RMem(buf_size_ + sizeof(int) * 2, alloc_huge_page, dealloc_huge_page));
     RDMA_ASSERT(ctrl_->registered_mrs.create_then_reg(
         mem_name, mem_, ctrl_->opened_nics.query(nic_name).value()));
 
@@ -293,7 +303,7 @@ void RDMABuffer::GuestInit(std::string addr, uint64_t nic_idx,
     // two int for head and tail
     unsignaled_buf_len_ = buf_size_ + sizeof(int) * 2;
     mem_ =
-        Arc<RMem>(new RMem(unsignaled_buf_len_ * RDMA_UNSIGNALED_BUFFER_NUM));
+        Arc<RMem>(new RMem(unsignaled_buf_len_ * RDMA_UNSIGNALED_BUFFER_NUM, alloc_huge_page, dealloc_huge_page));
     mr_ = RegHandler::create(mem_, nic_).value();
 
     auto fetch_res = cm_->fetch_remote_mr(mem_name);
