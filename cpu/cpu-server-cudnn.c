@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "cpu_rpc_prot.h"
+#include "cpu-server.h"
 #include "cpu-common.h"
 #include "cpu-utils.h"
 #include "log.h"

@@ -138,6 +138,8 @@ int mt_memcpy_init_server(mt_memcpy_server_t *server, void* dev_ptr, size_t size
 {
     cudaError_t cudaRes;
     int ret = 1;
+    int bret;
+
     if (server == NULL) {
         return ret;
     }
@@ -167,7 +169,7 @@ int mt_memcpy_init_server(mt_memcpy_server_t *server, void* dev_ptr, size_t size
         goto cleanup;
     }*/
 
-    int bret = pthread_barrier_wait(&server->barrier);
+    bret = pthread_barrier_wait(&server->barrier);
     if (bret != 0 && bret != PTHREAD_BARRIER_SERIAL_THREAD) {
         LOGE(LOG_ERROR, "oob: failed to wait for barrier.");
         pthread_cancel(server->server_thread);
@@ -207,6 +209,8 @@ static void* mt_memcpy_client_thread(void* arg)
 {
     size_t ret = 1;
     int sock;
+    size_t mem_per_thread, mem_offset, mem_this_thread;
+
     struct client_thread_args *args = (struct client_thread_args*)arg;
     if (oob_init_sender_s(&sock, args->client->addr) != 0) {
         LOGE(LOG_ERROR, "oob_init_sender failed");
@@ -219,9 +223,9 @@ static void* mt_memcpy_client_thread(void* arg)
         }
     }
 
-    size_t mem_per_thread = (args->client->size / (size_t)args->client->thread_num);
-    size_t mem_offset = (size_t)args->thread_id * mem_per_thread;
-    size_t mem_this_thread = mem_per_thread;
+    mem_per_thread = (args->client->size / (size_t)args->client->thread_num);
+    mem_offset = (size_t)args->thread_id * mem_per_thread;
+    mem_this_thread = mem_per_thread;
     if (args->thread_id == args->client->thread_num - 1) {
         mem_this_thread = args->client->size - mem_offset;
     }

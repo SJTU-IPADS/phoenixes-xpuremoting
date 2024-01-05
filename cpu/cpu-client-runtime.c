@@ -1899,10 +1899,51 @@ DEF_FN(cudaError_t, cudaMemcpy3DPeerAsync, const struct cudaMemcpy3DPeerParms*, 
 
 cudaError_t cudaMemcpyAsync(void* dst, const void* src, size_t count, enum cudaMemcpyKind kind, cudaStream_t stream)
 {
-#ifdef WITH_API_CNT
-    api_call_cnt++;
-#endif //WITH_API_CNT
+
+#if defined(POS_ENABLE) && !defined(NO_OPTIMIZATION)
+
+    int ret = 1;
+    enum clnt_stat retval;
+
+    if(kind == cudaMemcpyHostToDevice) {
+        mem_data src_mem;
+        src_mem.mem_data_len = count;
+        src_mem.mem_data_val = (void*)src;
+        retval = cuda_memcpy_htod_async_1((uint64_t)dst, src_mem, stream, &ret, clnt);
+    } else if(kind == cudaMemcpyDeviceToHost) {
+        mem_result result;
+        result.mem_result_u.data.mem_data_len = count;
+        result.mem_result_u.data.mem_data_val = dst;
+        retval = cuda_memcpy_dtoh_async_1((uint64_t)src, count, stream, &result, clnt);
+        ret = result.err;
+        if (result.err != 0) {
+            goto cleanup;
+        }
+        if (result.mem_result_u.data.mem_data_len != count) {
+            LOGE(LOG_ERROR, "error: mem_data_len: %lu, count: %lu", result.mem_result_u.data.mem_data_len, count);
+            goto cleanup;
+        }
+    } else if(kind == cudaMemcpyDeviceToDevice) {
+        retval = cuda_memcpy_dtod_async_1((ptr)dst, (ptr)src, count, stream, &ret, clnt);
+        if (retval != RPC_SUCCESS) {
+            LOGE(LOG_ERROR, "RPC failed.");
+            clnt_perror (clnt, "call failed");
+        }
+    }
+
+cleanup:
+    return ret;
+
+#else // POS_ENABLE
+
+    #ifdef WITH_API_CNT
+        api_call_cnt++;
+    #endif //WITH_API_CNT
+
     return cudaMemcpy(dst, src, count, kind);
+
+#endif // POS_ENABLE
+
 }
 DEF_FN(cudaError_t, cudaMemcpyFromSymbol, void*, dst, const void*, symbol, size_t, count, size_t, offset, enum cudaMemcpyKind, kind)
 DEF_FN(cudaError_t, cudaMemcpyFromSymbolAsync, void*, dst, const void*, symbol, size_t, count, size_t, offset, enum cudaMemcpyKind, kind, cudaStream_t, stream)

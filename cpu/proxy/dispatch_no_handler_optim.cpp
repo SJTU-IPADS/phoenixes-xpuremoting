@@ -614,6 +614,28 @@ _cuda_memset_async_1 (cuda_memset_async_1_argument *argp, void *result, struct s
 	return (cuda_memset_async_1_svc(argp->arg1, argp->arg2, argp->arg3, argp->arg4, result, rqstp));
 }
 
+#ifdef POS_ENABLE
+
+static int
+_cuda_memcpy_htod_async_1 (cuda_memcpy_htod_async_1_argument *argp, void *result, struct svc_req *rqstp)
+{
+	return (cuda_memcpy_htod_async_1_svc(argp->arg1, argp->arg2, argp->arg3, result, rqstp));
+}
+
+static int
+_cuda_memcpy_dtoh_async_1 (cuda_memcpy_dtoh_async_1_argument *argp, void *result, struct svc_req *rqstp)
+{
+	return (cuda_memcpy_dtoh_async_1_svc(argp->arg1, argp->arg2, argp->arg3, result, rqstp));
+}
+
+static int
+_cuda_memcpy_dtod_async_1 (cuda_memcpy_dtod_async_1_argument *argp, void *result, struct svc_req *rqstp)
+{
+	return (cuda_memcpy_dtod_async_1_svc(argp->arg1, argp->arg2, argp->arg3, argp->arg4, result, rqstp));
+}
+
+#endif // POS_ENABLE
+
 static int
 _cuda_device_can_access_peer_1 (cuda_device_can_access_peer_1_argument *argp, void *result, struct svc_req *rqstp)
 {
@@ -1435,6 +1457,13 @@ int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res)
 		cuda_memset_3d_1_argument cuda_memset_3d_1_arg;
 		cuda_memset_3d_async_1_argument cuda_memset_3d_async_1_arg;
 		cuda_memset_async_1_argument cuda_memset_async_1_arg;
+	
+	#ifdef POS_ENABLE
+		cuda_memcpy_htod_async_1_argument cuda_memcpy_htod_async_1_arg;
+		cuda_memcpy_dtoh_async_1_argument cuda_memcpy_dtoh_async_1_arg;
+		cuda_memcpy_dtod_async_1_argument cuda_memcpy_dtod_async_1_arg;
+	#endif // POS_ENABLE
+
 		cuda_device_can_access_peer_1_argument cuda_device_can_access_peer_1_arg;
 		int cuda_device_disable_peer_access_1_arg;
 		cuda_device_enable_peer_access_1_argument cuda_device_enable_peer_access_1_arg;
@@ -1636,6 +1665,11 @@ int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res)
 		int cuda_memset_3d_1_res;
 		int cuda_memset_3d_async_1_res;
 		int cuda_memset_async_1_res;
+
+	#ifdef POS_ENABLE
+		int cuda_memcpy_htod_async_1_res;
+	#endif
+
 		int_result cuda_device_can_access_peer_1_res;
 		int cuda_device_disable_peer_access_1_res;
 		int cuda_device_enable_peer_access_1_res;
@@ -2363,6 +2397,26 @@ int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res)
 		_xdr_result = (xdrproc_t) xdr_int;
 		local = (bool_t (*) (char *, void *,  struct svc_req *))_cuda_memset_async_1;
 		break;
+
+#ifdef POS_ENABLE
+	case CUDA_MEMCPY_HTOD_ASYNC:
+		_xdr_argument = (xdrproc_t) xdr_cuda_memcpy_htod_async_1_argument;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (bool_t (*) (char *, void *,  struct svc_req *))_cuda_memcpy_htod_async_1;
+		break;
+
+	case CUDA_MEMCPY_DTOH_ASYNC:
+		_xdr_argument = (xdrproc_t) xdr_cuda_memcpy_dtoh_async_1_argument;
+		_xdr_result = (xdrproc_t) xdr_mem_result;
+		local = (bool_t (*) (char *, void *,  struct svc_req *))_cuda_memcpy_dtoh_async_1;
+		break;
+
+	case CUDA_MEMCPY_DTOD_ASYNC:
+		_xdr_argument = (xdrproc_t) xdr_cuda_memcpy_dtod_async_1_argument;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (bool_t (*) (char *, void *,  struct svc_req *))_cuda_memcpy_dtod_async_1;
+		break;
+#endif // POS_ENABLE
 
 	case CUDA_DEVICE_CAN_ACCESS_PEER:
 		_xdr_argument = (xdrproc_t) xdr_cuda_device_can_access_peer_1_argument;

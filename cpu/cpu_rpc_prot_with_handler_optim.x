@@ -368,6 +368,15 @@ program RPC_CD_PROG {
         /*?          CUDA_MIPMAPPED_ARRAY_GET_SPARSE_PROPERTIES(ptr)            = 476;*/
         /* make_ APIs can be copied on the client side */
 
+        /* add by POS */
+        int          CUDA_MEMCPY_HTOD_ASYNC(ptr, mem_data, ptr)                 = 480; 
+
+        /* add by POS */     
+        mem_result   CUDA_MEMCPY_DTOH_ASYNC(ptr, size_t, ptr)                   = 481; 
+        
+        /* add by POS */
+        int          CUDA_MEMCPY_DTOD_ASYNC(ptr, ptr, size_t, ptr)              = 482;
+
         /* ### Unified Addressing ### */
         /* mem_result CUDA_POINTER_GET_ATTRIBUTES(ptr)                          = 490;*/
 

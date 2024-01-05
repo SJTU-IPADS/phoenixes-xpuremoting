@@ -86,6 +86,14 @@ resource_mg rm_cudnn_backendds;
 
 unsigned long prog=0, vers=0;
 
+#if defined(POS_ENABLE)
+    #include "pos/include/common.h"
+    #include "pos/include/transport.h"
+    #include "pos/cuda_impl/workspace.h"
+
+    POSWorkspace_CUDA<POSTransport_SHM> *pos_cuda_ws;
+#endif
+
 extern void rpc_cd_prog_1(struct svc_req *rqstp, register SVCXPRT *transp);
 
 void int_handler(int signal) {
@@ -270,7 +278,8 @@ void cricket_main(size_t prog_num, size_t vers_num)
 
     LOGE(LOG_DEBUG, "using prog=%d, vers=%d", prog, vers);
 
-
+#ifndef NO_OPTIMIZATION
+#else
     switch (socktype) {
     case UNIX:
         LOG(LOG_INFO, "using UNIX...");
@@ -308,6 +317,7 @@ void cricket_main(size_t prog_num, size_t vers_num)
         LOGE(LOG_ERROR, "unable to register (RPC_PROG_PROG, RPC_PROG_VERS).");
         exit(1);
     }
+#endif // NO_OPTIMIZATION
 
     /* Call CUDA initialization function (usually called by __libc_init_main())
      * Address of "_ZL24__sti____cudaRegisterAllv" in static symbol table is e.g. 0x4016c8
@@ -367,6 +377,12 @@ void cricket_main(size_t prog_num, size_t vers_num)
         goto cleanup00;
     }
 
+    #if defined(POS_ENABLE)
+        pos_cuda_ws = new POSWorkspace_CUDA<POSTransport_SHM>();
+        POS_CHECK_POINTER(pos_cuda_ws);
+        pos_cuda_ws->init();
+    #endif
+
     LOG(LOG_INFO, "waiting for RPC requests...");
 
     svc_run();
@@ -385,9 +401,20 @@ void cricket_main(size_t prog_num, size_t vers_num)
  cleanup3:
     api_records_free();
  cleanup4:
+ 
+#if defined(POS_ENABLE)
+    if(likely(pos_cuda_ws != nullptr)){
+        delete pos_cuda_ws;
+    }  
+#endif
+
+#ifndef NO_OPTIMIZATION
+#else
     pmap_unset(prog, vers);
     svc_destroy(transp);
     unlink(CD_SOCKET_PATH);
+#endif
+
     LOG(LOG_DEBUG, "have a nice day!");
     exit(ret);
 }

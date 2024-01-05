@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include "cpu_rpc_prot.h"
+#include "cpu-server.h"
 #include "cpu-common.h"
 #include "cpu-utils.h"
 #include "log.h"
@@ -54,6 +55,18 @@ int cublas_deinit(void)
 
 bool_t rpc_cublascreate_1_svc(ptr_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cublasCreate, 
+        /* uuid */ 0, 
+        /* param_desps */ {},
+        /* ret_data */ &(result->ptr_result_u.ptr),
+        /* ret_data_len */ sizeof(cublasHandle_t)
+    );
+
+#else // POS_ENABLE
+
     RECORD_VOID_API;
     LOGE(LOG_DEBUG, "cublasCreate_v2");
 
@@ -66,6 +79,9 @@ bool_t rpc_cublascreate_1_svc(ptr_result *result, struct svc_req *rqstp)
     GSCHED_RELEASE;
     
     RECORD_RESULT(ptr_result_u, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -123,6 +139,31 @@ bool_t rpc_cublassgemm_1_svc(ptr handle, int transa, int transb, int m, int n, i
             ptr C, int ldc,
             int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cublasSgemm, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &handle, .size = sizeof(ptr) },
+            { .value = &transa, .size = sizeof(cublasOperation_t) },
+            { .value = &transb, .size = sizeof(cublasOperation_t) },
+            { .value = &m, .size = sizeof(int) },
+            { .value = &n, .size = sizeof(int) },
+            { .value = &k, .size = sizeof(int) },
+            { .value = &alpha, .size = sizeof(float) },
+            { .value = &A, .size = sizeof(ptr) },
+            { .value = &lda, .size = sizeof(int) },
+            { .value = &B, .size = sizeof(ptr) },
+            { .value = &ldb, .size = sizeof(int) },
+            { .value = &beta, .size = sizeof(float) },
+            { .value = &C, .size = sizeof(ptr) },
+            { .value = &ldc, .size = sizeof(int) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(rpc_cublassgemm_1_argument);
     RECORD_ARG(1, handle);
     RECORD_ARG(2, transa);
@@ -153,6 +194,9 @@ bool_t rpc_cublassgemm_1_svc(ptr handle, int transa, int transb, int m, int n, i
     cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -265,6 +309,19 @@ bool_t rpc_cublassgemmex_1_svc(ptr handle, int transa, int transb, int m, int n,
 
 bool_t rpc_cublassetstream_1_svc(ptr handle, ptr streamId, int *result, struct svc_req* rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cublasSetStream, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &handle, .size = sizeof(ptr) },
+            { .value = &streamId, .size = sizeof(ptr) }
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(rpc_cublassetstream_1_argument);
     RECORD_NARG(handle);
     RECORD_NARG(streamId);
@@ -278,6 +335,9 @@ bool_t rpc_cublassetstream_1_svc(ptr handle, ptr streamId, int *result, struct s
     cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -305,6 +365,19 @@ bool_t rpc_cublassetworkspace_1_svc(ptr handle, ptr workspace, size_t workspaceS
 
 bool_t rpc_cublassetmathmode_1_svc(ptr handle, int mode, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cublasSetMathMode, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &handle, .size = sizeof(ptr) },
+            { .value = &mode, .size = sizeof(int) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(rpc_cublassetmathmode_1_argument);
     RECORD_NARG(handle);
     RECORD_NARG(mode);
@@ -318,6 +391,9 @@ bool_t rpc_cublassetmathmode_1_svc(ptr handle, int mode, int *result, struct svc
     cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 

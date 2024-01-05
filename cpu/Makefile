@@ -26,6 +26,11 @@ PROXY_PREFIX = ./proxy
 # VERSION = NO_OPTIMIZATION / WITH_TCPIP / WITH_SHARED_MEMORY / WITH_RDMA
 VERSION ?= WITH_SHARED_MEMORY
 
+# pos currently will use SHM by default
+ifdef POS_ENABLE
+VERSION = WITH_SHARED_MEMORY
+endif
+
 ALL = $(SERVER) $(CLIENT)
 
 ifeq ($(VERSION), NO_OPTIMIZATION)
@@ -57,6 +62,10 @@ SRC_PROXY_SERVER = $(PROXY_DISPATCH)				\
 				$(PROXY_PREFIX)/handler_mapper.cpp
 endif
 
+# pos won't enable async optimization
+ifdef POS_ENABLE
+NO_ASYNC_OPTIMIZATION = 1
+endif
 
 SRC_SERVER = $(RPC_XDR)                 \
 			 $(RPC_SERVER_MOD)          \
@@ -114,15 +123,28 @@ OBJ_PROXY_SERVER = $(SRC_PROXY_SERVER:%.cpp=%.o)
 OBJ_SERVER = $(SRC_SERVER:%.c=%.o)
 OBJ_CLIENT = $(SRC_CLIENT:%.c=%.o)
 
+# this env variable is passed from PheonixOS build script
+ifdef POS_ENABLE
+CC_FLAGS += -DPOS_ENABLE
+endif
+
 # Compiler flags
 RPCGEN_FLAGS = -C -M -N
+
 INC_FLAGS += -I$(LIBTIRPC_PREFIX)/include/tirpc
 INC_FLAGS += -I$(CUDA_SRC)/include
 INC_FLAGS += -I$(PROXY_PREFIX)
-
+# add POS include path
+INC_FLAGS += -I../../..
+INC_FLAGS += -I../../../build
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
 LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs
+
+# add POS lib path
+LIB_FLAGS += -L../../../build
+LIB_FLAGS += -lpos
+
 CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) -O0
 # TODO: use extern in header files instead of direct definition e.g. in cpu-common.h to remove -fcommon flag
 CC_FLAGS += -fcommon

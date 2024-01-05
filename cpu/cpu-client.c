@@ -75,6 +75,23 @@ resource_mg rm_cudnn_lrns;
 resource_mg rm_cudnn_convs;
 resource_mg rm_cudnn_backendds;
 
+#if defined(POS_ENABLE)
+    #include "pos/include/common.h"
+    #include "pos/include/agent.h"
+    #include "pos/include/transport.h"
+
+    POSAgent<POSTransport_SHM> *pos_agent;
+
+    void __attribute__((constructor)) init_pos(void){
+        pos_agent = new POSAgent<POSTransport_SHM>();
+        POS_CHECK_POINTER(pos_agent);
+    }
+
+    void __attribute__((destructor)) deinit_pos(void){
+        delete pos_agent;
+    }
+#endif
+
 #ifdef WITH_IB
 int ib_device = 0;
 #endif // WITH_IB

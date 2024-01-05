@@ -668,6 +668,8 @@ static int get_parm_for_kernel(Elf *elf, kernel_info_t *kernel, void* memory, si
     char *section_name = NULL;
     Elf_Scn *section = NULL;
     Elf_Data *data = NULL;
+    size_t secpos=0;
+    int i=0;
 
     if (kernel == NULL || kernel->name == NULL || memory == NULL) {
         LOGE(LOG_ERROR, "at least one parameter is NULL");
@@ -694,8 +696,6 @@ static int get_parm_for_kernel(Elf *elf, kernel_info_t *kernel, void* memory, si
 
     //print_hexmem(data->d_buf, data->d_size);
 
-    size_t secpos=0;
-    int i=0;
     while (secpos < data->d_size) {
         struct nv_info_kernel_entry *entry = (struct nv_info_kernel_entry*)(data->d_buf+secpos);
         // printf("entry %d: format: %#x, attr: %#x, ", i++, entry->format, entry->attribute);

@@ -4,6 +4,7 @@
 #include <cuda.h>
 
 #include "cpu_rpc_prot.h"
+#include "cpu-server.h"
 #include "cpu-server-driver-hidden.h"
 #include "cpu-common.h"
 #include "cpu-utils.h"
@@ -42,10 +43,24 @@ int server_driver_init(int restore)
 // Does not support checkpoint/restart yet
 bool_t rpc_elf_load_1_svc(mem_data elf, ptr module_key, int *result, struct svc_req *rqstp)
 {
-    LOGE(LOG_DEBUG, "rpc_elf_load(elf: %p, len: %#x, module_key: %#x)", elf.mem_data_val, elf.mem_data_len, module_key);
     CUresult res;
     CUmodule module = NULL;
-    
+
+#ifdef POS_ENABLE
+
+    res = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cuModuleLoad, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &module_key, .size = sizeof(ptr) },
+            { .value = elf.mem_data_val, .size = elf.mem_data_len }
+        }
+    );
+
+#else // POS_ENABLE
+
+    LOGE(LOG_DEBUG, "rpc_elf_load(elf: %p, len: %#x, module_key: %#x)", elf.mem_data_val, elf.mem_data_len, module_key);
+
     int proc = 51;
     cpu_time_start(vanillas, proc);
     if ((res = cuModuleLoadData(&module, elf.mem_data_val)) != CUDA_SUCCESS) {
@@ -64,7 +79,11 @@ bool_t rpc_elf_load_1_svc(mem_data elf, ptr module_key, int *result, struct svc_
     }
 
     LOGE(LOG_DEBUG, "->module: %p", module);
+
+#endif // POS_ENABLE
+
     *result = 0;
+
     return 1;
 }
 
@@ -106,6 +125,22 @@ bool_t rpc_elf_unload_1_svc(ptr elf_handle, int *result, struct svc_req *rqstp)
 bool_t rpc_register_function_1_svc(ptr fatCubinHandle, ptr hostFun, char* deviceFun,
                             char* deviceName, int thread_limit, ptr_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cuModuleGetFunction, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &fatCubinHandle, .size = sizeof(ptr) },
+            { .value = &hostFun, .size = sizeof(ptr) },
+            { .value = deviceFun, .size = strlen(deviceFun) > 0 ? strlen(deviceFun)+1 : 0 },
+            { .value = deviceName, .size = strlen(deviceName) > 0 ? strlen(deviceName)+1 : 0 },
+            { .value = &thread_limit, .size = sizeof(int) },
+        }
+    );
+
+#else // POS_ENABLE
+
     void *module = NULL;
     RECORD_API(rpc_register_function_1_argument);
     RECORD_ARG(1, fatCubinHandle);
@@ -133,6 +168,9 @@ bool_t rpc_register_function_1_svc(ptr fatCubinHandle, ptr hostFun, char* device
     }
     GSCHED_RELEASE;
     RECORD_RESULT(ptr_result_u, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -140,6 +178,29 @@ bool_t rpc_register_function_1_svc(ptr fatCubinHandle, ptr hostFun, char* device
 bool_t rpc_register_var_1_svc(ptr fatCubinHandle, ptr hostVar, ptr deviceAddress, char *deviceName, int ext, size_t size,
                         int constant, int global, int *result, struct svc_req *rqstp)
 {
+    CUdeviceptr dptr = 0;
+
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_register_var, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &fatCubinHandle, .size = sizeof(ptr) },
+            { .value = &hostVar, .size = sizeof(ptr) },
+            { .value = &deviceAddress, .size = sizeof(ptr) },
+            { .value = deviceName, .size = strlen(deviceName) > 0 ? strlen(deviceName)+1 : 0 },
+            { .value = &ext, .size = sizeof(int) },
+            { .value = &size, .size = sizeof(int) },
+            { .value = &constant, .size = sizeof(int) },
+            { .value = &global, .size = sizeof(int) },
+        },
+        /* ret_data */ &dptr,
+        /* ret_data_len */ sizeof(CUdeviceptr)
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(rpc_register_var_1_argument);
     RECORD_ARG(1, fatCubinHandle);
     RECORD_ARG(2, hostVar);
@@ -154,7 +215,7 @@ bool_t rpc_register_var_1_svc(ptr fatCubinHandle, ptr hostVar, ptr deviceAddress
                    "ext: %d, size: %d, constant: %d, global: %d)",
                    fatCubinHandle, hostVar, deviceAddress, deviceName, ext, size, constant, global);
     
-    CUdeviceptr dptr = 0;
+    
     size_t d_size = 0;
     CUresult res;
     void *module = NULL;
@@ -180,6 +241,9 @@ bool_t rpc_register_var_1_svc(ptr fatCubinHandle, ptr hostVar, ptr deviceAddress
     cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -387,6 +451,20 @@ bool_t rpc_cugeterrorstring_1_svc(int err, str_result *result,
 bool_t rpc_cudeviceprimaryctxgetstate_1_svc(int dev, dint_result *result,
                                       struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cuDevicePrimaryCtxGetState, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &dev, .size = sizeof(int) },
+        },
+        /* ret_data */ &(result->dint_result_u.data),
+        /* ret_data_len */ sizeof(int) + sizeof(unsigned int)
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "%s(%d)", __FUNCTION__, dev);
     GSCHED_RETAIN;
     int proc = 1022;
@@ -397,6 +475,9 @@ bool_t rpc_cudeviceprimaryctxgetstate_1_svc(int dev, dint_result *result,
     LOGE(LOG_DEBUG, "state: %d, flags: %d", result->dint_result_u.data.i1,
                                            result->dint_result_u.data.i2);
     GSCHED_RELEASE;
+
+#endif // POS_ENABLE
+
     return 1;
 }
 

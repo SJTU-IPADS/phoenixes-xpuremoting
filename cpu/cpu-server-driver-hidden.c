@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpu-server.h"
 #include "cpu-server-driver-hidden.h"
 
 #define EXPECT_CALL_CNT 4

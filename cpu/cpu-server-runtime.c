@@ -29,6 +29,7 @@
 #define WITH_RECORDER
 #include "api-recorder.h"
 #include "resource-mg.h"
+#include "cpu-server.h"
 #include "cpu-server-runtime.h"
 #include "cr.h"
 #include "cpu-server-cusolver.h"
@@ -92,7 +93,7 @@ int server_runtime_init(int restore)
         ret &= server_runtime_restore("ckp");
     }
 
-#ifdef NO_OPTIMIZATION
+#if defined(NO_OPTIMIZATION) && !defined(POS_ENABLE)
     // Make sure runtime API is initialized
     // If we don't do this and use the driver API, it might be unintialized
     cudaError_t cres;
@@ -355,6 +356,18 @@ bool_t cuda_device_synchronize_1_svc(int *result, struct svc_req *rqstp)
 
 bool_t cuda_get_device_1_svc(int_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_GET_DEVICE, 
+        /* uuid */ 0, 
+        /* param_desps */ {},
+        /* ret_data */ &(result->int_result_u.data),
+        /* ret_data_len */ sizeof(int)
+    );
+
+#else // POS_ENABLE
+
     int proc = 117;
     LOGE(LOG_DEBUG, "cudaGetDevice");
     cpu_time_start(vanillas, proc);
@@ -363,16 +376,34 @@ bool_t cuda_get_device_1_svc(int_result *result, struct svc_req *rqstp)
     current_device = result->int_result_u.data;
 #endif // WITH_OPTIMIZATION
     cpu_time_end(vanillas, proc);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
 bool_t cuda_get_device_count_1_svc(int_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_GET_DEVICE_COUNT, 
+        /* uuid */ 0, 
+        /* param_desps */ {},
+        /* ret_data */ &(result->int_result_u.data),
+        /* ret_data_len */ sizeof(int)
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "cudaGetDeviceCount");
     int proc = 118;
     cpu_time_start(vanillas, proc);
     result->err = cudaGetDeviceCount(&result->int_result_u.data);
     cpu_time_end(vanillas, proc);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -386,6 +417,18 @@ bool_t cuda_get_device_flags_1_svc(int_result *result, struct svc_req *rqstp)
 
 bool_t cuda_get_device_properties_1_svc(int device, cuda_device_prop_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_GET_DEVICE_PROPERTIES, 
+        /* uuid */ 0, 
+        /* param_desps */ {{ .value = &device, .size = sizeof(int) }},
+        /* ret_data */ (void*)result->cuda_device_prop_result_u.data,
+        /* ret_data_len */ sizeof(struct cudaDeviceProp)
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "cudaGetDeviceProperties");
     if (sizeof(result->cuda_device_prop_result_u.data) != sizeof(struct cudaDeviceProp)) {
         LOGE(LOG_ERROR, "cuda_device_prop_result size mismatch");
@@ -395,6 +438,9 @@ bool_t cuda_get_device_properties_1_svc(int device, cuda_device_prop_result *res
     cpu_time_start(vanillas, proc);
     result->err = cudaGetDeviceProperties((void*)result->cuda_device_prop_result_u.data, device);
     cpu_time_end(vanillas, proc);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -406,6 +452,16 @@ bool_t cuda_get_device_properties_1_svc(int device, cuda_device_prop_result *res
 
 bool_t cuda_set_device_1_svc(int device, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_SET_DEVICE, 
+        /* uuid */ 0, 
+        /* param_desps */ {{ .value = &device, .size = sizeof(int) }}
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(int);
     RECORD_SINGLE_ARG(device);
     LOGE(LOG_DEBUG, "cudaSetDevice(%d)", device);
@@ -414,6 +470,9 @@ bool_t cuda_set_device_1_svc(int device, int *result, struct svc_req *rqstp)
     *result = cudaSetDevice(device);
     cpu_time_end(vanillas, proc);
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -472,22 +531,53 @@ bool_t cuda_get_error_name_1_svc(int error, str_result *result, struct svc_req *
 
 bool_t cuda_get_error_string_1_svc(int error, str_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    POS_CHECK_POINTER(result->str_result_u.str = malloc(128));
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_GET_ERROR_STRING, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &error, .size = sizeof(int) }
+        },
+        /* ret_data */ result->str_result_u.str,
+        /* ret_data_len */ 128
+    );
+
+#else // POS_ENABLE
+
     const char* str;
     result->str_result_u.str = malloc(128);
     LOGE(LOG_DEBUG, "cudaGetErrorString");
     str = cudaGetErrorString((cudaError_t)error);
     strncpy(result->str_result_u.str, str, 128);
     result->err = 0;
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
 bool_t cuda_get_last_error_1_svc(int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_GET_LAST_ERROR, 
+        /* uuid */ 0, 
+        /* param_desps */ {}
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "cudaGetLastError");
     int proc = 142;
     cpu_time_start(vanillas, proc);
     *result = cudaGetLastError();
     cpu_time_end(vanillas, proc);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -638,6 +728,18 @@ bool_t cuda_stream_get_priority_1_svc(ptr hStream, int_result *result, struct sv
 
 bool_t cuda_stream_is_capturing_1_svc(ptr stream, int_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_STREAM_IS_CAPTURING, 
+        /* uuid */ 0, 
+        /* param_desps */ {{ .value = &stream, .size = sizeof(ptr) }},
+        /* ret_data */ &result->int_result_u.data,
+        /* ret_data_len */ sizeof(cudaStreamCaptureStatus*)
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "cudaStreamIsCapturing");
     int proc = 264;
     cpu_time_start(vanillas, proc);
@@ -645,6 +747,9 @@ bool_t cuda_stream_is_capturing_1_svc(ptr stream, int_result *result, struct svc
       resource_mg_get(&rm_streams, (void*)stream),
       (enum cudaStreamCaptureStatus*)&result->int_result_u.data);
     cpu_time_end(vanillas, proc);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -661,6 +766,16 @@ bool_t cuda_stream_query_1_svc(ptr hStream, int *result, struct svc_req *rqstp)
 
 bool_t cuda_stream_synchronize_1_svc(ptr stream, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_STREAM_SYNCHRONIZE, 
+        /* uuid */ 0, 
+        /* param_desps */ {{ .value = &stream, .size = sizeof(ptr) }}
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(uint64_t);
     RECORD_SINGLE_ARG(stream);
     LOGE(LOG_DEBUG, "cudaStreamSynchronize");
@@ -670,6 +785,9 @@ bool_t cuda_stream_synchronize_1_svc(ptr stream, int *result, struct svc_req *rq
       resource_mg_get(&rm_streams, (void*)stream));
     cpu_time_end(vanillas, proc);
     RECORD_RESULT(integer, *result);
+
+#endif
+
     return 1;
 }
 
@@ -715,6 +833,20 @@ bool_t cuda_event_create_1_svc(ptr_result *result, struct svc_req *rqstp)
 
 bool_t cuda_event_create_with_flags_1_svc(int flags, ptr_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_EVENT_CREATE_WITH_FLAGS, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &flags, .size = sizeof(int) }
+        },
+        /* ret_data */ &(result->ptr_result_u.ptr),
+        /* ret_data_len */ sizeof(cudaEvent_t)
+    );
+
+#else
+
     RECORD_API(int);
     RECORD_SINGLE_ARG(flags);
     LOGE(LOG_DEBUG, "cudaEventCreateWithFlags");
@@ -723,17 +855,35 @@ bool_t cuda_event_create_with_flags_1_svc(int flags, ptr_result *result, struct 
         LOGE(LOG_ERROR, "error in resource manager");
     }
     RECORD_RESULT(ptr_result_u, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
 bool_t cuda_event_destroy_1_svc(ptr event, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_EVENT_DESTROY, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &event, .size = sizeof(ptr) }
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(ptr);
     RECORD_SINGLE_ARG(event);
     LOGE(LOG_DEBUG, "cudaEventDestroy");
     *result = cudaEventDestroy(
       resource_mg_get(&rm_events, (void*)event));
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -761,6 +911,19 @@ bool_t cuda_event_query_1_svc(ptr event, int *result, struct svc_req *rqstp)
 
 bool_t cuda_event_record_1_svc(ptr event, ptr stream, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_EVENT_RECORD, 
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &event, .size = sizeof(ptr) },
+            { .value = &stream, .size = sizeof(ptr) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(cuda_event_record_1_argument);
     RECORD_ARG(1, event);
     RECORD_ARG(2, stream);
@@ -769,6 +932,9 @@ bool_t cuda_event_record_1_svc(ptr event, ptr stream, int *result, struct svc_re
       resource_mg_get(&rm_events, (void*)event),
       resource_mg_get(&rm_streams, (void*)stream));
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -914,6 +1080,23 @@ bool_t cuda_launch_kernel_1_svc(ptr func, rpc_dim3 gridDim, rpc_dim3 blockDim,
                                 mem_data args, size_t sharedMem, ptr stream,
                                 int *result, struct svc_req *rqstp)
 {   
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_LAUNCH_KERNEL, 
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &func, .size = sizeof(ptr) },
+            { .value = &gridDim, .size = sizeof(rpc_dim3) },
+            { .value = &blockDim, .size = sizeof(rpc_dim3) },
+            { .value = args.mem_data_val, .size = args.mem_data_len },
+            { .value = &sharedMem, .size = sizeof(size_t) },
+            { .value = &stream, .size = sizeof(ptr) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(cuda_launch_kernel_1_argument);
     RECORD_ARG(1, func);
     RECORD_ARG(2, gridDim);
@@ -960,6 +1143,9 @@ bool_t cuda_launch_kernel_1_svc(ptr func, rpc_dim3 gridDim, rpc_dim3 blockDim,
     free(cuda_args);
     RECORD_RESULT(integer, *result);
     LOGE(LOG_DEBUG, "cudaLaunchKernel result: %d", *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -1044,6 +1230,18 @@ bool_t cuda_array_get_sparse_properties_1_svc(ptr array, mem_result *result, str
 
 bool_t cuda_free_1_svc(ptr devPtr, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_FREE, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &devPtr, .size = sizeof(ptr) }
+        }
+    );
+
+#else
+
     RECORD_API(ptr);
     RECORD_SINGLE_ARG(devPtr);
     int index = hainfo_getserverindex((void*)devPtr);
@@ -1106,6 +1304,9 @@ bool_t cuda_free_1_svc(ptr devPtr, int *result, struct svc_req *rqstp)
     //    *result = CUDA_ERROR_UNKNOWN;
     //}
     RECORD_RESULT(integer, *result);
+
+#endif
+
     return 1;
 }
 
@@ -1292,6 +1493,18 @@ bool_t cuda_host_get_flags_1_svc(ptr pHost, int_result *result, struct svc_req *
 //here we will register new ib region 
 bool_t cuda_malloc_1_svc(size_t argp, ptr_result *result, struct svc_req *rqstp)
 {   
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MALLOC, 
+        /* uuid */ 0, 
+        /* param_desps */ {{ .value = &argp, .size = sizeof(size_t) }},
+        /* ret_data */ &(result->ptr_result_u.ptr),
+        /* ret_data_len */ sizeof(uint64_t)
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(size_t);
     RECORD_SINGLE_ARG(argp);
     LOGE(LOG_DEBUG, "cudaMalloc");
@@ -1314,6 +1527,9 @@ bool_t cuda_malloc_1_svc(size_t argp, ptr_result *result, struct svc_req *rqstp)
     cpu_time_end(vanillas, proc);
 
     RECORD_RESULT(ptr_result_u, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }
 
@@ -1470,6 +1686,19 @@ bool_t cuda_mem_prefetch_async_1_svc(ptr devPtr, size_t count, int dstDevice, pt
 
 bool_t cuda_memcpy_htod_1_svc(uint64_t ptr, mem_data mem, size_t size, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMCPY_HTOD, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &ptr, .size = sizeof(uint64_t) },
+            { .value = mem.mem_data_val, .size = mem.mem_data_len },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(cuda_memcpy_htod_1_argument);
     RECORD_ARG(1, ptr);
     RECORD_ARG(2, mem);
@@ -1500,7 +1729,33 @@ bool_t cuda_memcpy_htod_1_svc(uint64_t ptr, mem_data mem, size_t size, int *resu
     cpu_time_end(vanillas, proc);
 
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
+}
+
+
+bool_t cuda_memcpy_htod_async_1_svc(uint64_t dst, mem_data mem, ptr stream, int *result, struct svc_req *rqstp){
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMCPY_HTOD_ASYNC, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &dst, .size = sizeof(uint64_t) },
+            { .value = mem.mem_data_val, .size = mem.mem_data_len },
+            { .value = &stream, .size = sizeof(ptr) },
+        }
+    );
+
+    return 1;
+
+#else // POS_ENABLE
+
+    return cuda_memcpy_htod_1_svc(dst, mem, mem.mem_data_len, result, rqstp);
+
+#endif // POS_ENABLE
 }
 
 
@@ -1587,6 +1842,20 @@ bool_t cuda_memcpy_mt_sync_1_svc(int id, int *result, struct svc_req *rqstp)
 
 bool_t cuda_memcpy_dtod_1_svc(ptr dst, ptr src, size_t size, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMCPY_DTOD, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &dst, .size = sizeof(uint64_t) },
+            { .value = &src, .size = sizeof(uint64_t) },
+            { .value = &size, .size = sizeof(size_t) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(cuda_memcpy_dtod_1_argument);
     RECORD_ARG(1, dst);
     RECORD_ARG(2, src);
@@ -1602,7 +1871,34 @@ bool_t cuda_memcpy_dtod_1_svc(ptr dst, ptr src, size_t size, int *result, struct
     cpu_time_end(vanillas, proc);
 
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
+}
+
+
+bool_t cuda_memcpy_dtod_async_1_svc(uint64_t dst, uint64_t src, size_t size, ptr stream, int *result, struct svc_req *rqstp){
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMCPY_DTOD_ASYNC, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &dst, .size = sizeof(uint64_t) },
+            { .value = &src, .size = sizeof(uint64_t) },
+            { .value = &size, .size = sizeof(size_t) },
+            { .value = &stream, .size = sizeof(ptr) },
+        }
+    );
+
+    return 1;
+
+#else // POS_ENABLE
+
+    return cuda_memcpy_dtod_1_svc(dst, src, size, result, rqstp);
+
+#endif // POS_ENABLE
 }
 
 
@@ -1722,6 +2018,27 @@ out:
 
 bool_t cuda_memcpy_dtoh_1_svc(uint64_t ptr, size_t size, mem_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+    result->mem_result_u.data.mem_data_len = size;
+    POS_CHECK_POINTER(result->mem_result_u.data.mem_data_val = malloc(size));
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMCPY_DTOH, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &ptr, .size = sizeof(uint64_t) },
+            { .value = &size, .size = sizeof(size_t) },
+        },
+        /* ret_data */ result->mem_result_u.data.mem_data_val,
+        /* ret_data_len */ size
+    );
+
+    if (result->err != 0) {
+        free(result->mem_result_u.data.mem_data_val);
+    }
+
+#else // POS_ENABLE
+
     //Does not need to be recorded because doesn't change device state
     LOGE(LOG_DEBUG, "cudaMemcpyDtoH(%p, %zu)", ptr, size);
     result->mem_result_u.data.mem_data_len = size;
@@ -1748,8 +2065,44 @@ bool_t cuda_memcpy_dtoh_1_svc(uint64_t ptr, size_t size, mem_result *result, str
         free(result->mem_result_u.data.mem_data_val);
     }
 out:
+
+#endif // POS_ENABLE
+
     return 1;
 }
+
+
+bool_t cuda_memcpy_dtoh_async_1_svc(uint64_t src, size_t size, ptr stream, mem_result *result, struct svc_req *rqstp){
+#ifdef POS_ENABLE
+    
+    result->mem_result_u.data.mem_data_len = size;
+    POS_CHECK_POINTER(result->mem_result_u.data.mem_data_val = malloc(size));
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMCPY_DTOH_ASYNC, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &src, .size = sizeof(uint64_t) },
+            { .value = &size, .size = sizeof(size_t) },
+            { .value = &stream, .size = sizeof(ptr) },
+        },
+        /* ret_data */ result->mem_result_u.data.mem_data_val,
+        /* ret_data_len */ size
+    );
+
+    if (result->err != 0) {
+        free(result->mem_result_u.data.mem_data_val);
+    }
+
+    return 1;
+
+#else // POS_ENABLE
+
+    return cuda_memcpy_dtoh_1_svc(src, size, result, rqstp);
+
+#endif // POS_ENABLE    
+}
+
 
 /* Multidimensional Memcpys */
 
