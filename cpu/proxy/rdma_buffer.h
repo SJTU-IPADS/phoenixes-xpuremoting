@@ -9,7 +9,7 @@ using namespace rdmaio;
 using namespace rdmaio::rmem;
 using namespace rdmaio::qp;
 
-#define RDMA_BUFFER_SIZE (2*1024*1024*1024)
+#define RDMA_BUFFER_SIZE (1024*1024*1024)
 #define RDMA_CONNECTION_PORT_STOC 8080
 #define RDMA_NIC_IDX_STOC 0
 #define RDMA_NIC_NAME_STOC 60
