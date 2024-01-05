@@ -4,6 +4,7 @@
 #include "device_buffer.h"
 #include "rib/core/lib.hh"
 #include <memory>
+#include <stddef.h>
 
 using namespace rdmaio;
 using namespace rdmaio::rmem;
@@ -27,7 +28,7 @@ class RDMABuffer final : public DeviceBuffer
 public:
     RDMABuffer(BufferPrivilege privilege, usize port, std::string addr,
                uint64_t nic_idx, uint64_t nic_name, uint64_t mem_name,
-               std::string qp_name, int buf_size);
+               std::string qp_name, size_t buf_size);
     ~RDMABuffer();
 
     // public DeviceBuffer methods
@@ -52,7 +53,7 @@ private:
 
     // local ring buffer
     char *buf_;
-    int buf_size_;
+    size_t buf_size_;
     int *buf_head_, *buf_tail_;
     int last_tail_; // guest
 

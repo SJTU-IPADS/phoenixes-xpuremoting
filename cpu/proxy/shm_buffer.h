@@ -2,6 +2,7 @@
 #define SHM_BUFFER_H
 
 #include "device_buffer.h"
+#include <stddef.h>
 
 #define SHM_BUFFER_SIZE (512*1024*1024)
 #define SHM_NAME_STOC "/stoc"
@@ -10,7 +11,7 @@
 // Shared Memory Buffer, should act like a ring buffer.
 class ShmBuffer final : public DeviceBuffer {
 public:
-    ShmBuffer(BufferPrivilege privilege, const char* shm_name, int buf_size);
+    ShmBuffer(BufferPrivilege privilege, const char* shm_name, size_t buf_size);
     ~ShmBuffer();
     const char* getShmName();
     int getShmLen();
@@ -24,12 +25,12 @@ public:
 private:
     // share memory related
     char* shm_name_;
-    int shm_len_;
+    size_t shm_len_;
     void* shm_ptr_;
 
     // ring buffer
     char* buf_;
-    int buf_size_;
+    size_t buf_size_;
     int *buf_head_, *buf_tail_;
 
     void HostInit();

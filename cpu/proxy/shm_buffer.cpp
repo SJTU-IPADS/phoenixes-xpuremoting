@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 ShmBuffer::ShmBuffer(BufferPrivilege privilege, const char *shm_name,
-                     int buf_size)
+                     size_t buf_size)
     : DeviceBuffer(privilege)
 {
     shm_name_ = new char(strlen(shm_name) + 1);

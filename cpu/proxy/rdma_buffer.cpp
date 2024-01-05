@@ -5,13 +5,19 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <cassert>
 #include <sys/mman.h>
 
 // #define PRINT_LOG
 
 void* alloc_huge_page(size_t s) {
-    return mmap(nullptr, s, PROT_READ | PROT_WRITE,
+    void* ptr = mmap(nullptr, s, PROT_READ | PROT_WRITE,
         MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE | MAP_HUGETLB, -1, 0);
+    if (ptr == MAP_FAILED) {
+        printf("failed to alloc %lu bytes huge page\n", s);
+        assert(0);
+    }
+    return ptr;
 }
 
 void dealloc_huge_page(void* p) {
@@ -20,7 +26,7 @@ void dealloc_huge_page(void* p) {
 
 RDMABuffer::RDMABuffer(BufferPrivilege privilege, usize port, std::string addr,
                        uint64_t nic_idx, uint64_t nic_name, uint64_t mem_name,
-                       std::string qp_name, int buf_size)
+                       std::string qp_name, size_t buf_size)
     : DeviceBuffer(privilege)
 {
     buf_size_ = buf_size;
