@@ -49,7 +49,7 @@ private:
     unsigned long qp_key_;
     int pending_num_;
     int unsignaled_buf_idx_;
-    int unsignaled_buf_len_;
+    size_t unsignaled_buf_len_;
 
     // local ring buffer
     char *buf_;
