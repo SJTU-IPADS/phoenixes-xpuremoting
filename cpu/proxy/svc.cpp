@@ -13,6 +13,8 @@ extern int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res);
 
 BufferPool buffers[BUFFER_POOL_CAPACITY];
 
+int remoting_shutdown = 0;
+
 static void createBuffer()
 {
     const char *ENV_REMOTE_ADDRESS = std::getenv("XPU_REMOTE_ADDRESS");

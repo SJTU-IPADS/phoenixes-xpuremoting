@@ -64,6 +64,7 @@ endif
 
 # pos won't enable async optimization
 ifdef POS_ENABLE
+NO_CACHE_OPTIMIZATION = 1
 NO_ASYNC_OPTIMIZATION = 1
 endif
 

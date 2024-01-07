@@ -28,6 +28,8 @@ BufferPool *buffers;
 AsyncBatch *batchs;
 // std::mutex *muts;
 
+int remoting_shutdown = 0;
+
 static void createBuffer()
 {
     const char *ENV_REMOTE_ADDRESS = std::getenv("XPU_REMOTE_ADDRESS");

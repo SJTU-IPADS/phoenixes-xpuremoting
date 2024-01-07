@@ -29,13 +29,15 @@
 #include "cpu-server-cudnn.h"
 
 #include "cpu-measurement.h"
-#ifndef NO_OPTIMIZATION
-#include "proxy/measurement.h"
-#endif //WITH_OPTIMIZATION
-#ifndef NO_HANDLER_OPTIMIZATION
-#include "proxy/handler_mapper.h"
-#endif
 
+#ifndef NO_OPTIMIZATION
+    #include "proxy/measurement.h"
+    extern int remoting_shutdown;
+#endif //WITH_OPTIMIZATION
+
+#ifndef NO_HANDLER_OPTIMIZATION
+    #include "proxy/handler_mapper.h"
+#endif
 
 extern cpu_measurement_info vanillas[CPU_API_COUNT];
 #ifndef NO_OPTIMIZATION
@@ -101,7 +103,12 @@ void int_handler(int signal) {
         unlink(CD_SOCKET_PATH);
     }
     LOG(LOG_INFO, "have a nice day!\n");
-    svc_exit();
+
+    #ifndef NO_OPTIMIZATION
+        remoting_shutdown = 1;
+    #else
+        svc_exit();
+    #endif
 }
 
 bool_t rpc_printmessage_1_svc(char *argp, int *result, struct svc_req *rqstp)

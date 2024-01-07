@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+extern int remoting_shutdown;
+
 ShmBuffer::ShmBuffer(BufferPrivilege privilege, const char *shm_name,
                      size_t buf_size)
     : DeviceBuffer(privilege)
@@ -75,8 +77,9 @@ int ShmBuffer::putBytes(const char *src, int length)
 
 int ShmBuffer::FlushOut()
 {
-    while ((*buf_tail_ + 1) % buf_size_ == *buf_head_)
-        ;
+    while ((*buf_tail_ + 1) % buf_size_ == *buf_head_){
+        if(remoting_shutdown){ return -1; }
+    }
     return 0;
 }
 
@@ -114,8 +117,9 @@ int ShmBuffer::getBytes(char *dst, int length)
 
 int ShmBuffer::FillIn()
 {
-    while (*buf_head_ == *buf_tail_)
-        ;
+    while (*buf_head_ == *buf_tail_){
+        if(remoting_shutdown){ return -1; }
+    }
     return 0;
 }
 
