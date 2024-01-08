@@ -9,6 +9,13 @@
 #include <cuda_runtime_api.h>
 #include <thread>
 
+#ifdef POS_ENABLE
+    #include "../cpu-server.h"
+    #include "pos/include/common.h"
+    #include "pos/include/log.h"
+    #include "pos/cuda_impl/api_context.h"
+#endif
+
 extern int dispatch(int proc_id, XDR *xdrs_arg, XDR *xdrs_res);
 
 BufferPool buffers[BUFFER_POOL_CAPACITY];
@@ -119,20 +126,32 @@ int process_header(ProxyHeader &header)
 #define cudaGetLastError_API 142
 #ifndef NO_CACHE_OPTIMIZATION
     int local_device = header.get_device_id();
+    // POS_LOG("current_device: %d, local_device: %d", current_device, local_device);
     if (current_device != local_device && local_device >= 0) {
-        add_cnt(svc_apis, cudaSetDevice_API);
-        time_start(svc_apis, cudaSetDevice_API, TOTAL_TIME);
-        current_device = local_device;
-        int result = cudaSetDevice(current_device);
+        #ifdef POS_ENABLE
+            current_device = local_device;
+            int result = pos_cuda_ws->pos_process( 
+                /* api_id */ CUDA_SET_DEVICE,
+                /* uuid */ 0,
+                /* param_desps */ {{ .value = &current_device, .size = sizeof(int) }}
+            );
+            POS_LOG("client %lu switch device to %d", 0, current_device);
+        #else // POS_ENABLE
+            add_cnt(svc_apis, cudaSetDevice_API);
+            time_start(svc_apis, cudaSetDevice_API, TOTAL_TIME);
+            current_device = local_device;
+            int result = cudaSetDevice(current_device);
+            time_end(svc_apis, cudaSetDevice_API, TOTAL_TIME);
+        #endif
         if (result != cudaSuccess) {
             printf("cudaSetDevice failed, error code: %d, current device: "
-                   "%d, "
-                   "proc id: %d\n",
-                   result, current_device, header.get_proc_id());
+                "%d, "
+                "proc id: %d\n",
+                result, current_device, header.get_proc_id());
             return -1;
         }
-        time_end(svc_apis, cudaSetDevice_API, TOTAL_TIME);
     }
+
     int retrieve_flag = header.get_retrieve_flag();
     if (retrieve_flag == 1) {
         add_cnt(svc_apis, cudaGetLastError_API);
@@ -205,8 +224,14 @@ void svc_run()
         //     goto end;
         // }
 
-        // seems only need to call cudaDeviceSynchronize once
-        cudaDeviceSynchronize();
+        #ifdef POS_ENABLE
+            /*!
+             *  \note   POS should init CUDA context in the worker thread
+             */
+        #else
+            // seems only need to call cudaDeviceSynchronize once
+            cudaDeviceSynchronize();
+        #endif
 
         while (1) {
             uint64_t start_0 = rdtscp();
@@ -218,6 +243,13 @@ void svc_run()
             }
 
             int async = AsyncBatch::is_async_api(proc_id);
+
+            #if defined(POS_ENABLE) && defined(POS_ENABLE_HIJACK_API_CHECK)
+                if(unlikely(pos_is_hijacked(proc_id) == false)){
+                    POS_ERROR_DETAIL("POS hasn't hijack api %lu", proc_id)
+                }
+            #endif // POS_ENABLE && POS_ENABLE_HIJACK_API_CHECK
+
 
             set_start(svc_apis, proc_id, NETWORK_RECEIVE_TIME, start_0);
             payload += sizeof(ProxyHeader);

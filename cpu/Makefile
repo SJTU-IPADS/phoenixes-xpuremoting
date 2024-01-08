@@ -64,8 +64,9 @@ endif
 
 # pos won't enable async optimization
 ifdef POS_ENABLE
-NO_CACHE_OPTIMIZATION = 1
-NO_ASYNC_OPTIMIZATION = 1
+# NO_CACHE_OPTIMIZATION = 1
+# NO_ASYNC_OPTIMIZATION = 1
+# NO_HANDLER_OPTIMIZATION = 1
 endif
 
 SRC_SERVER = $(RPC_XDR)                 \
@@ -127,6 +128,7 @@ OBJ_CLIENT = $(SRC_CLIENT:%.c=%.o)
 # this env variable is passed from PheonixOS build script
 ifdef POS_ENABLE
 CC_FLAGS += -DPOS_ENABLE
+CC_FLAGS += -DPOS_ENABLE_HIJACK_API_CHECK
 endif
 
 # Compiler flags
@@ -135,9 +137,11 @@ RPCGEN_FLAGS = -C -M -N
 INC_FLAGS += -I$(LIBTIRPC_PREFIX)/include/tirpc
 INC_FLAGS += -I$(CUDA_SRC)/include
 INC_FLAGS += -I$(PROXY_PREFIX)
+
 # add POS include path
 INC_FLAGS += -I../../..
 INC_FLAGS += -I../../../build
+
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
 LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs

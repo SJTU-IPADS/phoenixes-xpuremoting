@@ -33,7 +33,8 @@
 
 extern cpu_measurement_info totals[CPU_API_COUNT];
 #if !defined NO_OPTIMIZATION
-extern thread_local int local_device;
+// extern thread_local int local_device;
+extern int local_device;
 extern thread_local int retrieve_error;
 #endif // WITH_OPTIMIZATION
 
@@ -299,7 +300,7 @@ cudaError_t cudaGetDevice(int* device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
-#if !defined NO_OPTIMIZATION
+#ifndef NO_OPTIMIZATION
     #ifndef NO_CACHE_OPTIMIZATION
         if (local_device != -1) {
             *device = local_device;
@@ -423,7 +424,7 @@ cudaError_t cudaSetDevice(int device)
 #ifdef WITH_API_CNT
     api_call_cnt++;
 #endif //WITH_API_CNT
-#if !defined NO_OPTIMIZATION
+#ifndef NO_OPTIMIZATION
     #ifndef NO_CACHE_OPTIMIZATION
         if (local_device != device) {
             local_device = device;

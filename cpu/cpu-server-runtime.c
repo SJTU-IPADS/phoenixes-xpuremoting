@@ -365,7 +365,7 @@ bool_t cuda_get_device_1_svc(int_result *result, struct svc_req *rqstp)
         /* ret_data */ &(result->int_result_u.data),
         /* ret_data_len */ sizeof(int)
     );
-
+    
 #else // POS_ENABLE
 
     int proc = 117;

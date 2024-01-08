@@ -171,7 +171,8 @@ void clnt_device_destroy(CLIENT *clnt)
     }
 }
 
-thread_local int local_device = -1;
+// thread_local int local_device = -1;
+int local_device = -1;
 thread_local int retrieve_error = 0;
 
 std::mutex buffer_num_mut;
