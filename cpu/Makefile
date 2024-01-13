@@ -128,7 +128,7 @@ OBJ_CLIENT = $(SRC_CLIENT:%.c=%.o)
 # this env variable is passed from PheonixOS build script
 ifdef POS_ENABLE
 CC_FLAGS += -DPOS_ENABLE
-CC_FLAGS += -DPOS_ENABLE_HIJACK_API_CHECK
+# CC_FLAGS += -DPOS_ENABLE_HIJACK_API_CHECK
 endif
 
 # Compiler flags
