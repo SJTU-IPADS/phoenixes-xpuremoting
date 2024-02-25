@@ -244,7 +244,7 @@ void svc_run()
 
             int async = AsyncBatch::is_async_api(proc_id);
 
-            #if defined(POS_ENABLE) && defined(POS_ENABLE_HIJACK_API_CHECK)
+            #if defined(POS_ENABLE) && POS_ENABLE_HIJACK_API_CHECK
                 if(unlikely(pos_is_hijacked(proc_id) == false)){
                     POS_ERROR_DETAIL("POS hasn't hijack api %lu", proc_id)
                 }

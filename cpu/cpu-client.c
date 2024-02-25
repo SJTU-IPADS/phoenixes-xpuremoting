@@ -80,10 +80,10 @@ resource_mg rm_cudnn_backendds;
     #include "pos/include/agent.h"
     #include "pos/include/transport.h"
 
-    POSAgent<POSTransport_SHM> *pos_agent;
+    POSAgent *pos_agent;
 
     void __attribute__((constructor)) init_pos(void){
-        pos_agent = new POSAgent<POSTransport_SHM>();
+        pos_agent = new POSAgent();
         POS_CHECK_POINTER(pos_agent);
     }
 

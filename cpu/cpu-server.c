@@ -93,7 +93,7 @@ unsigned long prog=0, vers=0;
     #include "pos/include/transport.h"
     #include "pos/cuda_impl/workspace.h"
 
-    POSWorkspace_CUDA<POSTransport_SHM> *pos_cuda_ws;
+    POSWorkspace_CUDA *pos_cuda_ws;
 #endif
 
 extern void rpc_cd_prog_1(struct svc_req *rqstp, register SVCXPRT *transp);
@@ -229,7 +229,7 @@ bool_t rpc_dlopen_1_svc(char *path, int *result, struct svc_req *rqstp)
     return 1;
 }
 
-void cricket_main(size_t prog_num, size_t vers_num)
+void cricket_main(size_t prog_num, size_t vers_num, int argc, char *argv[])
 {
     int ret = 1;
     register SVCXPRT *transp;
@@ -385,7 +385,7 @@ void cricket_main(size_t prog_num, size_t vers_num)
     }
 
     #if defined(POS_ENABLE)
-        pos_cuda_ws = new POSWorkspace_CUDA<POSTransport_SHM>();
+        pos_cuda_ws = new POSWorkspace_CUDA(argc, argv);
         POS_CHECK_POINTER(pos_cuda_ws);
         pos_cuda_ws->init();
     #endif
