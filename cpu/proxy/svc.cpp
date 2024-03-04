@@ -233,7 +233,7 @@ void svc_run()
             cudaDeviceSynchronize();
         #endif
 
-        while (1) {
+        while (!remoting_shutdown) {
             uint64_t start_0 = rdtscp();
             int payload = 0;
 
@@ -295,6 +295,7 @@ void svc_run()
     for (int i = 0; i < BUFFER_POOL_CAPACITY; i++) {
         threads.emplace_back(thread_serving, i);
     }
+
     for (auto &t : threads) {
         t.join();
     }

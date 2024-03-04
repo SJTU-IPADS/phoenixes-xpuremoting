@@ -99,11 +99,12 @@ unsigned long prog=0, vers=0;
 extern void rpc_cd_prog_1(struct svc_req *rqstp, register SVCXPRT *transp);
 
 void int_handler(int signal) {
+    LOG(LOG_INFO, "interrupt signal received, clearing\n");
+
     if (socktype == UNIX) {
         unlink(CD_SOCKET_PATH);
     }
-    LOG(LOG_INFO, "have a nice day!\n");
-
+    
     #ifndef NO_OPTIMIZATION
         remoting_shutdown = 1;
     #else
@@ -412,7 +413,7 @@ void cricket_main(size_t prog_num, size_t vers_num, int argc, char *argv[])
 #if defined(POS_ENABLE)
     if(likely(pos_cuda_ws != nullptr)){
         delete pos_cuda_ws;
-    }  
+    }
 #endif
 
 #ifndef NO_OPTIMIZATION
