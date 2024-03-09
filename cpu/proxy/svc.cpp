@@ -135,7 +135,7 @@ int process_header(ProxyHeader &header)
                 /* uuid */ 0,
                 /* param_desps */ {{ .value = &current_device, .size = sizeof(int) }}
             );
-            POS_LOG("client %lu switch device to %d", 0, current_device);
+            POS_DEBUG("client %lu switch device to %d", 0, current_device);
         #else // POS_ENABLE
             add_cnt(svc_apis, cudaSetDevice_API);
             time_start(svc_apis, cudaSetDevice_API, TOTAL_TIME);
