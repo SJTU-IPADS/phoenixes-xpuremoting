@@ -405,6 +405,39 @@ bool_t rpc_cublassgemmstridedbatched_1_svc(ptr handle, int transa, int transb, i
             int batchCount,
             int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    long long int strideA = ((long long int)sA.i1 << 32) | sA.i2,
+        strideB = ((long long int)sB.i1 << 32) | sB.i2,
+        strideC = ((long long int)sC.i1 << 32) | sC.i2;
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cublasSgemmStridedBatched, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &handle, .size = sizeof(ptr) },
+            { .value = &transa, .size = sizeof(cublasOperation_t) },
+            { .value = &transb, .size = sizeof(cublasOperation_t) },
+            { .value = &m, .size = sizeof(int) },
+            { .value = &n, .size = sizeof(int) },
+            { .value = &k, .size = sizeof(int) },
+            { .value = &alpha, .size = sizeof(float) },
+            { .value = &A, .size = sizeof(ptr) },
+            { .value = &lda, .size = sizeof(int) },
+            { .value = &strideA, .size = sizeof(long long int) },
+            { .value = &B, .size = sizeof(ptr) },
+            { .value = &ldb, .size = sizeof(int) },
+            { .value = &strideB, .size = sizeof(long long int) },
+            { .value = &beta, .size = sizeof(float) },
+            { .value = &C, .size = sizeof(ptr) },
+            { .value = &ldc, .size = sizeof(int) },
+            { .value = &strideC, .size = sizeof(long long int) },
+            { .value = &batchCount, .size = sizeof(int) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(rpc_cublassgemmstridedbatched_1_argument);
     RECORD_ARG(1, handle);
     RECORD_ARG(2, transa);
@@ -446,5 +479,8 @@ bool_t rpc_cublassgemmstridedbatched_1_svc(ptr handle, int transa, int transb, i
     cpu_time_end(vanillas, proc);
     GSCHED_RELEASE;
     RECORD_RESULT(integer, *result);
+
+#endif // POS_ENABLE
+
     return 1;
 }

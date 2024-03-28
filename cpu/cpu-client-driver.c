@@ -467,7 +467,16 @@ CUresult cuModuleLoadData(CUmodule* module, const void* image)
         return CUDA_ERROR_INVALID_IMAGE;
     }
 
-    mem.mem_data_len = ehdr->e_shoff + ehdr->e_shnum * ehdr->e_shentsize;
+    // TODO: [POS] how many bytes should we copy?
+    // LOGE(LOG_WARNING, 
+    //     "!!! e_shoff: %u, end of sh: %u, "
+    //     "e_phoff: %u, end of ph: %u\n",
+    //     ehdr->e_shoff,
+    //     ehdr->e_shoff + ehdr->e_shnum * ehdr->e_shentsize,
+    //     ehdr->e_phoff + ehdr->e_phnum * ehdr->e_phentsize
+    // );
+    // mem.mem_data_len = ehdr->e_shoff + ehdr->e_shnum * ehdr->e_shentsize;
+    mem.mem_data_len = ehdr->e_phoff + ehdr->e_phnum * ehdr->e_phentsize;
     mem.mem_data_val = (uint8_t*)image;
 
     LOGE(LOG_DEBUG, "image_size = %#0zx", mem.mem_data_len);

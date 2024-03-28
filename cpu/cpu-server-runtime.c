@@ -215,8 +215,26 @@ bool_t cuda_choose_device_1_svc(mem_data prop, int_result *result, struct svc_re
 
 bool_t cuda_device_get_attribute_1_svc(int attr, int device, int_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_DEVICE_GET_ATTRIBUTE, 
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &attr, .size = sizeof(cudaDeviceAttr) },
+            { .value = &device, .size = sizeof(int) },
+        },
+        /* ret_data */ &(result->int_result_u.data),
+        /* ret_data_len */ sizeof(int)
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "cudaDeviceGetAttribute");
     result->err = cudaDeviceGetAttribute(&result->int_result_u.data, (enum cudaDeviceAttr)attr, device);
+
+#endif
+
     return 1;
 }
 
@@ -583,8 +601,20 @@ bool_t cuda_get_last_error_1_svc(int *result, struct svc_req *rqstp)
 
 bool_t cuda_peek_at_last_error_1_svc(int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_PEEK_AT_LAST_ERROR, 
+        /* uuid */ 0,
+        /* param_desps */ {}
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "cudaPeekAtLastError");
     *result = cudaPeekAtLastError();
+
+#endif // POS_ENABLE
     return 1;
 }
 
@@ -973,11 +1003,27 @@ bool_t cuda_event_synchronize_1_svc(ptr event, int *result, struct svc_req *rqst
 
 bool_t cuda_func_get_attributes_1_svc(ptr func, mem_result *result, struct svc_req *rqstp)
 {
-    LOGE(LOG_DEBUG, "cudaFuncGetAttributes");
     result->mem_result_u.data.mem_data_val = malloc(sizeof(struct cudaFuncAttributes));
     result->mem_result_u.data.mem_data_len = sizeof(struct cudaFuncAttributes);
+    
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_FUNC_GET_ATTRIBUTES, 
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &func, .size = sizeof(ptr) },
+        },
+        /* ret_data */ result->mem_result_u.data.mem_data_val,
+        /* ret_data_len */ result->mem_result_u.data.mem_data_len
+    );
+
+#else // POS_ENABLE
+    LOGE(LOG_DEBUG, "cudaFuncGetAttributes");
+    
     struct cudaFuncAttributes* attr = malloc(sizeof(struct cudaFuncAttributes));
     CUfunction handle = (CUfunction)resource_mg_get(&rm_functions, (void*)func);
+
 #define GET_FUNC_ATTR(member, name)					\
     do {								\
       int tmp;								\
@@ -998,6 +1044,9 @@ bool_t cuda_func_get_attributes_1_svc(ptr func, mem_result *result, struct svc_r
     memcpy(result->mem_result_u.data.mem_data_val, attr, sizeof(struct cudaFuncAttributes));
     free(attr);
     result->err = 0;
+
+#endif
+
     return 1;
 }
 
@@ -1178,10 +1227,30 @@ bool_t cuda_occupancy_max_active_bpm_1_svc(ptr func, int blockSize, size_t dynam
 
 bool_t cuda_occupancy_max_active_bpm_with_flags_1_svc(ptr func, int blockSize, size_t dynamicSMemSize, int flags, int_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_OCCUPANCY_MAX_ACTIVE_BPM_WITH_FLAGS, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &func, .size = sizeof(ptr) },
+            { .value = &blockSize, .size = sizeof(int) },
+            { .value = &dynamicSMemSize, .size = sizeof(size_t) },
+            { .value = &flags, .size = sizeof(int) },
+        },
+        /* ret_data */ &result->int_result_u.data,
+        /* ret_data_len */ sizeof(int)
+    );
+
+#else
+
     LOGE(LOG_DEBUG, "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags");
     CUfunction handle = (CUfunction)resource_mg_get(&rm_functions, (void*)func);
     cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(&result->int_result_u.data, handle, blockSize, dynamicSMemSize, flags);
     result->err = 0;
+
+#endif
+
     return 1;
 }
 

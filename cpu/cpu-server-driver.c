@@ -327,6 +327,18 @@ bool_t rpc_cudevicegetuuid_1_svc(int dev, str_result *result, struct svc_req *rq
 
 bool_t rpc_cuctxgetcurrent_1_svc(ptr_result *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cuCtxGetCurrent, 
+        /* uuid */ 0, 
+        /* param_desps */ {},
+        /* ret_data */ &(result->ptr_result_u.ptr),
+        /* ret_data_len */ sizeof(struct CUctx_st*)
+    );
+
+#else // POS_ENABLE
+
     LOG(LOG_DEBUG, "%s", __FUNCTION__);
     GSCHED_RETAIN;
     result->err = cuCtxGetCurrent((struct CUctx_st**)&result->ptr_result_u.ptr);
@@ -336,6 +348,9 @@ bool_t rpc_cuctxgetcurrent_1_svc(ptr_result *result, struct svc_req *rqstp)
         cuCtxGetApiVersion((CUcontext)result->ptr_result_u.ptr, &version);
         LOG(LOG_DEBUG, "ctxapi version: %d", version);
     }
+
+#endif
+
     return 1;
 }
 
@@ -359,6 +374,21 @@ bool_t rpc_cudeviceprimaryctxretain_1_svc(int dev, ptr_result *result,
 bool_t rpc_cumodulegetfunction_1_svc(uint64_t module, char *name, ptr_result *result,
                                      struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process(
+        /* api_id */ rpc_cuModuleGetFunction,
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &module, .size = sizeof(CUmodule) },
+            { .value = name, .size = strlen(name)+1 }
+        },
+        /* ret_data */ &(result->ptr_result_u.ptr),
+        /* ret_data_len */ sizeof(CUfunction)
+    );
+
+#else
+
     RECORD_API(rpc_cumodulegetfunction_1_argument);
     RECORD_ARG(1, module);
     RECORD_ARG(2, name);
@@ -372,12 +402,29 @@ bool_t rpc_cumodulegetfunction_1_svc(uint64_t module, char *name, ptr_result *re
         LOGE(LOG_ERROR, "error in resource manager");
     }
     RECORD_RESULT(ptr_result_u, *result);
+
+#endif
+
     return 1;
 }
 
 bool_t rpc_cumoduleloaddata_1_svc(mem_data mem, ptr_result *result,
                                      struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    result->err = pos_cuda_ws->pos_process(
+        /* api_id */ rpc_cuModuleLoadData,
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = mem.mem_data_val, .size = mem.mem_data_len }
+        },
+        /* ret_data */ &(result->ptr_result_u.ptr),
+        /* ret_data_len */ sizeof(ptr)
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(mem_data);
     RECORD_SINGLE_ARG(mem);
     LOG(LOG_DEBUG, "%s(%p, %#0zx)", __FUNCTION__, mem.mem_data_val, mem.mem_data_len);
@@ -396,6 +443,9 @@ bool_t rpc_cumoduleloaddata_1_svc(mem_data mem, ptr_result *result,
         LOGE(LOG_DEBUG, "cuModuleLoadData result: %s", err_str);
     }
     RECORD_RESULT(ptr_result_u, *result);
+
+#endif
+
     return 1;
 }
 
@@ -578,6 +628,26 @@ bool_t rpc_cumemcpyhtod_1_svc(uint64_t dptr, mem_data hptr, int *result,
 
 bool_t rpc_culaunchkernel_1_svc(uint64_t f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, uint64_t hStream, mem_data args, int* result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+    rpc_dim3 gridDim = {gridDimX, gridDimY, gridDimZ};
+    rpc_dim3 blockDim = {blockDimX, blockDimY, blockDimZ};
+    size_t sharedMem = (size_t)(sharedMemBytes);
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cuLaunchKernel, 
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &f, .size = sizeof(uint64_t) },
+            { .value = &gridDim, .size = sizeof(rpc_dim3) },
+            { .value = &blockDim, .size = sizeof(rpc_dim3) },
+            { .value = args.mem_data_val, .size = args.mem_data_len },
+            { .value = &sharedMem, .size = sizeof(size_t) },
+            { .value = &hStream, .size = sizeof(uint64_t) },
+        }
+    );
+
+#else // POS_ENABLE
+
     void **cuda_args;
     uint16_t *arg_offsets;
     size_t param_num;
@@ -619,6 +689,9 @@ bool_t rpc_culaunchkernel_1_svc(uint64_t f, unsigned int gridDimX, unsigned int 
     GSCHED_RELEASE;
 
     free(cuda_args);
+
+#endif
+
     return 1;
 
 }
