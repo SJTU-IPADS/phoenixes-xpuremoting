@@ -124,9 +124,18 @@ bool_t rpc_printmessage_1_svc(char *argp, int *result, struct svc_req *rqstp)
 
 bool_t rpc_deinit_1_svc(int *result, struct svc_req *rqstp)
 {
+
+#if POS_ENABLE
+    pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_deinit, 
+        /* uuid */ 0, 
+        /* param_desps */ {}
+    );
+#endif
+
     cpu_print_measurement_info("server_vanilla_", vanillas, CPU_API_COUNT);
 #ifndef NO_OPTIMIZATION
-    print_detailed_info(svc_apis, API_COUNT, "server");
+    // print_detailed_info(svc_apis, API_COUNT, "server");
 #endif //WITH_OPTIMIZATION
     LOG(LOG_INFO, "RPC deinit requested.");
     // svc_exit();

@@ -1,7 +1,7 @@
 #ifndef CPU_MEASUREMENT_H
 #define CPU_MEASUREMENT_H
 
-// #define CPU_MEASUREMRNT_SWITCH
+#define CPU_MEASUREMRNT_SWITCH
 
 #include "proxy/rdtscp.h"
 

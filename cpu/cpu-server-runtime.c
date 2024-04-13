@@ -216,7 +216,7 @@ bool_t cuda_choose_device_1_svc(mem_data prop, int_result *result, struct svc_re
 bool_t cuda_device_get_attribute_1_svc(int attr, int device, int_result *result, struct svc_req *rqstp)
 {
 #ifdef POS_ENABLE
-
+    
     result->err = pos_cuda_ws->pos_process( 
         /* api_id */ CUDA_DEVICE_GET_ATTRIBUTE, 
         /* uuid */ 0,
@@ -232,7 +232,7 @@ bool_t cuda_device_get_attribute_1_svc(int attr, int device, int_result *result,
 
     LOGE(LOG_DEBUG, "cudaDeviceGetAttribute");
     result->err = cudaDeviceGetAttribute(&result->int_result_u.data, (enum cudaDeviceAttr)attr, device);
-
+    
 #endif
 
     return 1;
@@ -736,6 +736,7 @@ bool_t cuda_stream_get_capture_info_1_svc(ptr stream, int3_result *result, struc
     result->int3_result_u.data[1] = (int)(id >> 32);
     result->int3_result_u.data[2] = (int)(id & 0xFFFFFFFF);
     cpu_time_end(vanillas, proc);
+    
     return 1;
 }
 
@@ -928,12 +929,27 @@ bool_t cuda_event_elapsed_time_1_svc(ptr start, ptr end, float_result *result, s
 
 bool_t cuda_event_query_1_svc(ptr event, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_EVENT_QUERY, 
+        /* uuid */ 0,
+        /* param_desps */ {
+            { .value = &event, .size = sizeof(ptr) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(ptr);
     RECORD_SINGLE_ARG(event);
     LOGE(LOG_DEBUG, "cudaEventQuery");
     *result = cudaEventQuery(
       resource_mg_get(&rm_events, (void*)event));
     RECORD_RESULT(integer, *result);
+
+#endif
+
     return 1;
 }
 
@@ -1015,7 +1031,7 @@ bool_t cuda_func_get_attributes_1_svc(ptr func, mem_result *result, struct svc_r
             { .value = &func, .size = sizeof(ptr) },
         },
         /* ret_data */ result->mem_result_u.data.mem_data_val,
-        /* ret_data_len */ result->mem_result_u.data.mem_data_len
+        /* ret_data_len */ sizeof(struct cudaFuncAttributes)
     );
 
 #else // POS_ENABLE
@@ -2348,6 +2364,21 @@ bool_t cuda_memset_3d_async_1_svc(size_t pitch, ptr devPtr, size_t xsize, size_t
 
 bool_t cuda_memset_async_1_svc(ptr devPtr, int value, size_t count, ptr stream, int *result, struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+
+    *result = pos_cuda_ws->pos_process( 
+        /* api_id */ CUDA_MEMSET_ASYNC, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &devPtr, .size = sizeof(ptr) },
+            { .value = &value, .size = sizeof(int) },
+            { .value = &count, .size = sizeof(size_t) },
+            { .value = &stream, .size = sizeof(CUstream) },
+        }
+    );
+
+#else // POS_ENABLE
+
     RECORD_API(cuda_memset_async_1_argument);
     RECORD_ARG(1, devPtr);
     RECORD_ARG(2, value);
@@ -2360,6 +2391,9 @@ bool_t cuda_memset_async_1_svc(ptr devPtr, int value, size_t count, ptr stream, 
       count,
       resource_mg_get(&rm_streams, (void*)stream));
     RECORD_RESULT(integer, *result);
+
+#endif
+
     return 1;
 }
 /* cudaMipmappedArrayGetSparseProperties ( cudaArraySparseProperties* sparseProperties, cudaMipmappedArray_t mipmap ) is not implemented */

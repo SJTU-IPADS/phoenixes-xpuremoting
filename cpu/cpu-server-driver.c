@@ -128,7 +128,7 @@ bool_t rpc_register_function_1_svc(ptr fatCubinHandle, ptr hostFun, char* device
 #ifdef POS_ENABLE
 
     result->err = pos_cuda_ws->pos_process( 
-        /* api_id */ rpc_cuModuleGetFunction, 
+        /* api_id */ rpc_register_function, 
         /* uuid */ 0, 
         /* param_desps */ {
             { .value = &fatCubinHandle, .size = sizeof(ptr) },
@@ -334,7 +334,7 @@ bool_t rpc_cuctxgetcurrent_1_svc(ptr_result *result, struct svc_req *rqstp)
         /* uuid */ 0, 
         /* param_desps */ {},
         /* ret_data */ &(result->ptr_result_u.ptr),
-        /* ret_data_len */ sizeof(struct CUctx_st*)
+        /* ret_data_len */ sizeof(CUcontext)
     );
 
 #else // POS_ENABLE
@@ -486,6 +486,21 @@ bool_t rpc_cumoduleunload_1_svc(ptr module, int *result,
 bool_t rpc_cugeterrorstring_1_svc(int err, str_result *result,
                                      struct svc_req *rqstp)
 {
+#ifdef POS_ENABLE
+    char data_str[128];
+
+    result->err = pos_cuda_ws->pos_process( 
+        /* api_id */ rpc_cuGetErrorString, 
+        /* uuid */ 0, 
+        /* param_desps */ {
+            { .value = &err, .size = sizeof(int) },
+        },
+        /* ret_data */ data_str,
+        /* ret_data_len */ 128
+    );
+
+#else // POS_ENABLE
+
     LOGE(LOG_DEBUG, "%s", __FUNCTION__);
     const char* err_str = NULL;
     result->err = cuGetErrorString(err, &err_str);
@@ -494,6 +509,8 @@ bool_t rpc_cugeterrorstring_1_svc(int err, str_result *result,
         (strncpy(result->str_result_u.str, err_str, 128) == NULL)) {
         LOGE(LOG_ERROR, "error copying string");
     }
+
+#endif
 
     return 1;
 }
@@ -634,7 +651,7 @@ bool_t rpc_culaunchkernel_1_svc(uint64_t f, unsigned int gridDimX, unsigned int 
     size_t sharedMem = (size_t)(sharedMemBytes);
 
     *result = pos_cuda_ws->pos_process( 
-        /* api_id */ rpc_cuLaunchKernel, 
+        /* api_id */ CUDA_LAUNCH_KERNEL, 
         /* uuid */ 0,
         /* param_desps */ {
             { .value = &f, .size = sizeof(uint64_t) },
