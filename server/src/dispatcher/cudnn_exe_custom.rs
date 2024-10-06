@@ -12,7 +12,19 @@ pub fn cudnnCreateExe<T: CommChannel>(channel_sender: &mut T, channel_receiver: 
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe { cudnnCreate(&mut cuda_handle) };
+    let result = {
+        // cudnnCreate(&mut cuda_handle)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1500u64,
+                0u64,
+                vec![
+                    get_address(&mut cuda_handle), cuda_handle.mem_size(),
+                ]
+            )
+        )
+    };
 
     cuda_handle.send(channel_sender).unwrap();
     result.send(channel_sender).unwrap();
@@ -43,7 +55,19 @@ pub fn cudnnCreateTensorDescriptorExe<T: CommChannel>(
     }
 
     let mut tensorDesc: cudnnTensorDescriptor_t = Default::default();
-    unsafe { cudnnCreateTensorDescriptor(&mut tensorDesc) };
+    {
+        // cudnnCreateTensorDescriptor(&mut tensorDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1501u64,
+                0u64,
+                vec![
+                    get_address(&mut tensorDesc), tensorDesc.mem_size(),
+                ]
+            )
+        )
+    };
     add_resource(resource_idx, tensorDesc as usize);
 }
 #[cfg(not(feature = "shadow_desc"))]
@@ -62,7 +86,19 @@ pub fn cudnnCreateTensorDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut tensorDesc: cudnnTensorDescriptor_t = Default::default();
-    let result: cudnnStatus_t = unsafe { cudnnCreateTensorDescriptor(&mut tensorDesc) };
+    let result: cudnnStatus_t = {
+        // cudnnCreateTensorDescriptor(&mut tensorDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1501u64,
+                0u64,
+                vec![
+                    get_address(&mut tensorDesc), tensorDesc.mem_size(),
+                ]
+            )
+        )
+    };
 
     tensorDesc.send(channel_sender).unwrap();
     result.send(channel_sender).unwrap();
@@ -83,7 +119,19 @@ pub fn cudnnCreateActivationDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut activationDesc: cudnnActivationDescriptor_t = Default::default();
-    let result = unsafe { cudnnCreateActivationDescriptor(&mut activationDesc) };
+    let result = {
+        // cudnnCreateActivationDescriptor(&mut activationDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1503u64,
+                0u64,
+                vec![
+                    get_address(&mut activationDesc), activationDesc.mem_size(),
+                ]
+            )
+        )
+    };
 
     activationDesc.send(channel_sender).unwrap();
     result.send(channel_sender).unwrap();
@@ -156,16 +204,33 @@ pub fn cudnnActivationForwardExe<T: CommChannel>(channel_sender: &mut T, channel
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result: cudnnStatus_t = unsafe {
-        cudnnActivationForward(
-            handle,
-            activationDesc,
-            alpha as *const c_void,
-            xDesc,
-            x as *const c_void,
-            beta as *const c_void,
-            yDesc,
-            y as *mut c_void,
+    let result: cudnnStatus_t = {
+        // cudnnActivationForward(
+        //     handle,
+        //     activationDesc,
+        //     alpha as *const c_void,
+        //     xDesc,
+        //     x as *const c_void,
+        //     beta as *const c_void,
+        //     yDesc,
+        //     y as *mut c_void,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1505u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&activationDesc), activationDesc.mem_size(),
+                    get_address(&alpha), alpha.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&x), x.mem_size(),
+                    get_address(&beta), beta.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&y), y.mem_size(),
+                ]
+            )
         )
     };
     y.send(channel_sender).unwrap();
@@ -224,13 +289,27 @@ pub fn cudnnSetTensorNdDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
 
-    let result: cudnnStatus_t = unsafe {
-        cudnnSetTensorNdDescriptor(
-            tensorDesc,
-            dataType,
-            nbDims,
-            dimA.as_ptr() as *const c_int,
-            strideA.as_ptr() as *const c_int,
+    let result: cudnnStatus_t = {
+        // cudnnSetTensorNdDescriptor(
+        //     tensorDesc,
+        //     dataType,
+        //     nbDims,
+        //     dimA.as_ptr() as *const c_int,
+        //     strideA.as_ptr() as *const c_int,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1509u64,
+                0u64,
+                vec![
+                    get_address(&tensorDesc), tensorDesc.mem_size(),
+                    get_address(&dataType), dataType.mem_size(),
+                    get_address(&nbDims), nbDims.mem_size(),
+                    get_address(&dimA), dimA.mem_size(),
+                    get_address(&strideA), strideA.mem_size(),
+                ]
+            )
         )
     };
 
@@ -263,7 +342,19 @@ pub fn cudnnCreateFilterDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut filterDesc: cudnnFilterDescriptor_t = Default::default();
-    unsafe { cudnnCreateFilterDescriptor(&mut filterDesc) };
+    {
+        // cudnnCreateFilterDescriptor(&mut filterDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1511u64,
+                0u64,
+                vec![
+                    get_address(&mut filterDesc), filterDesc.mem_size(),
+                ]
+            )
+        )
+    };
     add_resource(resource_idx, filterDesc as usize);
 }
 #[cfg(not(feature = "shadow_desc"))]
@@ -281,7 +372,19 @@ pub fn cudnnCreateFilterDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut filterDesc: cudnnFilterDescriptor_t = Default::default();
-    let result: cudnnStatus_t = unsafe { cudnnCreateFilterDescriptor(&mut filterDesc) };
+    let result: cudnnStatus_t = {
+        // cudnnCreateFilterDescriptor(&mut filterDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1511u64,
+                0u64,
+                vec![
+                    get_address(&mut filterDesc), filterDesc.mem_size(),
+                ]
+            )
+        )
+    };
     filterDesc.send(channel_sender).unwrap();
     result.send(channel_sender).unwrap();
     channel_sender.flush_out().unwrap();
@@ -337,13 +440,27 @@ pub fn cudnnSetFilterNdDescriptorExe<T: CommChannel>(
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe {
-        cudnnSetFilterNdDescriptor(
-            filterDesc,
-            dataType,
-            format,
-            nbDims,
-            filterDimA.as_ptr() as *const c_int,
+    let result = {
+        // cudnnSetFilterNdDescriptor(
+        //     filterDesc,
+        //     dataType,
+        //     format,
+        //     nbDims,
+        //     filterDimA.as_ptr() as *const c_int,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1513u64,
+                0u64,
+                vec![
+                    get_address(&filterDesc), filterDesc.mem_size(),
+                    get_address(&dataType), dataType.mem_size(),
+                    get_address(&format), format.mem_size(),
+                    get_address(&nbDims), nbDims.mem_size(),
+                    get_address(&filterDimA), filterDimA.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -380,7 +497,19 @@ pub fn cudnnCreateConvolutionDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut convDesc: cudnnConvolutionDescriptor_t = Default::default();
-    unsafe { cudnnCreateConvolutionDescriptor(&mut convDesc) };
+    {
+        // cudnnCreateConvolutionDescriptor(&mut convDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1514u64,
+                0u64,
+                vec![
+                    get_address(&mut convDesc), convDesc.mem_size(),
+                ]
+            )
+        )
+    };
     add_resource(resource_idx, convDesc as usize);
 }
 #[cfg(not(feature = "shadow_desc"))]
@@ -398,7 +527,19 @@ pub fn cudnnCreateConvolutionDescriptorExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut convDesc: cudnnConvolutionDescriptor_t = Default::default();
-    let result: cudnnStatus_t = unsafe { cudnnCreateConvolutionDescriptor(&mut convDesc) };
+    let result: cudnnStatus_t = {
+        // cudnnCreateConvolutionDescriptor(&mut convDesc)
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1514u64,
+                0u64,
+                vec![
+                    get_address(&mut convDesc), convDesc.mem_size(),
+                ]
+            )
+        )
+    };
     convDesc.send(channel_sender).unwrap();
     result.send(channel_sender).unwrap();
     channel_sender.flush_out().unwrap();
@@ -468,15 +609,31 @@ pub fn cudnnSetConvolutionNdDescriptorExe<T: CommChannel>(
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe {
-        cudnnSetConvolutionNdDescriptor(
-            convDesc,
-            arrayLength,
-            padA.as_ptr() as *const c_int,
-            filterStrideA.as_ptr() as *const c_int,
-            upscaleA.as_ptr() as *const c_int,
-            mode,
-            computeType,
+    let result = {
+        // cudnnSetConvolutionNdDescriptor(
+        //     convDesc,
+        //     arrayLength,
+        //     padA.as_ptr() as *const c_int,
+        //     filterStrideA.as_ptr() as *const c_int,
+        //     upscaleA.as_ptr() as *const c_int,
+        //     mode,
+        //     computeType,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1516u64,
+                0u64,
+                vec![
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&arrayLength), arrayLength.mem_size(),
+                    get_address(&padA), padA.mem_size(),
+                    get_address(&filterStrideA), filterStrideA.mem_size(),
+                    get_address(&upscaleA), upscaleA.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&computeType), computeType.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -557,16 +714,33 @@ pub fn cudnnGetConvolutionForwardAlgorithm_v7Exe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     perfResults.resize(requestedAlgoCount as usize, Default::default());
-    let result = unsafe {
-        cudnnGetConvolutionForwardAlgorithm_v7(
-            handle,
-            xDesc,
-            wDesc,
-            convDesc,
-            yDesc,
-            requestedAlgoCount,
-            &mut returnedAlgoCount,
-            perfResults.as_mut_ptr(),
+    let result = {
+        // cudnnGetConvolutionForwardAlgorithm_v7(
+        //     handle,
+        //     xDesc,
+        //     wDesc,
+        //     convDesc,
+        //     yDesc,
+        //     requestedAlgoCount,
+        //     &mut returnedAlgoCount,
+        //     perfResults.as_mut_ptr(),
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1520u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&wDesc), wDesc.mem_size(),
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&requestedAlgoCount), requestedAlgoCount.mem_size(),
+                    get_address(&mut returnedAlgoCount), returnedAlgoCount.mem_size(),
+                    get_address(&perfResults), perfResults.mem_size(),
+                ]
+            )
         )
     };
     match returnedAlgoCount.send(channel_sender) {
@@ -707,21 +881,43 @@ pub fn cudnnConvolutionForwardExe<T: CommChannel>(
     let alpha_ = &alpha as *const f64;
     let beta_ = &beta as *const f64;
 
-    let result: cudnnStatus_t = unsafe {
-        cudnnConvolutionForward(
-            handle,
-            alpha_ as *const c_void,
-            xDesc,
-            x as *const c_void,
-            wDesc,
-            w as *const c_void,
-            convDesc,
-            algo,
-            workSpace as *mut c_void,
-            workSpaceSizeInBytes,
-            beta_ as *const c_void,
-            yDesc,
-            y as *mut c_void,
+    let result: cudnnStatus_t = {
+        // cudnnConvolutionForward(
+        //     handle,
+        //     alpha_ as *const c_void,
+        //     xDesc,
+        //     x as *const c_void,
+        //     wDesc,
+        //     w as *const c_void,
+        //     convDesc,
+        //     algo,
+        //     workSpace as *mut c_void,
+        //     workSpaceSizeInBytes,
+        //     beta_ as *const c_void,
+        //     yDesc,
+        //     y as *mut c_void,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1521u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&alpha_), alpha_.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&x), x.mem_size(),
+                    get_address(&wDesc), wDesc.mem_size(),
+                    get_address(&w), w.mem_size(),
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&algo), algo.mem_size(),
+                    get_address(&workSpace), workSpace.mem_size(),
+                    get_address(&workSpaceSizeInBytes), workSpaceSizeInBytes.mem_size(),
+                    get_address(&beta_), beta_.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&y), y.mem_size(),
+                ]
+            )
         )
     };
     
@@ -801,17 +997,35 @@ pub fn cudnnGetBatchNormalizationForwardTrainingExWorkspaceSizeExe<T: CommChanne
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
 
-    let result = unsafe {
-        cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize(
-            handle,
-            mode,
-            bnOps,
-            xDesc,
-            zDesc,
-            yDesc,
-            bnScaleBiasMeanVarDesc,
-            activationDesc,
-            &mut sizeInBytes,
+    let result = {
+        // cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize(
+        //     handle,
+        //     mode,
+        //     bnOps,
+        //     xDesc,
+        //     zDesc,
+        //     yDesc,
+        //     bnScaleBiasMeanVarDesc,
+        //     activationDesc,
+        //     &mut sizeInBytes,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1522u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&bnOps), bnOps.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&zDesc), zDesc.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&bnScaleBiasMeanVarDesc), bnScaleBiasMeanVarDesc.mem_size(),
+                    get_address(&activationDesc), activationDesc.mem_size(),
+                    get_address(&mut sizeInBytes), sizeInBytes.mem_size(),
+                ]
+            )
         )
     };
     match sizeInBytes.send(channel_sender) {
@@ -866,14 +1080,29 @@ pub fn cudnnGetBatchNormalizationTrainingExReserveSpaceSizeExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut sizeInBytes: size_t = Default::default();
-    let result = unsafe {
-        cudnnGetBatchNormalizationTrainingExReserveSpaceSize(
-            handle,
-            mode,
-            bnOps,
-            activationDesc,
-            xDesc,
-            &mut sizeInBytes,
+    let result = {
+        // cudnnGetBatchNormalizationTrainingExReserveSpaceSize(
+        //     handle,
+        //     mode,
+        //     bnOps,
+        //     activationDesc,
+        //     xDesc,
+        //     &mut sizeInBytes,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1523u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&bnOps), bnOps.mem_size(),
+                    get_address(&activationDesc), activationDesc.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&mut sizeInBytes), sizeInBytes.mem_size(),
+                ]
+            )
         )
     };
     match sizeInBytes.send(channel_sender) {
@@ -1035,33 +1264,67 @@ pub fn cudnnBatchNormalizationForwardTrainingExExe<T: CommChannel>(
     }
     let alpha_ = &alpha as *const f64;
     let beta_ = &beta as *const f64;
-    let result = unsafe {
-        cudnnBatchNormalizationForwardTrainingEx(
-            handle,
-            mode,
-            bnOps,
-            alpha_ as *const c_void,
-            beta_ as *const c_void,
-            xDesc,
-            x as *const c_void,
-            zDesc,
-            z as *const c_void,
-            yDesc,
-            y as *mut c_void,
-            bnScaleBiasMeanVarDesc,
-            bnScale as *const c_void,
-            bnBias as *const c_void,
-            exponentialAverageFactor,
-            resultRunningMean as *mut c_void,
-            resultRunningVariance as *mut c_void,
-            epsilon,
-            saveMean as *mut c_void,
-            saveInvVariance as *mut c_void,
-            activationDesc,
-            workSpace as *mut c_void,
-            workSpaceSizeInBytes,
-            reserveSpace as *mut c_void,
-            reserveSpaceSizeInBytes,
+    let result = {
+        // cudnnBatchNormalizationForwardTrainingEx(
+        //     handle,
+        //     mode,
+        //     bnOps,
+        //     alpha_ as *const c_void,
+        //     beta_ as *const c_void,
+        //     xDesc,
+        //     x as *const c_void,
+        //     zDesc,
+        //     z as *const c_void,
+        //     yDesc,
+        //     y as *mut c_void,
+        //     bnScaleBiasMeanVarDesc,
+        //     bnScale as *const c_void,
+        //     bnBias as *const c_void,
+        //     exponentialAverageFactor,
+        //     resultRunningMean as *mut c_void,
+        //     resultRunningVariance as *mut c_void,
+        //     epsilon,
+        //     saveMean as *mut c_void,
+        //     saveInvVariance as *mut c_void,
+        //     activationDesc,
+        //     workSpace as *mut c_void,
+        //     workSpaceSizeInBytes,
+        //     reserveSpace as *mut c_void,
+        //     reserveSpaceSizeInBytes,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1524u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&bnOps), bnOps.mem_size(),
+                    get_address(&alpha_), alpha_.mem_size(),
+                    get_address(&beta_), beta_.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&x), x.mem_size(),
+                    get_address(&zDesc), zDesc.mem_size(),
+                    get_address(&z), z.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&y), y.mem_size(),
+                    get_address(&bnScaleBiasMeanVarDesc), bnScaleBiasMeanVarDesc.mem_size(),
+                    get_address(&bnScale), bnScale.mem_size(),
+                    get_address(&bnBias), bnBias.mem_size(),
+                    get_address(&exponentialAverageFactor), exponentialAverageFactor.mem_size(),
+                    get_address(&resultRunningMean), resultRunningMean.mem_size(),
+                    get_address(&resultRunningVariance), resultRunningVariance.mem_size(),
+                    get_address(&epsilon), epsilon.mem_size(),
+                    get_address(&saveMean), saveMean.mem_size(),
+                    get_address(&saveInvVariance), saveInvVariance.mem_size(),
+                    get_address(&activationDesc), activationDesc.mem_size(),
+                    get_address(&workSpace), workSpace.mem_size(),
+                    get_address(&workSpaceSizeInBytes), workSpaceSizeInBytes.mem_size(),
+                    get_address(&reserveSpace), reserveSpace.mem_size(),
+                    get_address(&reserveSpaceSizeInBytes), reserveSpaceSizeInBytes.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -1140,19 +1403,39 @@ pub fn cudnnGetBatchNormalizationBackwardExWorkspaceSizeExe<T: CommChannel>(
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe {
-        cudnnGetBatchNormalizationBackwardExWorkspaceSize(
-            handle,
-            mode,
-            bnOps,
-            xDesc,
-            yDesc,
-            dyDesc,
-            dzDesc,
-            dxDesc,
-            dbnScaleBiasDesc,
-            activationDesc,
-            &mut sizeInBytes,
+    let result = {
+        // cudnnGetBatchNormalizationBackwardExWorkspaceSize(
+        //     handle,
+        //     mode,
+        //     bnOps,
+        //     xDesc,
+        //     yDesc,
+        //     dyDesc,
+        //     dzDesc,
+        //     dxDesc,
+        //     dbnScaleBiasDesc,
+        //     activationDesc,
+        //     &mut sizeInBytes,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1525u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&bnOps), bnOps.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&dyDesc), dyDesc.mem_size(),
+                    get_address(&dzDesc), dzDesc.mem_size(),
+                    get_address(&dxDesc), dxDesc.mem_size(),
+                    get_address(&dbnScaleBiasDesc), dbnScaleBiasDesc.mem_size(),
+                    get_address(&activationDesc), activationDesc.mem_size(),
+                    get_address(&mut sizeInBytes), sizeInBytes.mem_size(),
+                ]
+            )
         )
     };
     if let Err(e) = sizeInBytes.send(channel_sender) {
@@ -1313,38 +1596,77 @@ pub fn cudnnBatchNormalizationBackwardExExe<T: CommChannel>(
     let betaDataDiff_ = &betaDataDiff as *const f64;
     let alphaParamDiff_ = &alphaParamDiff as *const f64;
     let betaParamDiff_ = &betaParamDiff as *const f64;
-    let result = unsafe {
-        cudnnBatchNormalizationBackwardEx(
-            handle,
-            mode,
-            bnOps,
-            alphaDataDiff_ as *const c_void,
-            betaDataDiff_ as *const c_void,
-            alphaParamDiff_ as *const c_void,
-            betaParamDiff_ as *const c_void,
-            xDesc,
-            xData as *const c_void,
-            yDesc,
-            yData as *const c_void,
-            dyDesc,
-            dyData as *const c_void,
-            dzDesc,
-            dzData as *mut c_void,
-            dxDesc,
-            dxData as *mut c_void,
-            dbnScaleBiasDesc,
-            bnScaleData as *const c_void,
-            bnBiasData as *const c_void,
-            dBnScaleData as *mut c_void,
-            dBnBiasData as *mut c_void,
-            epsilon,
-            saveMean as *const c_void,
-            saveInvVariance as *const c_void,
-            activationDesc,
-            workSpace as *mut c_void,
-            workSpaceSizeInBytes,
-            reserveSpace as *mut c_void,
-            reserveSpaceSizeInBytes,
+    let result = {
+        // cudnnBatchNormalizationBackwardEx(
+        //     handle,
+        //     mode,
+        //     bnOps,
+        //     alphaDataDiff_ as *const c_void,
+        //     betaDataDiff_ as *const c_void,
+        //     alphaParamDiff_ as *const c_void,
+        //     betaParamDiff_ as *const c_void,
+        //     xDesc,
+        //     xData as *const c_void,
+        //     yDesc,
+        //     yData as *const c_void,
+        //     dyDesc,
+        //     dyData as *const c_void,
+        //     dzDesc,
+        //     dzData as *mut c_void,
+        //     dxDesc,
+        //     dxData as *mut c_void,
+        //     dbnScaleBiasDesc,
+        //     bnScaleData as *const c_void,
+        //     bnBiasData as *const c_void,
+        //     dBnScaleData as *mut c_void,
+        //     dBnBiasData as *mut c_void,
+        //     epsilon,
+        //     saveMean as *const c_void,
+        //     saveInvVariance as *const c_void,
+        //     activationDesc,
+        //     workSpace as *mut c_void,
+        //     workSpaceSizeInBytes,
+        //     reserveSpace as *mut c_void,
+        //     reserveSpaceSizeInBytes,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1526u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&bnOps), bnOps.mem_size(),
+                    get_address(&alphaDataDiff_), alphaDataDiff_.mem_size(),
+                    get_address(&betaDataDiff_), betaDataDiff_.mem_size(),
+                    get_address(&alphaParamDiff_), alphaParamDiff_.mem_size(),
+                    get_address(&betaParamDiff_), betaParamDiff_.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&xData), xData.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&yData), yData.mem_size(),
+                    get_address(&dyDesc), dyDesc.mem_size(),
+                    get_address(&dyData), dyData.mem_size(),
+                    get_address(&dzDesc), dzDesc.mem_size(),
+                    get_address(&dzData), dzData.mem_size(),
+                    get_address(&dxDesc), dxDesc.mem_size(),
+                    get_address(&dxData), dxData.mem_size(),
+                    get_address(&dbnScaleBiasDesc), dbnScaleBiasDesc.mem_size(),
+                    get_address(&bnScaleData), bnScaleData.mem_size(),
+                    get_address(&bnBiasData), bnBiasData.mem_size(),
+                    get_address(&dBnScaleData), dBnScaleData.mem_size(),
+                    get_address(&dBnBiasData), dBnBiasData.mem_size(),
+                    get_address(&epsilon), epsilon.mem_size(),
+                    get_address(&saveMean), saveMean.mem_size(),
+                    get_address(&saveInvVariance), saveInvVariance.mem_size(),
+                    get_address(&activationDesc), activationDesc.mem_size(),
+                    get_address(&workSpace), workSpace.mem_size(),
+                    get_address(&workSpaceSizeInBytes), workSpaceSizeInBytes.mem_size(),
+                    get_address(&reserveSpace), reserveSpace.mem_size(),
+                    get_address(&reserveSpaceSizeInBytes), reserveSpaceSizeInBytes.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -1422,16 +1744,33 @@ pub fn cudnnGetConvolutionBackwardDataAlgorithm_v7Exe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     perfResults.resize(requestedAlgoCount as usize, Default::default());
-    let result = unsafe {
-        cudnnGetConvolutionBackwardDataAlgorithm_v7(
-            handle,
-            wDesc,
-            dyDesc,
-            convDesc,
-            dxDesc,
-            requestedAlgoCount,
-            &mut returnedAlgoCount,
-            perfResults.as_mut_ptr(),
+    let result = {
+        // cudnnGetConvolutionBackwardDataAlgorithm_v7(
+        //     handle,
+        //     wDesc,
+        //     dyDesc,
+        //     convDesc,
+        //     dxDesc,
+        //     requestedAlgoCount,
+        //     &mut returnedAlgoCount,
+        //     perfResults.as_mut_ptr(),
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1527u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&wDesc), wDesc.mem_size(),
+                    get_address(&dyDesc), dyDesc.mem_size(),
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&dxDesc), dxDesc.mem_size(),
+                    get_address(&requestedAlgoCount), requestedAlgoCount.mem_size(),
+                    get_address(&mut returnedAlgoCount), returnedAlgoCount.mem_size(),
+                    get_address(&perfResults), perfResults.mem_size(),
+                ]
+            )
         )
     };
     match returnedAlgoCount.send(channel_sender) {
@@ -1531,21 +1870,43 @@ pub fn cudnnConvolutionBackwardDataExe<T: CommChannel>(
     }
     let alpha_ = &alpha as *const f64;
     let beta_ = &beta as *const f64;
-    let result = unsafe {
-        cudnnConvolutionBackwardData(
-            handle,
-            alpha_ as *const c_void,
-            wDesc,
-            w as *const c_void,
-            dyDesc,
-            dy as *const c_void,
-            convDesc,
-            algo,
-            workSpace as *mut c_void,
-            workSpaceSizeInBytes,
-            beta_ as *const c_void,
-            dxDesc,
-            dx as *mut c_void,
+    let result = {
+        // cudnnConvolutionBackwardData(
+        //     handle,
+        //     alpha_ as *const c_void,
+        //     wDesc,
+        //     w as *const c_void,
+        //     dyDesc,
+        //     dy as *const c_void,
+        //     convDesc,
+        //     algo,
+        //     workSpace as *mut c_void,
+        //     workSpaceSizeInBytes,
+        //     beta_ as *const c_void,
+        //     dxDesc,
+        //     dx as *mut c_void,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1528u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&alpha_), alpha_.mem_size(),
+                    get_address(&wDesc), wDesc.mem_size(),
+                    get_address(&w), w.mem_size(),
+                    get_address(&dyDesc), dyDesc.mem_size(),
+                    get_address(&dy), dy.mem_size(),
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&algo), algo.mem_size(),
+                    get_address(&workSpace), workSpace.mem_size(),
+                    get_address(&workSpaceSizeInBytes), workSpaceSizeInBytes.mem_size(),
+                    get_address(&beta_), beta_.mem_size(),
+                    get_address(&dxDesc), dxDesc.mem_size(),
+                    get_address(&dx), dx.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -1606,16 +1967,33 @@ pub fn cudnnGetConvolutionBackwardFilterAlgorithm_v7Exe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     perfResults.resize(requestedAlgoCount as usize, Default::default());
-    let result = unsafe {
-        cudnnGetConvolutionBackwardFilterAlgorithm_v7(
-            handle,
-            xDesc,
-            dyDesc,
-            convDesc,
-            dwDesc,
-            requestedAlgoCount,
-            &mut returnedAlgoCount,
-            perfResults.as_mut_ptr(),
+    let result = {
+        // cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+        //     handle,
+        //     xDesc,
+        //     dyDesc,
+        //     convDesc,
+        //     dwDesc,
+        //     requestedAlgoCount,
+        //     &mut returnedAlgoCount,
+        //     perfResults.as_mut_ptr(),
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1529u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&dyDesc), dyDesc.mem_size(),
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&dwDesc), dwDesc.mem_size(),
+                    get_address(&requestedAlgoCount), requestedAlgoCount.mem_size(),
+                    get_address(&mut returnedAlgoCount), returnedAlgoCount.mem_size(),
+                    get_address(&perfResults), perfResults.mem_size(),
+                ]
+            )
         )
     };
     if let Err(e) = returnedAlgoCount.send(channel_sender) {
@@ -1705,21 +2083,43 @@ pub fn cudnnConvolutionBackwardFilterExe<T: CommChannel>(
     }
     let alpha_ = &alpha as *const f64;
     let beta_ = &beta as *const f64;
-    let result = unsafe {
-        cudnnConvolutionBackwardFilter(
-            handle,
-            alpha_ as *const c_void,
-            xDesc,
-            x as *const c_void,
-            dyDesc,
-            dy as *const c_void,
-            convDesc,
-            algo,
-            workSpace as *mut c_void,
-            workSpaceSizeInBytes,
-            beta_ as *const c_void,
-            dwDesc,
-            dw as *mut c_void,
+    let result = {
+        // cudnnConvolutionBackwardFilter(
+        //     handle,
+        //     alpha_ as *const c_void,
+        //     xDesc,
+        //     x as *const c_void,
+        //     dyDesc,
+        //     dy as *const c_void,
+        //     convDesc,
+        //     algo,
+        //     workSpace as *mut c_void,
+        //     workSpaceSizeInBytes,
+        //     beta_ as *const c_void,
+        //     dwDesc,
+        //     dw as *mut c_void,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1530u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&alpha_), alpha_.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&x), x.mem_size(),
+                    get_address(&dyDesc), dyDesc.mem_size(),
+                    get_address(&dy), dy.mem_size(),
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&algo), algo.mem_size(),
+                    get_address(&workSpace), workSpace.mem_size(),
+                    get_address(&workSpaceSizeInBytes), workSpaceSizeInBytes.mem_size(),
+                    get_address(&beta_), beta_.mem_size(),
+                    get_address(&dwDesc), dwDesc.mem_size(),
+                    get_address(&dw), dw.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -1808,22 +2208,45 @@ pub fn cudnnBatchNormalizationForwardInferenceExe<T: CommChannel>(
     }
     let alpha_ = &alpha as *const f64;
     let beta_ = &beta as *const f64;
-    let result = unsafe {
-        cudnnBatchNormalizationForwardInference(
-            handle,
-            mode,
-            alpha_ as *const c_void,
-            beta_ as *const c_void,
-            xDesc,
-            x as *const c_void,
-            yDesc,
-            y as *mut c_void,
-            bnScaleBiasMeanVarDesc,
-            bnScale as *const c_void,
-            bnBias as *const c_void,
-            estimatedMean as *const c_void,
-            estimatedVariance as *const c_void,
-            epsilon,
+    let result = {
+        // cudnnBatchNormalizationForwardInference(
+        //     handle,
+        //     mode,
+        //     alpha_ as *const c_void,
+        //     beta_ as *const c_void,
+        //     xDesc,
+        //     x as *const c_void,
+        //     yDesc,
+        //     y as *mut c_void,
+        //     bnScaleBiasMeanVarDesc,
+        //     bnScale as *const c_void,
+        //     bnBias as *const c_void,
+        //     estimatedMean as *const c_void,
+        //     estimatedVariance as *const c_void,
+        //     epsilon,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1531u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&mode), mode.mem_size(),
+                    get_address(&alpha_), alpha_.mem_size(),
+                    get_address(&beta_), beta_.mem_size(),
+                    get_address(&xDesc), xDesc.mem_size(),
+                    get_address(&x), x.mem_size(),
+                    get_address(&yDesc), yDesc.mem_size(),
+                    get_address(&y), y.mem_size(),
+                    get_address(&bnScaleBiasMeanVarDesc), bnScaleBiasMeanVarDesc.mem_size(),
+                    get_address(&bnScale), bnScale.mem_size(),
+                    get_address(&bnBias), bnBias.mem_size(),
+                    get_address(&estimatedMean), estimatedMean.mem_size(),
+                    get_address(&estimatedVariance), estimatedVariance.mem_size(),
+                    get_address(&epsilon), epsilon.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -1870,13 +2293,27 @@ pub fn cudnnGetConvolutionNdForwardOutputDimExe<T: CommChannel> (
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut tensorOutputDim_ = vec![0; nbDims as usize];
-    let result = unsafe {
-        cudnnGetConvolutionNdForwardOutputDim(
-            convDesc,
-            inputTensorDesc,
-            filterDesc,
-            nbDims,
-            tensorOutputDim_.as_mut_ptr() as *mut c_int,
+    let result = {
+        // cudnnGetConvolutionNdForwardOutputDim(
+        //     convDesc,
+        //     inputTensorDesc,
+        //     filterDesc,
+        //     nbDims,
+        //     tensorOutputDim_.as_mut_ptr() as *mut c_int,
+        // )
+        cudnnStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                1533u64,
+                0u64,
+                vec![
+                    get_address(&convDesc), convDesc.mem_size(),
+                    get_address(&inputTensorDesc), inputTensorDesc.mem_size(),
+                    get_address(&filterDesc), filterDesc.mem_size(),
+                    get_address(&nbDims), nbDims.mem_size(),
+                    get_address(&mut tensorOutputDim_), tensorOutputDim_.mem_size(),
+                ]
+            )
         )
     };
     if let Err(e) = tensorOutputDim_.send(channel_sender) {
@@ -1901,7 +2338,17 @@ pub fn cudnnGetErrorStringExe<T: CommChannel>(
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe { cudnnGetErrorString(status) };
+    let result = {
+        // cudnnGetErrorString(status)
+        pos_process(
+            POS_CUDA_WS.lock().unwrap().get_ptr(),
+            1535u64,
+            0u64,
+            vec![
+                get_address(&status), status.mem_size(),
+            ]
+        ) as *const i8
+    };
     // transfer to Vec<u8>
     let result = unsafe { std::ffi::CStr::from_ptr(result).to_bytes().to_vec() };
     if let Err(e) = result.send(channel_sender) {

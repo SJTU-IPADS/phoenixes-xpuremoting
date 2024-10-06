@@ -222,6 +222,88 @@ lazy_static! {
             "cudnnConvolutionDescriptor_t".to_string(),
         ]
     };
+
+    pub static ref API_INDEX: std::collections::HashMap<&'static str, u64> = {
+        let mut map = std::collections::HashMap::new();
+        map.insert("cudaGetDevice", 0);
+        map.insert("cudaSetDevice", 1);
+        map.insert("cudaGetDeviceCount", 2);
+        map.insert("cudaGetLastError", 3);
+        map.insert("cudaPeekAtLastError", 4);
+        map.insert("cudaStreamSynchronize", 5);
+        map.insert("cudaMalloc", 6);
+        map.insert("cudaMemcpy", 7);
+        map.insert("cudaFree", 8);
+        map.insert("cudaStreamIsCapturing", 9);
+        map.insert("cudaGetDeviceProperties", 10);
+        map.insert("cudaMallocManaged", 11);
+        map.insert("cudaPointerGetAttributes", 12);
+        map.insert("cudaHostAlloc", 13);
+        map.insert("cudaFuncGetAttributes", 14);
+        map.insert("cudaDeviceGetStreamPriorityRange", 15);
+        map.insert("cudaMemsetAsync", 16);
+        map.insert("cudaGetErrorString", 17);
+        map.insert("cudaMemGetInfo", 18);
+        map.insert("__cudaRegisterFatBinary", 100);
+        map.insert("__cudaUnregisterFatBinary", 101);
+        map.insert("__cudaRegisterFunction", 102);
+        map.insert("__cudaRegisterVar", 103);
+        map.insert("cudaLaunchKernel", 200);
+        map.insert("cuDevicePrimaryCtxGetState", 300);
+        map.insert("cuGetProcAddress", 500);
+        map.insert("cuDriverGetVersion", 501);
+        map.insert("cuInit", 502);
+        map.insert("cuGetExportTable", 503);
+        map.insert("nvmlInit_v2", 1000);
+        map.insert("nvmlDeviceGetCount_v2", 1001);
+        map.insert("nvmlInitWithFlags", 1002);
+        map.insert("cudnnCreate", 1500);
+        map.insert("cudnnCreateTensorDescriptor", 1501);
+        map.insert("cudnnSetTensor4dDescriptor", 1502);
+        map.insert("cudnnCreateActivationDescriptor", 1503);
+        map.insert("cudnnSetActivationDescriptor", 1504);
+        map.insert("cudnnActivationForward", 1505);
+        map.insert("cudnnDestroy", 1506);
+        map.insert("cudnnSetConvolution2dDescriptor", 1507);
+        map.insert("cudnnSetStream", 1508);
+        map.insert("cudnnSetTensorNdDescriptor", 1509);
+        map.insert("cudnnDestroyTensorDescriptor", 1510);
+        map.insert("cudnnCreateFilterDescriptor", 1511);
+        map.insert("cudnnDestroyFilterDescriptor", 1512);
+        map.insert("cudnnSetFilterNdDescriptor", 1513);
+        map.insert("cudnnCreateConvolutionDescriptor", 1514);
+        map.insert("cudnnDestroyConvolutionDescriptor", 1515);
+        map.insert("cudnnSetConvolutionNdDescriptor", 1516);
+        map.insert("cudnnSetConvolutionGroupCount", 1517);
+        map.insert("cudnnSetConvolutionMathType", 1518);
+        map.insert("cudnnSetConvolutionReorderType", 1519);
+        map.insert("cudnnGetConvolutionForwardAlgorithm_v7", 1520);
+        map.insert("cudnnConvolutionForward", 1521);
+        map.insert("cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize", 1522);
+        map.insert("cudnnGetBatchNormalizationTrainingExReserveSpaceSize", 1523);
+        map.insert("cudnnBatchNormalizationForwardTrainingEx", 1524);
+        map.insert("cudnnGetBatchNormalizationBackwardExWorkspaceSize", 1525);
+        map.insert("cudnnBatchNormalizationBackwardEx", 1526);
+        map.insert("cudnnGetConvolutionBackwardDataAlgorithm_v7", 1527);
+        map.insert("cudnnConvolutionBackwardData", 1528);
+        map.insert("cudnnGetConvolutionBackwardFilterAlgorithm_v7", 1529);
+        map.insert("cudnnConvolutionBackwardFilter", 1530);
+        map.insert("cudnnBatchNormalizationForwardInference", 1531);
+        map.insert("cudnnSetFilter4dDescriptor", 1532);
+        map.insert("cudnnGetConvolutionNdForwardOutputDim", 1533);
+        map.insert("cudnnGetConvolutionForwardWorkspaceSize", 1534);
+        map.insert("cudnnGetErrorString", 1535);
+        map.insert("cublasCreate_v2", 2000);
+        map.insert("cublasDestroy_v2", 2001);
+        map.insert("cublasSetStream_v2", 2002);
+        map.insert("cublasSetMathMode", 2003);
+        map.insert("cublasSgemm_v2", 2004);
+        map.insert("cublasSgemmStridedBatched", 2005);
+        map.insert("cublasGetMathMode", 2006);
+        map.insert("cublasGemmEx", 2007);
+        map.insert("cublasGemmStridedBatchedEx", 2008);
+        map
+    };
 }
 
 pub fn get_success_status(ty: &str) -> &str {
@@ -232,5 +314,12 @@ pub fn get_success_status(ty: &str) -> &str {
         "cudnnStatus_t" => "CUDNN_STATUS_SUCCESS",
         "nvmlReturn_t" => "NVML_SUCCESS",
         &_ => todo!(),
+    }
+}
+
+pub fn get_api_index(api: &str) -> u64 {
+    match API_INDEX.get(api) {
+        Some(id) => *id,
+        _ => panic!("invalid API {}", api),
     }
 }

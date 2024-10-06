@@ -41,6 +41,13 @@ pub fn find_cuda() -> Vec<PathBuf> {
 }
 
 fn main() {
+    cc::Build::new()
+        .cpp(true)
+        .file("../pos/pos.cpp")
+        .compile("pos");
+    println!("cargo:rerun-if-changed=../pos/pos.h");
+    println!("cargo:rerun-if-changed=../pos/pos.cpp");
+
     for path in find_cuda() {
         println!("cargo:rustc-link-search=native={}", path.display());
     }

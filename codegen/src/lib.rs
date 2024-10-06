@@ -7,7 +7,7 @@ use syn::{parse_macro_input, parse_str, Ident, Type};
 mod utils;
 use utils::{
     Element, ElementMode, ExeParser, HijackParser, UnimplementParser,
-    get_success_status
+    get_success_status, get_api_index,
 };
 #[cfg(feature = "shadow_desc")]
 use utils::SHADOW_DESC_TYPES;
@@ -83,6 +83,22 @@ pub fn transportable_derive(input: TokenStream) -> TokenStream {
                     true => Ok(()),
                     false => Err(CommChannelError::IoError),
                 }
+            }
+        }
+    };
+
+    gen.into()
+}
+
+#[proc_macro_derive(MemorySize)]
+pub fn memorysize_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as syn::DeriveInput);
+    let name = &input.ident;
+
+    let gen = quote! {
+        impl MemorySize for #name {
+            fn mem_size(&self) -> usize {
+                std::mem::size_of::<Self>()
             }
         }
     };
@@ -573,49 +589,29 @@ pub fn gen_exe(input: TokenStream) -> TokenStream {
             quote! { #name.recv(channel_receiver).unwrap(); }
         });
 
-    #[cfg(feature = "shadow_desc")]
-    let (mut is_destroy, mut resource_str) = (false, String::new());
-    #[cfg(feature = "shadow_desc")]
-    {
-        let func_name = quote!{#func}.to_string();
-        let parts: Vec<_> = func_name.split("Destroy").collect();
-        if parts.len() == 2 {
-            (is_destroy, resource_str) = (true, parts[1].to_string());
-        }
-    }
-
-    // get resource when SR
-    #[cfg(feature = "shadow_desc")]
-    let get_resource_statements = params
-        .iter()
-        .filter(|param| {
-            let ty = &param.ty;
-            let ty_str = quote!{#ty}.to_string();
-            SHADOW_DESC_TYPES.contains(&ty_str)
-        })
-        .map(|param| {
-            let name = &param.name;
-            let ty = &param.ty;
-            let ty_str = quote!{#ty}.to_string();
-            if is_destroy && ty_str.contains(&resource_str) {
-                quote! { let mut #name = remove_resource(#name as usize); }
-            } else {
-                quote! { let mut #name = get_resource(#name as usize); }
-            }
-        });
-
     // execution statement
     let result_name = &result.name;
     let exec_statement = {
+        let api_index: u64 = get_api_index(&quote!(#func).to_string());
         let result_ty = &result.ty;
         let params = params.iter().map(|param| {
             let name = &param.name;
-            match param.mode {
-                ElementMode::Input => quote! { #name },
-                ElementMode::Output => quote! { &mut #name },
+            quote! {
+                get_address(&#name) as usize,
+                #name.mem_size() as usize,
             }
         });
-        quote! { let #result_name: #result_ty = unsafe { #func(#(#params),*) }; }
+        let params = quote! { vec![ #(#params)* ] };
+        quote! {
+            let #result_name: #result_ty = {
+                #result_ty::from(pos_process(
+                    POS_CUDA_WS.lock().unwrap().get_ptr(),
+                    #api_index,
+                    0u64,
+                    #params
+                ))
+            };
+        }
     };
 
     // send result
@@ -627,24 +623,6 @@ pub fn gen_exe(input: TokenStream) -> TokenStream {
             quote! { #name.send(channel_sender).unwrap(); }
         });
 
-    #[cfg(feature = "shadow_desc")]
-    let gen_fn = quote! {
-        pub fn #func_exe<T: CommChannel>(channel_sender: &mut T, channel_receiver: &mut T) {
-            info!("[{}:{}] {}", std::file!(), std::line!(), stringify!(#func));
-            #( #def_statements )*
-            #( #recv_statements )*
-            #( #get_resource_statements )*
-            match channel_receiver.recv_ts() {
-                Ok(()) => {}
-                Err(e) => panic!("failed to receive timestamp: {:?}", e)
-            }
-            #exec_statement
-            #( #send_statements )*
-            #result_name.send(channel_sender).unwrap();
-            channel_sender.flush_out().unwrap();
-        }
-    };
-    #[cfg(not(feature = "shadow_desc"))]
     let gen_fn = quote! {
         pub fn #func_exe<T: CommChannel>(channel_sender: &mut T, channel_receiver: &mut T) {
             info!("[{}:{}] {}", std::file!(), std::line!(), stringify!(#func));
@@ -658,6 +636,7 @@ pub fn gen_exe(input: TokenStream) -> TokenStream {
             #exec_statement
             #( #send_statements )*
             #result_name.send(channel_sender).unwrap();
+            channel_sender.flush_out().unwrap();
         }
     };
 
@@ -687,51 +666,29 @@ pub fn gen_exe_async(input: TokenStream) -> TokenStream {
             quote! { #name.recv(channel_receiver).unwrap(); }
         });
 
-    #[cfg(feature = "shadow_desc")]
-    let (mut is_destroy, mut resource_str) = (false, String::new());
-    #[cfg(feature = "shadow_desc")]
-    {
-        let func_name = quote!{#func}.to_string();
-        let parts: Vec<_> = func_name.split("Destroy").collect();
-        if parts.len() == 2 {
-            (is_destroy, resource_str) = (true, parts[1].to_string());
-        }
-    }
-
-    // get resource when SR
-    #[cfg(feature = "shadow_desc")]
-    let get_resource_statements = params
-        .iter()
-        .filter(|param| {
-            let ty = &param.ty;
-            let ty_str = quote!{#ty}.to_string();
-            SHADOW_DESC_TYPES.contains(&ty_str)
-        })
-        .map(|param| {
-            let name = &param.name;
-            let ty = &param.ty;
-            let ty_str = quote!{#ty}.to_string();
-            if is_destroy && ty_str.contains(&resource_str) {
-                quote! { let mut #name = remove_resource(#name as usize); }
-            } else {
-                quote! { let mut #name = get_resource(#name as usize); }
-            }
-        });
-    #[cfg(not(feature = "shadow_desc"))]
-    let get_resource_statements = params.iter().filter(|_| false).map(|_| quote! {;});
-
     // execution statement
     let result_name = &result.name;
     let exec_statement = {
+        let api_index: u64 = get_api_index(&quote!(#func).to_string());
         let result_ty = &result.ty;
         let params = params.iter().map(|param| {
             let name = &param.name;
-            match param.mode {
-                ElementMode::Input => quote! { #name },
-                ElementMode::Output => quote! { &mut #name },
+            quote! {
+                get_address(&#name) as usize,
+                #name.mem_size() as usize,
             }
         });
-        quote! { let #result_name: #result_ty = unsafe { #func(#(#params),*) }; }
+        let params = quote! { vec![ #(#params)* ] };
+        quote! {
+            let #result_name: #result_ty = {
+                #result_ty::from(pos_process(
+                        POS_CUDA_WS.lock().unwrap().get_ptr(),
+                        #api_index,
+                        0u64,
+                        #params
+                    ))
+            };
+        }
     };
 
     assert!(params.iter().filter(|param| param.mode == ElementMode::Output).count() == 0);
@@ -740,7 +697,6 @@ pub fn gen_exe_async(input: TokenStream) -> TokenStream {
             info!("[{}:{}] {}", std::file!(), std::line!(), stringify!(#func));
             #( #def_statements )*
             #( #recv_statements )*
-            #( #get_resource_statements )*
             match channel_receiver.recv_ts() {
                 Ok(()) => {}
                 Err(e) => panic!("failed to receive timestamp: {:?}", e)

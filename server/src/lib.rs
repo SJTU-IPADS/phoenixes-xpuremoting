@@ -22,7 +22,7 @@ use network::ringbufferchannel::EmulatorChannel;
 use network::{
     ringbufferchannel::{RDMAChannel, SHMChannel},
     type_impl::MemPtr,
-    Channel, CommChannel, CommChannelError, Transportable, CONFIG,
+    Channel, CommChannel, CommChannelError, Transportable, MemorySize, CONFIG,
 };
 
 #[allow(unused_imports)]
@@ -30,9 +30,24 @@ use log::{debug, error, info, log_enabled, Level};
 
 extern crate lazy_static;
 use lazy_static::lazy_static;
-use std::boxed::Box;
+use std::{boxed::Box, ptr};
 use std::collections::HashMap;
 use std::sync::Mutex;
+
+extern {
+    fn new_pos_workspace(argc: i32, argv: *const *const i8) -> *mut std::ffi::c_void;
+    fn pos_workspace_init(workspace: *mut std::ffi::c_void);
+    fn call_pos_process(workspace: *mut std::ffi::c_void, api_id: u64, uuid: u64, param_desps: *mut std::ffi::c_void, param_num: i32) -> i32;
+}
+
+pub struct POSWorkspace(*mut std::ffi::c_void);
+unsafe impl Send for POSWorkspace {}
+unsafe impl Sync for POSWorkspace {}
+impl POSWorkspace {
+    pub fn get_ptr(&self) -> *mut std::ffi::c_void {
+        self.0
+    }
+}
 
 lazy_static! {
     // client_address -> module
@@ -43,6 +58,30 @@ lazy_static! {
     static ref VARIABLES: Mutex<HashMap<MemPtr, CUdeviceptr>> = Mutex::new(HashMap::new());
 
     static ref RESOURCES: Mutex<HashMap<usize, usize>> = Mutex::new(HashMap::new());
+
+    pub static ref POS_CUDA_WS: Mutex<POSWorkspace> = {
+        let args: Vec<String> = std::env::args().collect();
+        let argc = args.len() as i32;
+        let argv: Vec<*const i8> = args.iter()
+            .map(|arg| std::ffi::CString::new(arg.as_str()).unwrap().into_raw() as *const i8)
+            .collect();
+        let pos = unsafe { new_pos_workspace(argc, argv.as_ptr()) };
+        unsafe { pos_workspace_init(pos) }
+        Mutex::new(POSWorkspace(pos))
+    };
+}
+
+// pub fn get_address<T>(value: &mut T) -> usize {
+//     let ptr: *mut T = value as *mut T;
+//     ptr as usize
+// }
+pub fn get_address<T>(value: &T) -> usize {
+    let ptr: *const T = ptr::addr_of!(*value);
+    ptr as usize
+}
+
+pub fn pos_process(workspace: *mut std::ffi::c_void, api_id: u64, uuid: u64, mut param_desps: Vec<usize>) -> i32 {
+    unsafe { call_pos_process(workspace, api_id, uuid, param_desps.as_mut_ptr() as *mut std::ffi::c_void, (param_desps.len() / 2) as i32) }
 }
 
 fn add_module(client_address: MemPtr, module: CUmodule) {
@@ -181,6 +220,20 @@ pub fn launch_server() {
         );
         panic!();
     }
+
+    // // Init POS_CUDA_WS
+    // let args: Vec<String> = std::env::args().collect();
+    // let argc = args.len() as i32;
+    // let c_args: Vec<std::ffi::CString> = args.iter()
+    //     .map(|arg| std::ffi::CString::new(arg.as_str()).unwrap())
+    //     .collect();
+    // let argv: Vec<*const i8> = c_args.iter()
+    //     .map(|arg| arg.as_ptr())
+    //     .collect();
+    // // let workspace = ffi::new_pos_workspace(argc, argv.as_ptr());
+    // // let workspace = ffi::POSWorkspace::new(argc, argv.as_ptr()).within_unique_ptr();
+    // let workspace = ffi::POSWorkspace::new(autocxx::c_int(argc)).within_unique_ptr();
+    // *POS_CUDA_WS.lock().unwrap() = Some(workspace);
 
     loop {
         if let Ok(proc_id) = receive_request(&mut channel_receiver) {

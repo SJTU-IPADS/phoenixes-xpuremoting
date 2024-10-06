@@ -42,12 +42,25 @@ pub fn cudaMemcpyExe<T: CommChannel>(channel_sender: &mut T, channel_receiver: &
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
 
-    let result = unsafe {
-        cudaMemcpy(
-            dst as *mut std::os::raw::c_void,
-            src as *const std::os::raw::c_void,
-            count as size_t,
-            kind,
+    let result = {
+        // cudaMemcpy(
+        //     dst as *mut std::os::raw::c_void,
+        //     src as *const std::os::raw::c_void,
+        //     count as size_t,
+        //     kind,
+        // )
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                7u64,
+                0u64,
+                vec![
+                    get_address(&dst), dst.mem_size(),
+                    get_address(&src), src.mem_size(),
+                    get_address(&count), count.mem_size(),
+                    get_address(&kind), kind.mem_size(),
+                ]
+            )
         )
     };
 
@@ -82,10 +95,21 @@ pub fn cudaMallocExe<T: CommChannel>(channel_sender: &mut T, channel_receiver: &
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result: cudaError_t = unsafe {
-        cudaMalloc(
-            &mut param1 as *mut *mut ::std::os::raw::c_void,
-            param2 as size_t,
+    let result: cudaError_t = {
+        // cudaMalloc(
+        //     &mut param1 as *mut *mut ::std::os::raw::c_void,
+        //     param2 as size_t,
+        // )
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                6u64,
+                0u64,
+                vec![
+                    get_address(&mut param1), param1.mem_size(),
+                    get_address(&param2), param2.mem_size(),
+                ]
+            )
         )
     };
     let param1 = param1 as MemPtr;
@@ -102,7 +126,19 @@ pub fn cudaFreeExe<T: CommChannel>(channel_sender: &mut T, channel_receiver: &mu
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result: cudaError_t = unsafe { cudaFree(param1 as *mut ::std::os::raw::c_void) };
+    let result: cudaError_t = {
+        // cudaFree(param1 as *mut ::std::os::raw::c_void)
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                8u64,
+                0u64,
+                vec![
+                    get_address(&param1), param1.mem_size(),
+                ]
+            )
+        )
+    };
 
     #[cfg(not(feature = "async_api"))]
     {
@@ -143,19 +179,39 @@ pub fn cudaLaunchKernelExe<T: CommChannel>(channel_sender: &mut T, channel_recei
 
     let device_func = get_function(func).unwrap();
 
-    let result = unsafe {
-        cudasys::cuda::cuLaunchKernel(
-            device_func,
-            gridDim.x,
-            gridDim.y,
-            gridDim.z,
-            blockDim.x,
-            blockDim.y,
-            blockDim.z,
-            sharedMem as std::os::raw::c_uint,
-            stream as cudasys::cuda::CUstream,
-            args.as_mut_ptr() as *mut *mut std::os::raw::c_void,
-            std::ptr::null_mut(),
+    let result = {
+        // cudasys::cuda::cuLaunchKernel(
+        //     device_func,
+        //     gridDim.x,
+        //     gridDim.y,
+        //     gridDim.z,
+        //     blockDim.x,
+        //     blockDim.y,
+        //     blockDim.z,
+        //     sharedMem as std::os::raw::c_uint,
+        //     stream as cudasys::cuda::CUstream,
+        //     args.as_mut_ptr() as *mut *mut std::os::raw::c_void,
+        //     std::ptr::null_mut(),
+        // )
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                200u64,
+                0u64,
+                vec![
+                    get_address(&device_func), device_func.mem_size(),
+                    get_address(&gridDim.x), gridDim.x.mem_size(),
+                    get_address(&gridDim.y), gridDim.y.mem_size(),
+                    get_address(&gridDim.z), gridDim.z.mem_size(),
+                    get_address(&blockDim.x), blockDim.x.mem_size(),
+                    get_address(&blockDim.y), blockDim.y.mem_size(),
+                    get_address(&blockDim.z), blockDim.z.mem_size(),
+                    get_address(&sharedMem), sharedMem.mem_size(),
+                    get_address(&stream), stream.mem_size(),
+                    get_address(&args), args.mem_size(),
+                    0 as usize, 8 as usize,
+                ]
+            )
         )
     };
 
@@ -187,7 +243,21 @@ pub fn cudaMallocManagedExe<T: CommChannel>(channel_sender: &mut T, channel_rece
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut devPtr: *mut c_void = null_mut();
-    let result = unsafe { cudaMallocManaged(&mut devPtr, size, flags) };
+    let result = {
+        // cudaMallocManaged(&mut devPtr, size, flags)
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                11u64,
+                0u64,
+                vec![
+                    get_address(&mut devPtr), devPtr.mem_size(),
+                    get_address(&size), size.mem_size(),
+                    get_address(&flags), flags.mem_size(),
+                ]
+            )
+        )
+    };
     let devPtr = devPtr as MemPtr;
     match devPtr.send(channel_sender) {
         Ok(()) => {}
@@ -220,10 +290,21 @@ pub fn cudaPointerGetAttributesExe<T: CommChannel>(
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe {
-        cudaPointerGetAttributes(
-            &mut attributes as *mut cudaPointerAttributes,
-            ptr as *const std::os::raw::c_void,
+    let result = {
+        // cudaPointerGetAttributes(
+        //     &mut attributes as *mut cudaPointerAttributes,
+        //     ptr as *const std::os::raw::c_void,
+        // )
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                12u64,
+                0u64,
+                vec![
+                    get_address(&mut attributes), attributes.mem_size(),
+                    get_address(&ptr), ptr.mem_size(),
+                ]
+            )
         )
     };
     attributes.send(channel_sender).unwrap();
@@ -246,7 +327,21 @@ pub fn cudaHostAllocExe<T: CommChannel>(channel_sender: &mut T, channel_receiver
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe { cudaHostAlloc(&mut pHost, size, flags) };
+    let result = {
+        // cudaHostAlloc(&mut pHost, size, flags)
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                13u64,
+                0u64,
+                vec![
+                    get_address(&mut pHost), pHost.mem_size(),
+                    get_address(&size), size.mem_size(),
+                    get_address(&flags), flags.mem_size(),
+                ]
+            )
+        )
+    };
     // send back pHost as MemPtr
     let pHost_ = pHost as MemPtr;
     if let Err(e) = pHost_.send(channel_sender) {
@@ -267,10 +362,21 @@ pub fn cudaFuncGetAttributesExe<T: CommChannel>(channel_sender: &mut T, channel_
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe {
-        cudaFuncGetAttributes(
-            &mut attributes as *mut cudaFuncAttributes,
-            func as *const std::os::raw::c_void,
+    let result = {
+        // cudaFuncGetAttributes(
+        //     &mut attributes as *mut cudaFuncAttributes,
+        //     func as *const std::os::raw::c_void,
+        // )
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                14u64,
+                0u64,
+                vec![
+                    get_address(&mut attributes), attributes.mem_size(),
+                    get_address(&func), func.mem_size(),
+                ]
+            )
         )
     };
     attributes.send(channel_sender).unwrap();
@@ -292,7 +398,22 @@ pub fn cudaMemsetAsyncExe<T: CommChannel>(channel_sender: &mut T, channel_receiv
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe { cudaMemsetAsync(devPtr as *mut std::os::raw::c_void, value, count, stream) };
+    let result = {
+        // cudaMemsetAsync(devPtr as *mut std::os::raw::c_void, value, count, stream)
+        cudaError_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                16u64,
+                0u64,
+                vec![
+                    get_address(&devPtr), devPtr.mem_size(),
+                    get_address(&value), value.mem_size(),
+                    get_address(&count), count.mem_size(),
+                    get_address(&stream), stream.mem_size(),
+                ]
+            )
+        )
+    };
     #[cfg(not(feature = "async_api"))]
     {
         result.send(channel_sender).unwrap();
@@ -308,7 +429,20 @@ pub fn cudaGetErrorStringExe<T: CommChannel>(channel_sender: &mut T, channel_rec
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe { cudaGetErrorString(error) };
+    let result = {
+        // cudaGetErrorString(error)
+        // [POS_TODO] cudaGetErrorString return a *const i8
+        (
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                17u64,
+                0u64,
+                vec![
+                    get_address(&error), error.mem_size(),
+                ]
+            )
+        ) as *const i8
+    };
     let result = unsafe { std::ffi::CStr::from_ptr(result).to_bytes().to_vec() };
     if let Err(e) = result.send(channel_sender) {
         error!("Error sending result: {:?}", e);

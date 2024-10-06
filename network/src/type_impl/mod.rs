@@ -1,4 +1,4 @@
-use crate::{CommChannel, CommChannelError, RawMemory, RawMemoryMut, Transportable};
+use crate::{CommChannel, CommChannelError, RawMemory, RawMemoryMut, Transportable, MemorySize};
 
 macro_rules! impl_transportable {
     ($($t:ty),*) => {
@@ -29,7 +29,12 @@ macro_rules! impl_transportable {
                         false => Err(CommChannelError::IoError),
                     }
                 }
+            }
 
+            impl MemorySize for $t {
+                fn mem_size(&self) -> usize {
+                    std::mem::size_of::<Self>()
+                }
             }
         )*
     };
@@ -68,6 +73,7 @@ impl<S> Transportable for [S] {
             false => Err(CommChannelError::IoError),
         }
     }
+
     fn send<T: CommChannel>(&self, channel: &mut T) -> Result<(), CommChannelError> {
         let len = self.len() * std::mem::size_of::<S>();
         let memory = RawMemory::from_ptr(self.as_ptr() as *const u8, len);
@@ -90,6 +96,33 @@ impl<S> Transportable for [S] {
 
 }
 
+impl MemorySize for *mut std::ffi::c_void {
+    fn mem_size(&self) -> usize {
+        std::mem::size_of::<usize>()
+    }
+}
+impl MemorySize for *const std::ffi::c_void {
+    fn mem_size(&self) -> usize {
+        std::mem::size_of::<usize>()
+    }
+}
+impl MemorySize for *const f32 {
+    fn mem_size(&self) -> usize {
+        std::mem::size_of::<usize>()
+    }
+}
+impl MemorySize for *const f64 {
+    fn mem_size(&self) -> usize {
+        std::mem::size_of::<usize>()
+    }
+}
+
+impl<S> MemorySize for [S] {
+    fn mem_size(&self) -> usize {
+        self.len() * std::mem::size_of::<S>()        
+    }
+}
+
 impl<S> Transportable for Vec<S>
 where
     S: Default + Clone,
@@ -99,6 +132,7 @@ where
         len.emulate_send(channel)?;
         self.as_slice().emulate_send(channel)
     }
+
     fn send<T: CommChannel>(&self, channel: &mut T) -> Result<(), CommChannelError> {
         let len: usize = self.len();
         len.send(channel)?;
@@ -112,6 +146,14 @@ where
         self.as_mut_slice().recv(channel)
     }
 
+}
+
+impl<S> MemorySize for Vec<S>
+where S: Default + Clone
+{
+    fn mem_size(&self) -> usize {
+        self.len() * std::mem::size_of::<S>()
+    }
 }
 
 #[cfg(test)]

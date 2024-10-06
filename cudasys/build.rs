@@ -84,7 +84,7 @@ fn decorate(file_path: PathBuf) {
             // #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
             // -> #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Default, FromPrimitive, codegen::Transportable)]
             let mut prev = cache.pop_front().unwrap();
-            prev = prev.replace(")]", ", Default, FromPrimitive, codegen::Transportable)]");
+            prev = prev.replace(")]", ", Default, FromPrimitive, codegen::Transportable, codegen::MemorySize)]");
             emit(&prev);
             emit(&line);
             // #[default]
@@ -95,7 +95,7 @@ fn decorate(file_path: PathBuf) {
             // #[derive(Debug, Default, Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq)]
             // -> #[derive(Debug, Default, Copy, Clone, Hash, PartialOrd, Ord, PartialEq, Eq, codegen::Transportable)]
             let mut prev = cache.pop_front().unwrap();
-            prev = prev.replace(")]", ", codegen::Transportable)]");
+            prev = prev.replace(")]", ", codegen::Transportable, codegen::MemorySize)]");
             // if not contains `Default`
             // if !prev.contains("Default") {
             //     prev = prev.replace(")]", ", codegen::ZeroDefault)]");

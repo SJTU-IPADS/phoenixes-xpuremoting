@@ -217,3 +217,7 @@ pub trait Transportable {
 
     fn recv<T: CommChannel>(&mut self, channel: &mut T) -> Result<(), CommChannelError>;
 }
+
+pub trait MemorySize {
+    fn mem_size(&self) -> usize;
+}

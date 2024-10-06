@@ -12,7 +12,7 @@ pub use num::FromPrimitive;
 extern crate num_derive;
 
 extern crate network;
-use network::{RawMemory, RawMemoryMut, CommChannel, CommChannelError, Transportable};
+use network::{RawMemory, RawMemoryMut, CommChannel, CommChannelError, Transportable, MemorySize};
 extern crate codegen;
 
 // The type definitions extarcted from the bindings.

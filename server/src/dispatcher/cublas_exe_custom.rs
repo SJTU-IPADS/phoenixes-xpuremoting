@@ -14,7 +14,19 @@ pub fn cublasCreate_v2Exe<T: CommChannel>(channel_sender: &mut T, channel_receiv
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
     let mut handle: cublasHandle_t = Default::default();
-    let result = unsafe { cublasCreate_v2(&mut handle) };
+    let result = {
+        // cublasCreate_v2(&mut handle)
+        cublasStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                2000u64,
+                0u64,
+                vec![
+                    get_address(&mut handle), handle.mem_size(),
+                ]
+            )
+        )
+    };
 
     handle.send(channel_sender).unwrap();
     result.send(channel_sender).unwrap();
@@ -83,22 +95,45 @@ pub fn cublasSgemm_v2Exe<T: CommChannel>(channel_sender: &mut T, channel_receive
         Ok(()) => {}
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
-    let result = unsafe {
-        cublasSgemm_v2(
-            handle,
-            transa,
-            transb,
-            m,
-            n,
-            k,
-            &alpha_,
-            A as *const f32,
-            lda,
-            B as *const f32,
-            ldb,
-            &beta_,
-            C as *mut f32,
-            ldc,
+    let result = {
+        // cublasSgemm_v2(
+        //     handle,
+        //     transa,
+        //     transb,
+        //     m,
+        //     n,
+        //     k,
+        //     &alpha_,
+        //     A as *const f32,
+        //     lda,
+        //     B as *const f32,
+        //     ldb,
+        //     &beta_,
+        //     C as *mut f32,
+        //     ldc,
+        // )
+        cublasStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                2004u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&transa), transa.mem_size(),
+                    get_address(&transb), transb.mem_size(),
+                    get_address(&m), m.mem_size(),
+                    get_address(&n), n.mem_size(),
+                    get_address(&k), k.mem_size(),
+                    get_address(&&alpha_), (&alpha_).mem_size(),
+                    get_address(&A), A.mem_size(),
+                    get_address(&lda), lda.mem_size(),
+                    get_address(&B), B.mem_size(),
+                    get_address(&ldb), ldb.mem_size(),
+                    get_address(&&beta_), (&beta_).mem_size(),
+                    get_address(&C), C.mem_size(),
+                    get_address(&ldc), ldc.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
@@ -197,12 +232,39 @@ pub fn cublasSgemmStridedBatchedExe<T: CommChannel>(
         Err(e) => panic!("failed to receive timestamp: {:?}", e),
     }
 
-    let result = unsafe {
-        cublasSgemmStridedBatched(
-            handle, transa, transb, m, n, k, 
-            &alpha_, A as *const f32, lda, strideA, B as *const f32, ldb, strideB, 
-            &beta_, C as *mut f32, ldc, strideC, batchCount
-        ) 
+    let result = {
+        // cublasSgemmStridedBatched(
+        //     handle, transa, transb, m, n, k, 
+        //     &alpha_, A as *const f32, lda, strideA, B as *const f32, ldb, strideB, 
+        //     &beta_, C as *mut f32, ldc, strideC, batchCount
+        // ) 
+        cublasStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                2005u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&transa), transa.mem_size(),
+                    get_address(&transb), transb.mem_size(),
+                    get_address(&m), m.mem_size(),
+                    get_address(&n), n.mem_size(),
+                    get_address(&k), k.mem_size(),
+                    get_address(&&alpha_), (&alpha_).mem_size(),
+                    get_address(&A), A.mem_size(),
+                    get_address(&lda), lda.mem_size(),
+                    get_address(&strideA), strideA.mem_size(),
+                    get_address(&B), B.mem_size(),
+                    get_address(&ldb), ldb.mem_size(),
+                    get_address(&strideB), strideB.mem_size(),
+                    get_address(&&beta_), (&beta_).mem_size(),
+                    get_address(&C), C.mem_size(),
+                    get_address(&ldc), ldc.mem_size(),
+                    get_address(&strideC), strideC.mem_size(),
+                    get_address(&batchCount), batchCount.mem_size(),
+                ]
+            )
+        )
     };
     #[cfg(not(feature = "async_api"))]
     {
@@ -296,11 +358,39 @@ pub fn cublasGemmExExe<T: CommChannel>(channel_sender: &mut T, channel_receiver:
     // convert c_float to *const c_void
     let alpha = &alpha as *const c_float;
     let beta = &beta as *const c_float;
-    let result = unsafe {
-        cublasGemmEx(handle, transa, transb, m, n, k, 
-            alpha as *const c_void, A as *const c_void, Atype, lda,
-            B as *const c_void, Btype, ldb, beta as *const c_void,
-            C as *mut c_void, Ctype, ldc, computeType, algo)
+    let result = {
+        // cublasGemmEx(handle, transa, transb, m, n, k, 
+        //     alpha as *const c_void, A as *const c_void, Atype, lda,
+        //     B as *const c_void, Btype, ldb, beta as *const c_void,
+        //     C as *mut c_void, Ctype, ldc, computeType, algo)
+        cublasStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                2007u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&transa), transa.mem_size(),
+                    get_address(&transb), transb.mem_size(),
+                    get_address(&m), m.mem_size(),
+                    get_address(&n), n.mem_size(),
+                    get_address(&k), k.mem_size(),
+                    get_address(&alpha), alpha.mem_size(),
+                    get_address(&A), A.mem_size(),
+                    get_address(&Atype), Atype.mem_size(),
+                    get_address(&lda), lda.mem_size(),
+                    get_address(&B), B.mem_size(),
+                    get_address(&Btype), Btype.mem_size(),
+                    get_address(&ldb), ldb.mem_size(),
+                    get_address(&beta), beta.mem_size(),
+                    get_address(&C), C.mem_size(),
+                    get_address(&Ctype), Ctype.mem_size(),
+                    get_address(&ldc), ldc.mem_size(),
+                    get_address(&computeType), computeType.mem_size(),
+                    get_address(&algo), algo.mem_size(),
+                ]
+            )
+        )
     };
     #[cfg(not(feature = "async_api"))]
     {
@@ -410,12 +500,44 @@ pub fn cublasGemmStridedBatchedExExe<T: CommChannel>(channel_sender: &mut T, cha
     // convert c_float to *const c_void
     let alpha = &alpha as *const c_float;
     let beta = &beta as *const c_float;
-    let result = unsafe {
-        cublasGemmStridedBatchedEx(
-            handle, transa, transb, m, n, k, 
-            alpha as *const c_void, A as *const c_void, Atype, lda, strideA,
-            B as *const c_void, Btype, ldb, strideB, beta as *const c_void,
-            C as *mut c_void, Ctype, ldc, strideC, batchCount, computeType, algo
+    let result = {
+        // cublasGemmStridedBatchedEx(
+        //     handle, transa, transb, m, n, k, 
+        //     alpha as *const c_void, A as *const c_void, Atype, lda, strideA,
+        //     B as *const c_void, Btype, ldb, strideB, beta as *const c_void,
+        //     C as *mut c_void, Ctype, ldc, strideC, batchCount, computeType, algo
+        // )
+        cublasStatus_t::from(
+            pos_process(
+                POS_CUDA_WS.lock().unwrap().get_ptr(),
+                2008u64,
+                0u64,
+                vec![
+                    get_address(&handle), handle.mem_size(),
+                    get_address(&transa), transa.mem_size(),
+                    get_address(&transb), transb.mem_size(),
+                    get_address(&m), m.mem_size(),
+                    get_address(&n), n.mem_size(),
+                    get_address(&k), k.mem_size(),
+                    get_address(&alpha), alpha.mem_size(),
+                    get_address(&A), A.mem_size(),
+                    get_address(&Atype), Atype.mem_size(),
+                    get_address(&lda), lda.mem_size(),
+                    get_address(&strideA), strideA.mem_size(),
+                    get_address(&B), B.mem_size(),
+                    get_address(&Btype), Btype.mem_size(),
+                    get_address(&ldb), ldb.mem_size(),
+                    get_address(&strideB), strideB.mem_size(),
+                    get_address(&beta), beta.mem_size(),
+                    get_address(&C), C.mem_size(),
+                    get_address(&Ctype), Ctype.mem_size(),
+                    get_address(&ldc), ldc.mem_size(),
+                    get_address(&strideC), strideC.mem_size(),
+                    get_address(&batchCount), batchCount.mem_size(),
+                    get_address(&computeType), computeType.mem_size(),
+                    get_address(&algo), algo.mem_size(),
+                ]
+            )
         )
     };
     #[cfg(not(feature = "async_api"))]
