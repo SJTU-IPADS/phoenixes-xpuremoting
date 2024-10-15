@@ -140,15 +140,16 @@ INC_FLAGS += -I$(PROXY_PREFIX)
 
 # add POS include path
 INC_FLAGS += -I../../..
-INC_FLAGS += -I../../../build
+INC_FLAGS += -I../../../lib
 
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
 LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs
 
 # add POS lib path
-LIB_FLAGS += -L../../../build
+LIB_FLAGS += -L../../../lib
 LIB_FLAGS += -lpos
+LIB_FLAGS += -lclang
 
 CC_FLAGS += -std=c++17 -w -fpermissive $(INC_FLAGS) -O0
 # TODO: use extern in header files instead of direct definition e.g. in cpu-common.h to remove -fcommon flag

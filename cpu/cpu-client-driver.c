@@ -911,7 +911,7 @@ CUresult cuGetProcAddress(const char* symbol, void** pfn, int cudaVersion, cuuin
     // Pytorch uses the 11.3 API of this function which does not have the symbolStatus parameter
     // Because we do not support API versioning yet and to avoid segfaults, we ignore this parameter for now.
     //*symbolStatus = CU_GET_PROC_ADDRESS_VERSION_NOT_SUFFICIENT;
-    return cudaSuccess;
+    return CUDA_SUCCESS;
 }
 #else
 CUresult cuGetProcAddress(const char* symbol, void** pfn, int cudaVersion, cuuint64_t flags) 
