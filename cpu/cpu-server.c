@@ -421,6 +421,7 @@ void cricket_main(size_t prog_num, size_t vers_num, int argc, char *argv[])
  
 #if defined(POS_ENABLE)
     if(likely(pos_cuda_ws != nullptr)){
+        pos_cuda_ws->deinit();
         delete pos_cuda_ws;
     }
 #endif
