@@ -395,7 +395,7 @@ void cricket_main(size_t prog_num, size_t vers_num, int argc, char *argv[])
     }
 
     #if defined(POS_ENABLE)
-        pos_cuda_ws = new POSWorkspace_CUDA(argc, argv);
+        pos_cuda_ws = new POSWorkspace_CUDA();
         POS_CHECK_POINTER(pos_cuda_ws);
         pos_cuda_ws->init();
     #endif
