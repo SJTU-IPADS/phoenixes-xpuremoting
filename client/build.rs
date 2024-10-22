@@ -33,6 +33,9 @@ fn main() {
     let library_dir = root.join("src/elf/");
     println!("cargo:rustc-link-search=native={}", library_dir.display());
     println!("cargo:rustc-link-search=native={}", find_std_lib());
+
+    println!("cargo:rustc-link-search=native=../../lib/");
+    println!("cargo:rustc-link-lib=pos");
     
     println!("cargo:rerun-if-changed=build.rs");
 }

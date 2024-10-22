@@ -41,12 +41,12 @@ pub fn find_cuda() -> Vec<PathBuf> {
 }
 
 fn main() {
-    cc::Build::new()
-        .cpp(true)
-        .file("../pos/pos.cpp")
-        .compile("pos");
-    println!("cargo:rerun-if-changed=../pos/pos.h");
-    println!("cargo:rerun-if-changed=../pos/pos.cpp");
+    // cc::Build::new()
+    //     .cpp(true)
+    //     .file("../pos/pos.cpp")
+    //     .compile("pos");
+    // println!("cargo:rerun-if-changed=../pos/pos.h");
+    // println!("cargo:rerun-if-changed=../pos/pos.cpp");
 
     for path in find_cuda() {
         println!("cargo:rustc-link-search=native={}", path.display());
@@ -57,6 +57,9 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=nvidia-ml");
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=CUDA_LIBRARY_PATH");
+
+    println!("cargo:rustc-link-search=native=../../lib/");
+    println!("cargo:rustc-link-lib=pos");
 
     // TODO: use bindgen (or cuda_hook) to automatically generate the FFI
 }

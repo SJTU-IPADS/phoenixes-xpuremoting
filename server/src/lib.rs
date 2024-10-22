@@ -35,9 +35,11 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 extern {
-    fn new_pos_workspace(argc: i32, argv: *const *const i8) -> *mut std::ffi::c_void;
-    fn pos_workspace_init(workspace: *mut std::ffi::c_void);
-    fn call_pos_process(workspace: *mut std::ffi::c_void, api_id: u64, uuid: u64, param_desps: *mut std::ffi::c_void, param_num: i32) -> i32;
+    // fn new_pos_workspace(argc: i32, argv: *const *const i8) -> *mut std::ffi::c_void;
+    fn pos_create_workspace_cuda() -> *mut std::ffi::c_void;
+    // fn pos_workspace_init(pos_cuda_ws: *mut std::ffi::c_void);
+    fn call_pos_process(pos_cuda_ws: *mut std::ffi::c_void, api_id: u64, uuid: u64, param_desps: *mut std::ffi::c_void, param_num: i32) -> i32;
+    fn pos_destory_workspace_cuda(pos_cuda_ws: *mut std::ffi::c_void) -> i32;
 }
 
 pub struct POSWorkspace(*mut std::ffi::c_void);
@@ -60,13 +62,13 @@ lazy_static! {
     static ref RESOURCES: Mutex<HashMap<usize, usize>> = Mutex::new(HashMap::new());
 
     pub static ref POS_CUDA_WS: Mutex<POSWorkspace> = {
-        let args: Vec<String> = std::env::args().collect();
-        let argc = args.len() as i32;
-        let argv: Vec<*const i8> = args.iter()
-            .map(|arg| std::ffi::CString::new(arg.as_str()).unwrap().into_raw() as *const i8)
-            .collect();
-        let pos = unsafe { new_pos_workspace(argc, argv.as_ptr()) };
-        unsafe { pos_workspace_init(pos) }
+        // let args: Vec<String> = std::env::args().collect();
+        // let argc = args.len() as i32;
+        // let argv: Vec<*const i8> = args.iter()
+        //     .map(|arg| std::ffi::CString::new(arg.as_str()).unwrap().into_raw() as *const i8)
+        //     .collect();
+        let pos = unsafe { pos_create_workspace_cuda() };
+        // unsafe { pos_workspace_init(pos) }
         Mutex::new(POSWorkspace(pos))
     };
 }
@@ -80,8 +82,8 @@ pub fn get_address<T>(value: &T) -> usize {
     ptr as usize
 }
 
-pub fn pos_process(workspace: *mut std::ffi::c_void, api_id: u64, uuid: u64, mut param_desps: Vec<usize>) -> i32 {
-    unsafe { call_pos_process(workspace, api_id, uuid, param_desps.as_mut_ptr() as *mut std::ffi::c_void, (param_desps.len() / 2) as i32) }
+pub fn pos_process(pos_cuda_ws: *mut std::ffi::c_void, api_id: u64, uuid: u64, mut param_desps: Vec<usize>) -> i32 {
+    unsafe { call_pos_process(pos_cuda_ws, api_id, uuid, param_desps.as_mut_ptr() as *mut std::ffi::c_void, (param_desps.len() / 2) as i32) }
 }
 
 fn add_module(client_address: MemPtr, module: CUmodule) {
@@ -220,20 +222,6 @@ pub fn launch_server() {
         );
         panic!();
     }
-
-    // // Init POS_CUDA_WS
-    // let args: Vec<String> = std::env::args().collect();
-    // let argc = args.len() as i32;
-    // let c_args: Vec<std::ffi::CString> = args.iter()
-    //     .map(|arg| std::ffi::CString::new(arg.as_str()).unwrap())
-    //     .collect();
-    // let argv: Vec<*const i8> = c_args.iter()
-    //     .map(|arg| arg.as_ptr())
-    //     .collect();
-    // // let workspace = ffi::new_pos_workspace(argc, argv.as_ptr());
-    // // let workspace = ffi::POSWorkspace::new(argc, argv.as_ptr()).within_unique_ptr();
-    // let workspace = ffi::POSWorkspace::new(autocxx::c_int(argc)).within_unique_ptr();
-    // *POS_CUDA_WS.lock().unwrap() = Some(workspace);
 
     loop {
         if let Ok(proc_id) = receive_request(&mut channel_receiver) {

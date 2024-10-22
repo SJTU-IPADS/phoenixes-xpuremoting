@@ -39,6 +39,11 @@ use std::{
     sync::Mutex,
 };
 
+extern {
+    fn pos_create_agent() -> *mut std::ffi::c_void;
+    fn pos_destory_agent(pos_agent: *mut std::ffi::c_void) -> i32;
+}
+
 lazy_static! {
     // Use features when compiling to decide what arm(s) will be supported.
     // In the client side, the sender's name is ctos_channel_name,
@@ -56,6 +61,7 @@ lazy_static! {
             }
             &_ => panic!("Unsupported communication type in config"),
         };
+        unsafe{ pos_create_agent() };
         if cfg!(feature = "emulator") {
             Mutex::new(Channel::new(Box::new(EmulatorChannel::new(c))))
         } else {

@@ -22,8 +22,8 @@ cc = "1"
 
 [features]
 # default = ["rdma"]
-default = ["shm", "emulator"]
-# default = ["shm"]
+# default = ["shm", "emulator"]
+default = ["shm"]
 shm = []
 rdma = []
 emulator = []

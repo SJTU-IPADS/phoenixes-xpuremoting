@@ -34,6 +34,7 @@ curl https://sh.rustup.rs -sSf | sh
 rustup toolchain install nightly-x86_64-unknown-linux-gnu
 rustup default nightly
 cargo +nightly install cargo-expand
+apt install clang libclang-dev -y
 ```
 
 - Version checklist
