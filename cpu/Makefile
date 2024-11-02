@@ -139,16 +139,16 @@ INC_FLAGS += -I$(CUDA_SRC)/include
 INC_FLAGS += -I$(PROXY_PREFIX)
 
 # add POS include path
-INC_FLAGS += -I../../..
-INC_FLAGS += -I../../../lib
-INC_FLAGS += -I../../../build
+INC_FLAGS += -I../..
+INC_FLAGS += -I../../lib
+INC_FLAGS += -I../../build
 
 LIB_FLAGS += -L$(LIBTIRPC_PREFIX)/lib
 LIB_FLAGS += -L$(CUDA_SRC)/lib64
 LIB_FLAGS += -L$(CUDA_SRC)/lib64/stubs
 
 # add POS lib path
-LIB_FLAGS += -L../../../lib
+LIB_FLAGS += -L../../lib
 LIB_FLAGS += -lpos
 LIB_FLAGS += -lclang
 LIB_FLAGS += -lyaml-cpp
