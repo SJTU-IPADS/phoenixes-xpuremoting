@@ -127,7 +127,7 @@ void ShmBuffer::HostInit()
 {
     int fd;
 
-    fd = shm_open(shm_name_, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR);
+    fd = shm_open(shm_name_, O_CREAT | O_TRUNC | O_RDWR, S_IRWXU | S_IRWXG | S_IRWXO);
     if (fd == -1) {
         std::cerr << "Error on shm_open" << std::endl;
         delete[] shm_name_;
@@ -160,7 +160,7 @@ void ShmBuffer::GuestInit()
 {
     int fd;
 
-    fd = shm_open(shm_name_, O_RDWR, S_IRUSR | S_IWUSR);
+    fd = shm_open(shm_name_, O_RDWR, S_IRWXU | S_IRWXG | S_IRWXO);
     if (fd == -1) {
         std::cerr << "Error on shm_open" << std::endl;
         delete[] shm_name_;
