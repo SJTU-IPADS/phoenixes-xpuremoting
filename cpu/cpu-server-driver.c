@@ -21,7 +21,7 @@ int server_driver_init(int restore)
 {
     #ifdef WITH_IB
     #endif //WITH_IB
-   
+
     int ret = 0;
     if (!restore) {
         // we cannot bypass the resource manager for functions and modules

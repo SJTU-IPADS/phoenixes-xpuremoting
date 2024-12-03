@@ -321,11 +321,12 @@ void *dlopen(const char *filename, int flag)
         return dlopen_orig(filename, flag);
     }
 
-    if (filename != NULL && (strcmp(filename, "libcuda.so.1") == 0 ||
-                             strcmp(filename, "libcuda.so") == 0) ||
-        strcmp(filename, "libnvidia-ml.so.1") == 0) {
-        LOG(LOG_DEBUG, "replacing dlopen call to cuda library with "
-                       "cricket-client.so");
+    if (filename != NULL && (
+        strcmp(filename, "libcuda.so.1") == 0 ||
+        strcmp(filename, "libcuda.so") == 0) ||
+        strcmp(filename, "libnvidia-ml.so.1"
+    ) == 0){
+        LOG(LOG_WARNING, "replacing dlopen call to cuda library with cricket-client.so");
         dl_handle = dlopen_orig("cricket-client.so", flag);
         if (clnt == NULL) {
             LOGE(LOG_ERROR, "rpc seems to be uninitialized");

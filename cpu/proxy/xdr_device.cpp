@@ -21,12 +21,17 @@ int XDRDevice::GetMask() { return mask; }
 
 bool_t XDRDevice::Getlong(long *lp)
 {
+    int ret = 0;
     assert(buffer_ != nullptr);
     if (mask == 1) {
         *lp = 0;
         return true;
     }
-    if (buffer_->getBytes((char *)lp, sizeof(long)) < 0) {
+
+    while(ret == 0)
+        ret = buffer_->getBytes((char *)lp, sizeof(long));
+
+    if (ret < 0) {
         return false;
     }
     position += sizeof(long);
@@ -48,14 +53,19 @@ bool_t XDRDevice::Putlong(const long *lp)
 
 bool_t XDRDevice::Getbytes(char *addr, u_int len)
 {
+    int ret = 0;
     assert(buffer_ != nullptr);
     if (mask == 1) {
         memset(addr, 0, len);
         return true;
     }
-    if (buffer_->getBytes(addr, len) < 0) {
+
+    while(ret == 0)
+        ret = buffer_->getBytes(addr, len);
+
+    if(ret < 0)
         return false;
-    }
+    
     position += len;
     return true;
 }

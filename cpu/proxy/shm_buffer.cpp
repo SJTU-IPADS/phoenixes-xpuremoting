@@ -94,11 +94,18 @@ int ShmBuffer::ReadCapacity(int read_tail)
 
 int ShmBuffer::getBytes(char *dst, int length)
 {
-    int current, len = length, read_tail;
+    int current, read_tail, len = length;
     // std::cout << "getBytes, head: " << *buf_head_ << ", tail: " << *buf_tail_
     // << std::endl;
+    
     while (len > 0) {
         read_tail = *buf_tail_;
+
+        // if nothing is in the buffer, we don't block it to receive
+        if(*buf_head_ == *buf_tail_ && len == length){
+            return 0;
+        }
+
         if (*buf_head_ == read_tail) {
             int ret = FillIn();
             if (ret < 0) {

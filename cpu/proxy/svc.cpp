@@ -169,16 +169,19 @@ int process_header(ProxyHeader &header)
     return 0;
 }
 
-int receive_request(int buffer_idx)
+int receive_request(int buffer_idx, bool& has_new_request)
 {
     ProxyHeader header;
-    auto ret = buffers[buffer_idx].receiver->getBytes((char *)&header,
-                                                      sizeof(ProxyHeader));
+    auto ret = buffers[buffer_idx].receiver->getBytes((char *)&header, sizeof(ProxyHeader));
     if (ret < 0) {
-        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__,
-               __LINE__, header.get_proc_id());
+        printf("timeout in %s in %s:%d, proc_id: %d\n", __func__, __FILE__, __LINE__, header.get_proc_id());
         return -1;
+    } else if (ret == 0){
+        has_new_request = false;
+        return 0;
     }
+
+    has_new_request = true;
     int proc_id = header.get_proc_id();
     if (process_header(header) < 0) {
         return -1;
@@ -236,11 +239,22 @@ void svc_run()
         while (!remoting_shutdown) {
             uint64_t start_0 = rdtscp();
             int payload = 0;
+            bool has_new_request = false;
 
-            int proc_id = receive_request(buffer_idx);
+            // try lock client
+            // TODO: we assume the client id is always 0
+            if(unlikely(pos_cuda_ws->try_lock_client(0) == 0)){
+                // TODO: in future, we need to c/r the shm and stop the thread
+                //      rpc thread should be re-spawned while restoring
+                continue;
+            }
+
+            int proc_id = receive_request(buffer_idx, has_new_request);
             if (proc_id < 0) {
                 goto end;
             }
+            
+            if(has_new_request == false){ continue; }
 
             int async = AsyncBatch::is_async_api(proc_id);
 
@@ -249,7 +263,6 @@ void svc_run()
                     POS_ERROR_DETAIL("POS hasn't hijack api %lu", proc_id)
                 }
             #endif // POS_ENABLE && POS_ENABLE_HIJACK_API_CHECK
-
 
             set_start(svc_apis, proc_id, NETWORK_RECEIVE_TIME, start_0);
             payload += sizeof(ProxyHeader);
